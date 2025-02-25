@@ -1,0 +1,70 @@
+{
+  "filename": "a_neon_cyberpunk_ninja.glb",
+  "filesize_bytes": 692996,
+  "filesize_mb": 0.66,
+  "scenes": 1,
+  "nodes": 2,
+  "meshes": 1,
+  "materials": 1,
+  "textures": 2,
+  "images": 2,
+  "skins": 0,
+  "animations": [],
+  "skeleton_hierarchy": [
+    {
+      "name": "world",
+      "index": 0,
+      "depth": 0,
+      "type": "node",
+      "properties": {
+        "translation": null,
+        "rotation": null,
+        "scale": null,
+        "matrix": null
+      },
+      "children": [
+        {
+          "name": "geometry_0",
+          "index": 1,
+          "depth": 1,
+          "type": "node",
+          "properties": {
+            "translation": null,
+            "rotation": null,
+            "scale": null,
+            "matrix": null
+          }
+        }
+      ]
+    }
+  ],
+  "mesh_details": [
+    {
+      "index": 0,
+      "name": "geometry_0",
+      "primitives": [
+        {
+          "material_index": 0,
+          "mode": 4,
+          "attributes": {
+            "POSITION": {
+              "count": 7841,
+              "type": "VEC3",
+              "component_type": 5126
+            },
+            "NORMAL": {
+              "count": 7841,
+              "type": "VEC3",
+              "component_type": 5126
+            },
+            "TEXCOORD_0": {
+              "count": 7841,
+              "type": "VEC2",
+              "component_type": 5126
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

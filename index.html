@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Deus Ex Dragon</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        #debugOverlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            font-family: Arial;
+        }
+    </style>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <div id="debugOverlay">
+        Position: (0, 0, 0)<br>
+        Rotation: 0
+    </div>
+
+    <script type="module">
+        import { LevelGenerator } from './levelGenerator.js';
+        import { SingaporeLevel } from './levels/singaporeLevel.js';
+        
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+        const debugOverlay = document.getElementById("debugOverlay");
+
+        // Add level selection
+        let currentScene = null;
+        let currentLevelType = 'default';  // Track current level type
+
+        // Available levels list
+        const availableLevels = ['default', 'singapore'];
+
+        const createScene = async (levelType = 'default') => {
+            const scene = new BABYLON.Scene(engine);
+            
+            // Camera profiles
+            const thirdPersonProfile = {
+                radius: 5,              
+                beta: Math.PI / 1.8,    
+                target: new BABYLON.Vector3(0, 2.0, 0),  
+                lowerRadiusLimit: 3,    
+                upperRadiusLimit: 10,   
+                lowerBetaLimit: 0.1,
+                upperBetaLimit: Math.PI / 1.2,  // Increased to allow more upward view (about 145 degrees)
+                speed: 0.1,
+                // Add dynamic radius adjustment parameters
+                minRadiusAtMaxBeta: 1.5,  // Minimum radius when looking straight up
+                radiusAdjustThreshold: Math.PI / 2.5  // Start adjusting radius at about 72 degrees
+            };
+
+            // Camera setup
+            const camera = new BABYLON.ArcRotateCamera("camera", 
+                0,    
+                thirdPersonProfile.beta,
+                thirdPersonProfile.radius,
+                thirdPersonProfile.target,
+                scene
+            );
+            
+            camera.lowerRadiusLimit = thirdPersonProfile.lowerRadiusLimit;
+            camera.upperRadiusLimit = thirdPersonProfile.upperRadiusLimit;
+            camera.lowerBetaLimit = thirdPersonProfile.lowerBetaLimit;
+            camera.upperBetaLimit = thirdPersonProfile.upperBetaLimit;
+            
+            // Make camera movement smooth and remove click requirement
+            camera.inputs.attached.mousewheel.detachControl();
+            camera.inputs.attached.pointers.detachControl();
+            camera.inputs.add(new BABYLON.FreeCameraMouseInput());
+            camera.attachControl(canvas, true);
+            camera.inertia = 0.5;
+            camera.angularSensibilityX = 500;
+            camera.angularSensibilityY = 500;
+
+            // Lighting
+            const light = new BABYLON.HemisphericLight("light", 
+                new BABYLON.Vector3(0, 1, 0), scene);
+
+            // Generate level based on type
+            let levelGenerator;
+            switch(levelType) {
+                case 'singapore':
+                    levelGenerator = new SingaporeLevel(scene);
+                    break;
+                default:
+                    levelGenerator = new LevelGenerator(scene);
+            }
+            
+            const { ground, walls, cellSize } = levelGenerator.createLevel();
+
+            // Character setup (simplified) - load both models at start
+            const cellSizeInMeters = 4; 
+            
+            const idleCharacterResult = await BABYLON.SceneLoader.ImportMeshAsync("", 
+                "./assets/", "character_idle.glb", scene);
+            const runningCharacterResult = await BABYLON.SceneLoader.ImportMeshAsync("", 
+                "./assets/", "character.glb", scene);
+            
+            const idleCharacter = idleCharacterResult.meshes[0];
+            const runningCharacter = runningCharacterResult.meshes[0];
+            let currentCharacter = idleCharacter;
+
+            // Modify material properties for all meshes in the model
+            idleCharacterResult.meshes.forEach(mesh => {
+                if (mesh.material) {
+                    mesh.material.emissiveColor = BABYLON.Color3.Black(); // Remove any self-illumination
+                    mesh.material.ambientColor = BABYLON.Color3.Black();  // Make it fully affected by scene lighting
+                }
+            });
+
+            // Set up both models with same properties
+            [idleCharacter, runningCharacter].forEach(char => {
+                char.scaling = new BABYLON.Vector3(1, 1, 1);
+                char.position = new BABYLON.Vector3(0, 0.1, 0);
+                // Create quaternion for 270 degree rotation around Y axis
+                char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+                    BABYLON.Vector3.Up(), 
+                    -Math.PI/2
+                );
+            });
+
+            // Start with idle animation visible, running hidden
+            runningCharacter.setEnabled(false);
+            idleCharacter.setEnabled(true);
+
+            // Simple key handler to switch animations
+            window.addEventListener("keydown", (e) => {
+                if (e.key === "w") {
+                    idleCharacter.setEnabled(false);
+                    runningCharacter.setEnabled(true);
+                    currentCharacter = runningCharacter;
+                }
+            });
+
+            window.addEventListener("keyup", (e) => {
+                if (e.key === "w") {
+                    idleCharacter.setEnabled(true);
+                    runningCharacter.setEnabled(false);
+                    currentCharacter = idleCharacter;
+                }
+            });
+
+            // Movement setup
+            const keys = { w: false, a: false, s: false, d: false };
+            const moveSpeed = thirdPersonProfile.speed;
+
+            window.addEventListener("keydown", (e) => {
+                if (e.key in keys) keys[e.key] = true;
+            });
+            window.addEventListener("keyup", (e) => {
+                if (e.key in keys) keys[e.key] = false;
+            });
+
+            // Animation Loop
+            scene.registerBeforeRender(() => {
+                // Get camera's forward direction (ignoring Y)
+                const cameraDirection = camera.getTarget().subtract(camera.position);
+                cameraDirection.y = 0;
+                cameraDirection.normalize();
+
+                // Calculate right vector
+                const right = BABYLON.Vector3.Cross(cameraDirection, BABYLON.Vector3.Up());
+
+                // Calculate movement
+                let moveVector = BABYLON.Vector3.Zero();
+                
+                if (keys.w || keys.s) {
+                    // When pressing W or S, move in the respective direction
+                    moveVector.addInPlace(cameraDirection.scale(keys.w ? moveSpeed : -moveSpeed));
+                    
+                    // Calculate rotation based on camera direction to show character's back
+                    const targetAngle = Math.atan2(cameraDirection.x, cameraDirection.z);
+                    const targetQuaternion = BABYLON.Quaternion.RotationAxis(
+                        BABYLON.Vector3.Up(), 
+                        targetAngle
+                    );
+                    idleCharacter.rotationQuaternion = targetQuaternion;
+                    runningCharacter.rotationQuaternion = targetQuaternion;
+                }
+                
+                // Add strafe movements
+                if (keys.a) moveVector.addInPlace(right.scale(moveSpeed));
+                if (keys.d) moveVector.addInPlace(right.scale(-moveSpeed));
+
+                // Update character position
+                if (moveVector.length() > 0) {
+                    currentCharacter.position.addInPlace(moveVector);
+                    idleCharacter.position = currentCharacter.position.clone();
+                    runningCharacter.position = currentCharacter.position.clone();
+                }
+
+                // Dynamic camera radius adjustment based on beta angle
+                if (camera.beta > thirdPersonProfile.radiusAdjustThreshold) {
+                    const betaProgress = (camera.beta - thirdPersonProfile.radiusAdjustThreshold) / 
+                        (thirdPersonProfile.upperBetaLimit - thirdPersonProfile.radiusAdjustThreshold);
+                    const targetRadius = BABYLON.Scalar.Lerp(
+                        thirdPersonProfile.radius,
+                        thirdPersonProfile.minRadiusAtMaxBeta,
+                        betaProgress
+                    );
+                    camera.radius = BABYLON.Scalar.Lerp(camera.radius, targetRadius, 0.1);
+                } else {
+                    // Gradually return to normal radius when looking down/forward
+                    camera.radius = BABYLON.Scalar.Lerp(camera.radius, thirdPersonProfile.radius, 0.1);
+                }
+
+                // Update camera target to follow character
+                camera.target.x = currentCharacter.position.x;
+                camera.target.z = currentCharacter.position.z;
+                camera.target.y = currentCharacter.position.y + 2.0; // Updated to match new target height
+            });
+
+            console.log("Idle character properties:", idleCharacter);
+
+            scene.ambientColor = BABYLON.Color3.Black(); // Reduce ambient light
+            scene.clearColor = new BABYLON.Color4(0, 0, 0, 1); // Dark background
+            scene.materialsNeedSceneLighting = true;
+
+            return scene;
+        };
+
+        window.addEventListener("keydown", async (e) => {
+            if (e.key.toLowerCase() === 'l') {
+                // Prompt for level name
+                const newLevel = prompt(
+                    `Enter level name (${availableLevels.join(', ')}):`,
+                    currentLevelType
+                );
+                
+                // Check if input is valid and different from current level
+                if (newLevel && 
+                    availableLevels.includes(newLevel.toLowerCase()) && 
+                    newLevel.toLowerCase() !== currentLevelType) {
+                    
+                    currentLevelType = newLevel.toLowerCase();
+                    
+                    // Dispose of current scene and create new one
+                    if (currentScene) {
+                        currentScene.dispose();
+                    }
+                    currentScene = await createScene(currentLevelType);
+                }
+            }
+        });
+
+        const main = async () => {
+            currentScene = await createScene(currentLevelType);
+            engine.runRenderLoop(() => {
+                if (currentScene) {
+                    currentScene.render();
+                }
+            });
+        };
+
+        main();
+
+        window.addEventListener("resize", () => {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>

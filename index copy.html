@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>3D Maze Game Demo</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        #debugOverlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            font-family: Arial;
+        }
+    </style>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <div id="debugOverlay">
+        Position: (0, 0, 0)<br>
+        Rotation: 0
+    </div>
+
+    <script type="module">
+        // TypeScript-like code (compiled to JS in browser)
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+        const debugOverlay = document.getElementById("debugOverlay");
+
+        const createScene = async () => {
+            const scene = new BABYLON.Scene(engine);
+            
+            // Camera profiles
+            const firstPersonProfile = {
+                radius: 0.1,
+                beta: Math.PI / 2,
+                target: new BABYLON.Vector3(0, 2, 0),  // Lower target point
+                lowerRadiusLimit: 0.1,
+                upperRadiusLimit: 0.1,
+                lowerBetaLimit: Math.PI / 2,
+                upperBetaLimit: Math.PI / 2,
+                speed: {
+                    forward: 0.05,
+                    strafe: 0.03
+                },
+                sensitivity: 0.003,
+                collisionRadius: 0.5
+            };
+
+            const thirdPersonProfile = {
+                radius: 3,
+                beta: Math.PI / 2.5,
+                target: new BABYLON.Vector3(0, 2.5, 0),
+                lowerRadiusLimit: 2,
+                upperRadiusLimit: 6,
+                lowerBetaLimit: 0.01,
+                upperBetaLimit: Math.PI,
+                speed: 0.1,
+                sensitivity: 0.01,
+                collisionRadius: 0.5
+            };
+
+            let currentProfile = thirdPersonProfile;
+            let collisionRadius = currentProfile.collisionRadius;
+
+            // Initial setup with third person profile
+            const camera = new BABYLON.ArcRotateCamera("camera", 
+                Math.PI / 2,    // Alpha (horizontal rotation)
+                thirdPersonProfile.beta,
+                thirdPersonProfile.radius,
+                thirdPersonProfile.target,
+                scene
+            );
+            camera.lowerRadiusLimit = thirdPersonProfile.lowerRadiusLimit;
+            camera.upperRadiusLimit = thirdPersonProfile.upperRadiusLimit;
+            camera.lowerBetaLimit = thirdPersonProfile.lowerBetaLimit;
+            camera.upperBetaLimit = thirdPersonProfile.upperBetaLimit;
+            camera.angularSensibilityX = thirdPersonProfile.sensitivity;
+            camera.angularSensibilityY = thirdPersonProfile.sensitivity;
+            camera.attachControl(canvas, true);
+
+            // Lighting
+            const light = new BABYLON.HemisphericLight("light", 
+                new BABYLON.Vector3(0, 1, 0), scene);
+
+            // Procedural Textures
+            const floorTexture = new BABYLON.DynamicTexture("floorTex", 512, scene);
+            const floorCtx = floorTexture.getContext();
+            floorCtx.fillStyle = "#8B4513";
+            floorCtx.fillRect(0, 0, 512, 512);
+            floorCtx.strokeStyle = "#654321";
+            for (let i = 0; i < 512; i += 64) {
+                floorCtx.beginPath();
+                floorCtx.moveTo(i, 0);
+                floorCtx.lineTo(i, 512);
+                floorCtx.moveTo(0, i);
+                floorCtx.lineTo(512, i);
+                floorCtx.stroke();
+            }
+            floorTexture.update();
+
+            const wallTexture = new BABYLON.DynamicTexture("wallTex", 512, scene);
+            const wallCtx = wallTexture.getContext();
+            wallCtx.fillStyle = "#666633";
+            wallCtx.fillRect(0, 0, 512, 512);
+            for (let i = 0; i < 50; i++) {
+                wallCtx.fillStyle = `rgba(0,${Math.random()*255},0,0.3)`;
+                wallCtx.fillRect(Math.random()*512, Math.random()*512, 32, 32);
+            }
+            wallTexture.update();
+
+            // Maze Generation
+            const mazeSize = 16;
+            const cellSize = 4;
+            const maze = Array(mazeSize).fill().map(() => Array(mazeSize).fill(false));
+            const walls = [];
+
+            // Outer boundaries
+            for (let i = 0; i < mazeSize; i++) {
+                maze[0][i] = maze[mazeSize-1][i] = true;
+                maze[i][0] = maze[i][mazeSize-1] = true;
+            }
+
+            // Central open area (6-9)
+            for (let x = 6; x <= 9; x++) {
+                for (let z = 6; z <= 9; z++) {
+                    maze[x][z] = false;
+                }
+            }
+
+            // Random walls
+            for (let x = 1; x < mazeSize-1; x++) {
+                for (let z = 1; z < mazeSize-1; z++) {
+                    if (x < 6 || x > 9 || z < 6 || z > 9) {
+                        maze[x][z] = Math.random() < 0.15;
+                    }
+                }
+            }
+
+            // Ground
+            const ground = BABYLON.MeshBuilder.CreateGround("ground", 
+                { width: mazeSize * cellSize, height: mazeSize * cellSize }, scene);
+            ground.position.y = -0.1;
+            ground.material = new BABYLON.StandardMaterial("groundMat", scene);
+            ground.material.diffuseTexture = floorTexture;
+
+            // Walls
+            const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
+            wallMat.diffuseTexture = wallTexture;
+            for (let x = 0; x < mazeSize; x++) {
+                for (let z = 0; z < mazeSize; z++) {
+                    if (maze[x][z]) {
+                        const wall = BABYLON.MeshBuilder.CreateBox("wall", 
+                            { width: cellSize, height: cellSize, depth: cellSize }, scene);
+                        wall.position = new BABYLON.Vector3(
+                            (x - mazeSize/2 + 0.5) * cellSize,
+                            cellSize/2,
+                            (z - mazeSize/2 + 0.5) * cellSize
+                        );
+                        wall.material = wallMat;
+                        walls.push(wall);
+                    }
+                }
+            }
+
+            // Character setup (simplified) - load both models at start
+            const cellSizeInMeters = 4; 
+            
+            const idleCharacterResult = await BABYLON.SceneLoader.ImportMeshAsync("", 
+                "./assets/", "character_idle.glb", scene);
+            const runningCharacterResult = await BABYLON.SceneLoader.ImportMeshAsync("", 
+                "./assets/", "character.glb", scene);
+            
+            const idleCharacter = idleCharacterResult.meshes[0];
+            const runningCharacter = runningCharacterResult.meshes[0];
+            let currentCharacter = idleCharacter;
+
+            // Set up both models with same properties
+            [idleCharacter, runningCharacter].forEach(char => {
+                char.scaling = new BABYLON.Vector3(1, 1, 1);
+                char.position = new BABYLON.Vector3(0, 0.1, 0);
+            });
+
+            // Make sure running model starts invisible
+            runningCharacter.setEnabled(false);  // Changed from visibility to enabled
+            idleCharacter.setEnabled(true);
+
+            // Movement
+            const keys = { w: false, a: false, s: false, d: false };
+            let currentSpeed = thirdPersonProfile.speed;
+            let isFirstPerson = false;
+            let characterRotation = 0;  // Track character's rotation angle
+
+            const switchToFirstPerson = () => {
+                currentCharacter.setEnabled(false);
+                camera.radius = firstPersonProfile.radius;
+                camera.beta = firstPersonProfile.beta;
+                camera.target = firstPersonProfile.target;
+                camera.lowerRadiusLimit = firstPersonProfile.lowerRadiusLimit;
+                camera.upperRadiusLimit = firstPersonProfile.upperRadiusLimit;
+                camera.lowerBetaLimit = firstPersonProfile.lowerBetaLimit;
+                camera.upperBetaLimit = firstPersonProfile.upperBetaLimit;
+                currentSpeed = firstPersonProfile.speed;
+            };
+
+            const switchToThirdPerson = () => {
+                currentCharacter.setEnabled(true);
+                camera.radius = thirdPersonProfile.radius;
+                camera.beta = thirdPersonProfile.beta;
+                camera.target = thirdPersonProfile.target;
+                camera.lowerRadiusLimit = thirdPersonProfile.lowerRadiusLimit;
+                camera.upperRadiusLimit = thirdPersonProfile.upperRadiusLimit;
+                camera.lowerBetaLimit = thirdPersonProfile.lowerBetaLimit;
+                camera.upperBetaLimit = thirdPersonProfile.upperBetaLimit;
+                camera.angularSensibilityX = thirdPersonProfile.sensitivity;
+                camera.angularSensibilityY = thirdPersonProfile.sensitivity;
+                currentSpeed = thirdPersonProfile.speed;
+            };
+
+            // Key handlers for camera switching
+            window.addEventListener("keydown", (e) => {
+                if (e.key === "1" && !isFirstPerson) {
+                    isFirstPerson = true;
+                    switchToFirstPerson();
+                } else if (e.key === "2" && isFirstPerson) {
+                    isFirstPerson = false;
+                    switchToThirdPerson();
+                }
+                if (e.key in keys) keys[e.key] = true;
+            });
+
+            // Movement
+            window.addEventListener("keydown", (e) => {
+                if (e.key in keys) keys[e.key] = true;
+            });
+            window.addEventListener("keyup", (e) => {
+                if (e.key in keys) keys[e.key] = false;
+            });
+
+            // Animation Loop
+            scene.registerBeforeRender(() => {
+                let moving = false;
+                
+                if (isFirstPerson) {
+                    // First person movement (camera-based)
+                    if (keys.w) {
+                        camera.target.x += Math.sin(camera.alpha) * firstPersonProfile.speed.forward;
+                        camera.target.z += Math.cos(camera.alpha) * firstPersonProfile.speed.forward;
+                    }
+                    if (keys.s) {
+                        camera.target.x -= Math.sin(camera.alpha) * firstPersonProfile.speed.forward;
+                        camera.target.z -= Math.cos(camera.alpha) * firstPersonProfile.speed.forward;
+                    }
+                    if (keys.a) {
+                        camera.target.x -= Math.cos(camera.alpha) * firstPersonProfile.speed.strafe;
+                        camera.target.z += Math.sin(camera.alpha) * firstPersonProfile.speed.strafe;
+                    }
+                    if (keys.d) {
+                        camera.target.x += Math.cos(camera.alpha) * firstPersonProfile.speed.strafe;
+                        camera.target.z -= Math.sin(camera.alpha) * firstPersonProfile.speed.strafe;
+                    }
+                } else {
+                    // Third person movement (character-based)
+                    if (keys.a) {
+                        camera.alpha += 0.05;
+                    }
+                    if (keys.d) {
+                        camera.alpha -= 0.05;
+                    }
+
+                    if (keys.w) {
+                        if (!moving) {  // Only switch if we just started moving
+                            idleCharacter.setEnabled(false);
+                            runningCharacter.setEnabled(true);
+                            currentCharacter = runningCharacter;
+                        }
+                        // Move both models together
+                        let moveX = Math.sin(camera.alpha) * currentSpeed;
+                        let moveZ = Math.cos(camera.alpha) * currentSpeed;
+                        idleCharacter.position.x += moveX;
+                        idleCharacter.position.z += moveZ;
+                        runningCharacter.position.x = idleCharacter.position.x;
+                        runningCharacter.position.z = idleCharacter.position.z;
+                        moving = true;
+                    } else if (moving) {  // Switch back to idle when not moving
+                        idleCharacter.setEnabled(true);
+                        runningCharacter.setEnabled(false);
+                        currentCharacter = idleCharacter;
+                        moving = false;
+                    }
+
+                    if (keys.s) {
+                        let moveX = -Math.sin(camera.alpha) * currentSpeed;
+                        let moveZ = -Math.cos(camera.alpha) * currentSpeed;
+                        idleCharacter.position.x += moveX;
+                        idleCharacter.position.z += moveZ;
+                        runningCharacter.position.x = idleCharacter.position.x;
+                        runningCharacter.position.z = idleCharacter.position.z;
+                    }
+
+                    // Keep both models rotated with camera
+                    idleCharacter.rotation.y = camera.alpha - Math.PI;
+                    runningCharacter.rotation.y = camera.alpha - Math.PI;
+
+                    // Update camera target to follow character
+                    camera.target.x = currentCharacter.position.x;
+                    camera.target.z = currentCharacter.position.z;
+                }
+
+                // Collision detection
+                const newPos = currentCharacter.position.clone().add(new BABYLON.Vector3(0, 0, 0));
+                let canMove = true;
+                for (const wall of walls) {
+                    const wallBB = wall.getBoundingInfo().boundingBox;
+                    if (BABYLON.Vector3.Distance(newPos, wall.position) < 
+                        collisionRadius + cellSize/2) {
+                        canMove = false;
+                        break;
+                    }
+                }
+
+                if (canMove && moving) {
+                    currentCharacter.position = newPos;
+                }
+
+                // Debug update
+                debugOverlay.innerHTML = `Position: (${currentCharacter.position.x.toFixed(2)}, 
+                    ${currentCharacter.position.y.toFixed(2)}, ${currentCharacter.position.z.toFixed(2)})<br>
+                    Rotation: ${(currentCharacter.rotation.y * 180/Math.PI).toFixed(2)}`;
+            });
+
+            return scene;
+        };
+
+        const main = async () => {
+            const scene = await createScene();
+            engine.runRenderLoop(() => {
+                scene.render();
+            });
+        };
+
+        main();
+
+        window.addEventListener("resize", () => {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
