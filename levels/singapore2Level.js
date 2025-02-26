@@ -1,7 +1,7 @@
 import { LevelGenerator } from '../levelGenerator.js';
 import { EffectManager } from '../src/effects/EffectManager.js';
 
-export class SingaporeLevel extends LevelGenerator {
+export class Singapore2Level extends LevelGenerator {
     constructor(scene) {
         super(scene);
         // Much larger space
@@ -88,20 +88,7 @@ export class SingaporeLevel extends LevelGenerator {
 
         const levelElements = await super.createLevel();
 
-        // Load Marina Bay Sands model
-        const result = await BABYLON.SceneLoader.ImportMeshAsync(
-            "", 
-            "assets/", 
-            "marina_bay_sands.glb", 
-            this.scene
-        );
-
-        // Position and scale the imported model
-        const mbsModel = result.meshes[0];
-        mbsModel.position = new BABYLON.Vector3(0, 20, -40);
-        mbsModel.scaling = new BABYLON.Vector3(4, 4, 4);
-
-        // Create additional skyscrapers
+        // Create additional skyscrapers (same as SingaporeLevel)
         const buildingMaterial = new BABYLON.StandardMaterial("buildingMat", this.scene);
         buildingMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.3);
         buildingMaterial.specularColor = new BABYLON.Color3(0.3, 0.3, 0.4);
@@ -160,19 +147,6 @@ export class SingaporeLevel extends LevelGenerator {
         });
 
         return levelElements;
-    }
-
-    toggleRain() {
-        const rainEffect = this.effectManager.getEffect('rain');
-        if (rainEffect) {
-            if (rainEffect.isActive) {
-                rainEffect.dispose();  // Stop the rain effect
-                rainEffect.isActive = false;  // Update the state
-            } else {
-                rainEffect.start();  // Start the rain effect
-                rainEffect.isActive = true;  // Update the state
-            }
-        }
     }
 
     dispose() {

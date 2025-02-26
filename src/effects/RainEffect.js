@@ -12,9 +12,11 @@ export class RainEffect {
             lightInteraction: false,
             ...config
         };
+        this.isActive = false;  // Track if the rain effect is active
     }
 
     start() {
+        this.isActive = true;  // Set active state
         this.rainDrops = [];
         // Increased rain count and varied initial positions
         const rainCount = 5000;  // More drops for denser rain
@@ -79,6 +81,7 @@ export class RainEffect {
     }
 
     dispose() {
+        this.isActive = false;  // Update state on dispose
         this.rainDrops.forEach(drop => drop.dispose());
     }
 } 

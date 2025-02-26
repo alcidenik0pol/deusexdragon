@@ -1,7 +1,7 @@
 import { LevelGenerator } from '../levelGenerator.js';
 import { EffectManager } from '../src/effects/EffectManager.js';
 
-export class SingaporeLevel extends LevelGenerator {
+export class Singapore3Level extends LevelGenerator {
     constructor(scene) {
         super(scene);
         // Much larger space
@@ -88,20 +88,7 @@ export class SingaporeLevel extends LevelGenerator {
 
         const levelElements = await super.createLevel();
 
-        // Load Marina Bay Sands model
-        const result = await BABYLON.SceneLoader.ImportMeshAsync(
-            "", 
-            "assets/", 
-            "marina_bay_sands.glb", 
-            this.scene
-        );
-
-        // Position and scale the imported model
-        const mbsModel = result.meshes[0];
-        mbsModel.position = new BABYLON.Vector3(0, 20, -40);
-        mbsModel.scaling = new BABYLON.Vector3(4, 4, 4);
-
-        // Create additional skyscrapers
+        // Create additional skyscrapers (same as SingaporeLevel)
         const buildingMaterial = new BABYLON.StandardMaterial("buildingMat", this.scene);
         buildingMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.3);
         buildingMaterial.specularColor = new BABYLON.Color3(0.3, 0.3, 0.4);
@@ -109,16 +96,57 @@ export class SingaporeLevel extends LevelGenerator {
 
         // Create 10 buildings with varied heights and positions
         const buildings = [
-            { x: -50, z: -80, height: 60 },
-            { x: -30, z: -70, height: 45 },
-            { x: 30, z: -75, height: 55 },
-            { x: 50, z: -85, height: 70 },
-            { x: -40, z: -100, height: 50 },
-            { x: 40, z: -95, height: 65 },
-            { x: -20, z: -90, height: 40 },
-            { x: 20, z: -110, height: 75 },
-            { x: -60, z: -95, height: 45 },
-            { x: 60, z: -105, height: 58 }
+            { x: -36, z: 31, height: 31 },
+            { x: -27, z: 31, height: 30 },
+            { x: -36, z: 37, height: 46 },
+            { x: -27, z: 37, height: 38 },
+            { x: -3, z: 31, height: 45 },
+            { x: 4, z: 31, height: 32 },
+            { x: -3, z: 37, height: 39 },
+            { x: 4, z: 37, height: 35 },
+            { x: 27, z: 31, height: 45 },
+            { x: 36, z: 31, height: 49 },
+            { x: 27, z: 37, height: 31 },
+            { x: 36, z: 37, height: 37 },
+            { x: -36, z: -37, height: 44 },
+            { x: -27, z: -37, height: 36 },
+            { x: -36, z: -31, height: 37 },
+            { x: -27, z: -31, height: 32 },
+            { x: -3, z: -37, height: 38 },
+            { x: 4, z: -37, height: 35 },
+            { x: -3, z: -31, height: 41 },
+            { x: 4, z: -31, height: 34 },
+            { x: 27, z: -37, height: 34 },
+            { x: 36, z: -37, height: 48 },
+            { x: 27, z: -31, height: 45 },
+            { x: 36, z: -31, height: 35 },
+            { x: -36, z: -6, height: 43 },
+            { x: -27, z: -6, height: 70 },
+            { x: -36, z: 6, height: 32 },
+            { x: -27, z: 6, height: 87 },
+            { x: -3, z: -6, height: 83 },
+            { x: 4, z: -6, height: 106 },
+            { x: -3, z: 6, height: 93 },
+            { x: 4, z: 6, height: 114 },
+            { x: 27, z: -6, height: 68 },
+            { x: 36, z: -6, height: 47 },
+            { x: 27, z: 6, height: 69 },
+            { x: 36, z: 6, height: 45 },
+            { x: -36, z: -6, height: 30 },
+            { x: -27, z: -6, height: 69 },
+            { x: -36, z: 6, height: 44 },
+            { x: -27, z: 6, height: 81 },
+            { x: -3, z: -6, height: 88 },
+            { x: 4, z: -6, height: 76 },
+            { x: -3, z: 6, height: 60 },
+            { x: 4, z: 6, height: 86 },
+            { x: 27, z: -6, height: 76 },
+            { x: 36, z: -6, height: 31 },
+            { x: 27, z: 6, height: 86 },
+            { x: 36, z: 6, height: 33 },
+            { x: 0, z: 0, height: 120 },
+            { x: -30, z: 30, height: 25 },
+            { x: 30, z: -30, height: 95 }
         ];
 
         buildings.forEach(({ x, z, height }) => {
@@ -160,19 +188,6 @@ export class SingaporeLevel extends LevelGenerator {
         });
 
         return levelElements;
-    }
-
-    toggleRain() {
-        const rainEffect = this.effectManager.getEffect('rain');
-        if (rainEffect) {
-            if (rainEffect.isActive) {
-                rainEffect.dispose();  // Stop the rain effect
-                rainEffect.isActive = false;  // Update the state
-            } else {
-                rainEffect.start();  // Start the rain effect
-                rainEffect.isActive = true;  // Update the state
-            }
-        }
     }
 
     dispose() {

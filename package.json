@@ -2,11 +2,18 @@
   "name": "3d-maze-game",
   "version": "1.0.0",
   "description": "3D Maze Game Demo",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "node dist/server/server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/sqlite3": "^3.1.11",
+    "typescript": "^5.3.3"
   }
-} 
+}
