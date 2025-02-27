@@ -1,9 +1,9 @@
 export const loadCharacters = async (scene) => {
     // Character setup (simplified) - load both models at start
     const idleCharacterResult = await BABYLON.SceneLoader.ImportMeshAsync("", 
-        "./assets/", "character_idle.glb", scene);
+        "./assets/", "pdenton_idle.glb", scene);
     const runningCharacterResult = await BABYLON.SceneLoader.ImportMeshAsync("", 
-        "./assets/", "character.glb", scene);
+        "./assets/", "pdenton_walk.glb", scene);
     
     const idleCharacter = idleCharacterResult.meshes[0];
     const runningCharacter = runningCharacterResult.meshes[0];

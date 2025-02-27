@@ -9,6 +9,18 @@ export class ChatService {
         this.conversationHistory = [];
     }
 
+    addGoodbye() {
+        const message = {
+            timestamp: new Date().toISOString(),
+            npcId: null,
+            npcName: null,
+            userMessage: "Good bye",
+            aiResponse: ""
+        };
+        this.conversationHistory.push(message);
+        console.log('Conversation History:', this.conversationHistory);
+    }
+
     async streamChat(question, onContent, npc = null) {
         // Add message to history
         const message = {
@@ -30,7 +42,7 @@ export class ChatService {
             body: JSON.stringify({
                 model: 'google/gemini-2.0-pro-exp-02-05:free',
                 messages: [
-                    { role: 'system', content: npc?.persona || 'You are a helpful AI assistant.' },
+                    { role: 'system', content: (npc?.persona || 'You are a character in a 3D game.') + ' Always respond concisely in 2-3 sentences maximum.' },
                     ...this.conversationHistory.map(entry => ([
                         { role: 'user', content: entry.userMessage },
                         { role: 'assistant', content: entry.aiResponse }
@@ -38,6 +50,8 @@ export class ChatService {
                     { role: 'user', content: question }
                 ],
                 stream: true,
+                max_tokens: 150,
+                temperature: 0.3,
             }),
         });
 

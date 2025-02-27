@@ -64,7 +64,7 @@
             const scene = new BABYLON.Scene(engine);
             
             // Create camera
-            const gameCamera = new GameCamera(canvas, scene);
+            window.gameCamera = new GameCamera(canvas, scene);
 
             // Lighting
             const light = new BABYLON.HemisphericLight("light", 
@@ -96,7 +96,7 @@
 
             // Set currentCharacter to idleCharacter initially
             currentCharacter = idleCharacter;  // Set the initial current character
-            gameCamera.setCharacter(currentCharacter);  // Set the character for the camera
+            window.gameCamera.setCharacter(currentCharacter);  // Set the character for the camera
 
             // Modify material properties for all meshes in the model
             idleCharacter.getChildren().forEach(mesh => {  // Use idleCharacter directly
@@ -142,7 +142,7 @@
 
             // Movement setup
             const keys = { w: false, a: false, s: false, d: false };
-            const moveSpeed = gameCamera.thirdPersonProfile.speed;
+            const moveSpeed = window.gameCamera.thirdPersonProfile.speed;
 
             window.addEventListener("keydown", (e) => {
                 if (ChatUI.isActive) return;  // Block all keys when chat is active
@@ -156,7 +156,7 @@
             // Animation Loop
             scene.registerBeforeRender(() => {
                 // Get camera's forward direction
-                const cameraDirection = gameCamera.getCameraDirection();
+                const cameraDirection = window.gameCamera.getCameraDirection();
                 
                 // Calculate right vector
                 const right = BABYLON.Vector3.Cross(cameraDirection, BABYLON.Vector3.Up());
@@ -186,7 +186,7 @@
                 }
 
                 // Update camera
-                gameCamera.update();
+                window.gameCamera.update();
             });
 
             console.log("Idle character properties:", idleCharacter);

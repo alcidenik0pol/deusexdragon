@@ -48,25 +48,26 @@ export class ChatUI {
             z-index: 1000;
         `;
 
-        // Create header bar (reduced padding further)
+        // Create header bar (made even smaller)
         const headerBar = document.createElement('div');
         headerBar.style.cssText = `
             display: flex;
             justify-content: space-between;
             align-items: center;
             background-color: #d97706;
-            padding: 0.15rem 0.5rem;  // Reduced padding
+            padding: 0.1rem 0.5rem;  // Further reduced padding
             border-bottom: 1px solid #b45309;
+            height: 20px; // Explicitly set small height
         `;
 
-        // Create NPC name display in header (smaller font and reduced height)
+        // Create NPC name display in header (adjusted for larger size)
         this.npcNameDisplay = document.createElement('div');
         this.npcNameDisplay.style.cssText = `
             color: #111827;
             font-weight: bold;
             letter-spacing: 1px;
-            font-size: 12px;  // Reduced font size
-            line-height: 1;   // Reduced line height
+            font-size: 16px;  // Increased from 11px to be larger than chat font (14px)
+            line-height: 1;
         `;
 
         // Spacer element
@@ -116,15 +117,15 @@ export class ChatUI {
         `;
         topDecoration.appendChild(diagonalStripes);
 
-        // Create output block (reduced height further)
+        // Create output block (larger font)
         this.outputBlock = document.createElement('div');
         this.outputBlock.style.cssText = `
             width: 100%;
-            height: 4rem;  // Reduced from 6rem
+            height: 4rem;
             overflow-y: auto;
             padding: 0.5rem;
             color: #fbbf24;
-            font-size: 12px;
+            font-size: 14px;  // Increased font size
             background-color: #111827;
             border-top: 1px solid rgba(217, 119, 6, 0.5);
             white-space: pre-wrap;
@@ -158,20 +159,22 @@ export class ChatUI {
             border-top: 1px solid rgba(217, 119, 6, 0.3);
         `;
 
-        // Create text area (reduced height further)
+        // Create text area (larger font + blinking cursor)
         this.textArea = document.createElement('textarea');
         this.textArea.style.cssText = `
             width: 100%;
-            padding: 0.25rem;  // Reduced padding
+            padding: 0.25rem;
             margin-bottom: 0.25rem;
             background-color: #111827;
             color: #fbbf24;
             border: 1px solid #d97706;
             border-radius: 0;
             font-family: 'Share Tech Mono', monospace;
-            font-size: 12px;
+            font-size: 14px;  // Increased font size
             resize: none;
-            height: 40px;  // Reduced from 50px
+            height: 40px;
+            caret-color: #fbbf24;  // Makes the cursor orange
+            animation: blink 1s step-end infinite;
         `;
         this.textArea.placeholder = "Enter your message...";
         
@@ -233,7 +236,10 @@ export class ChatUI {
             byeButton.style.backgroundColor = '#374151';
             byeButton.style.borderBottomColor = '#1f2937';
         };
-        byeButton.onclick = () => this.hide();
+        byeButton.onclick = () => {
+            this.chatService.addGoodbye();
+            this.hide();
+        };
 
         // Add keydown handler for Escape key
         this.container.addEventListener('keydown', (e) => {
@@ -249,6 +255,17 @@ export class ChatUI {
                 this.handleSubmit(); // Call submit handler
             }
         });
+
+        // Add blinking cursor animation
+        const cursorStyle = document.createElement('style');
+        cursorStyle.textContent = `
+            @keyframes blink {
+                0% { opacity: 1; }
+                50% { opacity: 0; }
+                100% { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(cursorStyle);
 
         // Assemble UI
         headerBar.appendChild(this.npcNameDisplay);
@@ -291,7 +308,13 @@ export class ChatUI {
         }
         this.container.style.display = 'block';
         this.isVisible = true;
-        ChatUI.isActive = true;  // Set active state when showing
+        ChatUI.isActive = true;
+        
+        // Focus camera on NPC
+        if (window.gameCamera) {  // Assuming gameCamera is accessible globally
+            window.gameCamera.focusOnNPC(this.currentNPC);
+        }
+        
         this.textArea.focus();
     }
 
@@ -299,7 +322,12 @@ export class ChatUI {
         if (this.container) {
             this.container.style.display = 'none';
             this.isVisible = false;
-            ChatUI.isActive = false;  // Clear active state when hiding
+            ChatUI.isActive = false;
+            
+            // Clear NPC focus and return to normal camera
+            if (window.gameCamera) {
+                window.gameCamera.clearNPCFocus();
+            }
         }
     }
 
@@ -319,6 +347,22 @@ export class ChatUI {
         this.textArea.value = '';
 
         try {
+            // Switch to player focus
+            if (window.gameCamera) {
+                console.log("Switching to player focus while waiting for response");
+                window.gameCamera.focusOnPlayer();
+            }
+
+            // After 1 second, switch back to NPC regardless of API status
+            setTimeout(() => {
+                if (window.gameCamera) {
+                    console.log("Switching back to NPC focus after delay");
+                    window.gameCamera.clearWaitingFocus();
+                    window.gameCamera.focusOnNPC(this.currentNPC);
+                }
+            }, 1000);
+
+            // Start the API call immediately
             await this.streamResponse(question);
         } catch (error) {
             this.outputBlock.textContent = `Error: ${error.message}`;
@@ -327,9 +371,37 @@ export class ChatUI {
 
     async streamResponse(question) {
         this.outputBlock.textContent = '';
-        
         await this.chatService.streamChat(question, (content) => {
             this.outputBlock.textContent += content;
-        }, this.currentNPC);  // Pass the current NPC to the chat service
+        }, this.currentNPC);
+    }
+
+    async handleChat(question) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+        
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user-message';
+        userDiv.textContent = question;
+        messageDiv.appendChild(userDiv);
+        
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'ai-message';
+        messageDiv.appendChild(aiDiv);
+        
+        this.outputBlock.appendChild(messageDiv);
+        
+        // Auto-scroll to bottom when adding new message
+        this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
+
+        await this.chatService.streamChat(
+            question,
+            (content) => {
+                aiDiv.textContent += content;
+                // Auto-scroll as content streams in
+                this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
+            },
+            this.currentNPC
+        );
     }
 }
