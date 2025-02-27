@@ -1,35 +1,105 @@
 export const loadCharacters = async (scene) => {
-    // Character setup (simplified) - load both models at start
-    const idleCharacterResult = await BABYLON.SceneLoader.ImportMeshAsync("", 
-        "./assets/", "pdenton_idle.glb", scene);
-    const runningCharacterResult = await BABYLON.SceneLoader.ImportMeshAsync("", 
-        "./assets/", "pdenton_walk.glb", scene);
-    
-    const idleCharacter = idleCharacterResult.meshes[0];
-    const runningCharacter = runningCharacterResult.meshes[0];
+    try {
+        console.log("Starting to load character models...");
+        
+        // Load all character animations
+        const modelPromises = [
+            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_idle.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_walk.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_walkb.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_sleft.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_sright.glb", scene)
+        ];
 
-    // Modify material properties for all meshes in the model
-    idleCharacterResult.meshes.forEach(mesh => {
-        if (mesh.material) {
-            mesh.material.emissiveColor = BABYLON.Color3.Black(); // Remove any self-illumination
-            mesh.material.ambientColor = BABYLON.Color3.Black();  // Make it fully affected by scene lighting
+        const results = await Promise.all(modelPromises.map(p => p.catch(error => {
+            console.error("Error loading model:", error);
+            return null;
+        })));
+
+        // Check if any models failed to load
+        if (results.some(result => result === null)) {
+            throw new Error("Failed to load one or more character models");
         }
-    });
 
-    // Set up both models with same properties
-    [idleCharacter, runningCharacter].forEach(char => {
-        char.scaling = new BABYLON.Vector3(1, 1, 1);
-        char.position = new BABYLON.Vector3(0, 0.1, 0);
-        // Create quaternion for 270 degree rotation around Y axis
-        char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
-            BABYLON.Vector3.Up(), 
-            -Math.PI/2
-        );
-    });
+        const [
+            idleCharacterResult,
+            forwardCharacterResult,
+            backwardCharacterResult,
+            leftCharacterResult,
+            rightCharacterResult
+        ] = results;
 
-    // Start with idle animation visible, running hidden
-    runningCharacter.setEnabled(false);
-    idleCharacter.setEnabled(true);
+        console.log("All models loaded, extracting root meshes...");
+        
+        // Get the root mesh for each animation
+        const idleCharacter = idleCharacterResult.meshes[0];
+        const forwardCharacter = forwardCharacterResult.meshes[0];
+        const backwardCharacter = backwardCharacterResult.meshes[0];
+        const leftCharacter = leftCharacterResult.meshes[0];
+        const rightCharacter = rightCharacterResult.meshes[0];
 
-    return { idleCharacter, runningCharacter };  // Return characters for use in createScene
+        // Verify all meshes exist
+        if (!idleCharacter || !forwardCharacter || !backwardCharacter || 
+            !leftCharacter || !rightCharacter) {
+            throw new Error("One or more character meshes are missing");
+        }
+
+        console.log("Applying material properties...");
+
+        // Apply material properties to all character meshes
+        [
+            idleCharacterResult,
+            forwardCharacterResult,
+            backwardCharacterResult,
+            leftCharacterResult,
+            rightCharacterResult
+        ].forEach(result => {
+            result.meshes.forEach(mesh => {
+                if (mesh.material) {
+                    mesh.material.emissiveColor = BABYLON.Color3.Black();
+                    mesh.material.ambientColor = BABYLON.Color3.Black();
+                }
+            });
+        });
+
+        console.log("Setting up common properties...");
+
+        // Set up common properties for all character states
+        [
+            idleCharacter,
+            forwardCharacter,
+            backwardCharacter,
+            leftCharacter,
+            rightCharacter
+        ].forEach(char => {
+            char.scaling = new BABYLON.Vector3(1, 1, 1);
+            char.position = new BABYLON.Vector3(0, 0.1, 0);
+            char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+                BABYLON.Vector3.Up(), 
+                -Math.PI/2
+            );
+        });
+
+        console.log("Setting initial visibility states...");
+
+        // Start with idle animation visible, others hidden
+        idleCharacter.setEnabled(true);
+        forwardCharacter.setEnabled(false);
+        backwardCharacter.setEnabled(false);
+        leftCharacter.setEnabled(false);
+        rightCharacter.setEnabled(false);
+
+        console.log("Character loading complete!");
+
+        return {
+            idleCharacter,
+            forwardCharacter,
+            backwardCharacter,
+            leftCharacter,
+            rightCharacter
+        };
+    } catch (error) {
+        console.error("Error in loadCharacters:", error);
+        throw error;
+    }
 };

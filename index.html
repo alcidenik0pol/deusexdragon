@@ -47,6 +47,7 @@
         import { ChatService } from './chat/chatService.js';
         import { loadNPC1 } from './characters/npc1.js';
         import { GameCamera } from './camera.js';
+        import { Controls } from './controls.js';
         
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -91,119 +92,37 @@
             
             const { ground, walls, cellSize } = await levelGenerator.createLevel();
 
-            // Character setup (moved to maincharacter.js)
-            const { idleCharacter, runningCharacter } = await loadCharacters(scene);  // Updated to load characters
+            // Load characters ONCE
+            const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter } = await loadCharacters(scene);
+            
+            // Initialize controls with all character models
+            const controls = new Controls(
+                scene, 
+                idleCharacter, 
+                forwardCharacter, 
+                backwardCharacter, 
+                leftCharacter, 
+                rightCharacter, 
+                window.gameCamera
+            );
 
-            // Set currentCharacter to idleCharacter initially
-            currentCharacter = idleCharacter;  // Set the initial current character
-            window.gameCamera.setCharacter(currentCharacter);  // Set the character for the camera
+            // Set current character
+            currentCharacter = controls.getCurrentCharacter();
+            window.gameCamera.setCharacter(currentCharacter);
 
-            // Modify material properties for all meshes in the model
-            idleCharacter.getChildren().forEach(mesh => {  // Use idleCharacter directly
-                if (mesh.material) {
-                    mesh.material.emissiveColor = BABYLON.Color3.Black(); // Remove any self-illumination
-                    mesh.material.ambientColor = BABYLON.Color3.Black();  // Make it fully affected by scene lighting
-                }
-            });
-
-            // Set up both models with same properties
-            [idleCharacter, runningCharacter].forEach(char => {
-                char.scaling = new BABYLON.Vector3(1, 1, 1);
-                char.position = new BABYLON.Vector3(0, 0.1, 0);
-                // Create quaternion for 270 degree rotation around Y axis
-                char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
-                    BABYLON.Vector3.Up(), 
-                    -Math.PI/2
-                );
-            });
-
-            // Start with idle animation visible, running hidden
-            runningCharacter.setEnabled(false);
-            idleCharacter.setEnabled(true);
-
-            // Simple key handler to switch animations
-            window.addEventListener("keydown", (e) => {
-                if (ChatUI.isActive && e.key !== "e") return;  // Block all keys except 'e' when chat is active
-                if (e.key === "w") {
-                    idleCharacter.setEnabled(false);
-                    runningCharacter.setEnabled(true);
-                    currentCharacter = runningCharacter;
-                }
-            });
-
-            window.addEventListener("keyup", (e) => {
-                if (ChatUI.isActive && e.key !== "e") return;  // Block all keys except 'e' when chat is active
-                if (e.key === "w") {
-                    idleCharacter.setEnabled(true);
-                    runningCharacter.setEnabled(false);
-                    currentCharacter = idleCharacter;
-                }
-            });
-
-            // Movement setup
-            const keys = { w: false, a: false, s: false, d: false };
-            const moveSpeed = window.gameCamera.thirdPersonProfile.speed;
-
-            window.addEventListener("keydown", (e) => {
-                if (ChatUI.isActive) return;  // Block all keys when chat is active
-                if (e.key in keys) keys[e.key] = true;
-            });
-            window.addEventListener("keyup", (e) => {
-                if (ChatUI.isActive) return;  // Block movement when chat is active
-                if (e.key in keys) keys[e.key] = false;
-            });
-
-            // Animation Loop
-            scene.registerBeforeRender(() => {
-                // Get camera's forward direction
-                const cameraDirection = window.gameCamera.getCameraDirection();
-                
-                // Calculate right vector
-                const right = BABYLON.Vector3.Cross(cameraDirection, BABYLON.Vector3.Up());
-
-                // Calculate movement
-                let moveVector = BABYLON.Vector3.Zero();
-                
-                if (keys.w || keys.s) {
-                    moveVector.addInPlace(cameraDirection.scale(keys.w ? moveSpeed : -moveSpeed));
-                    
-                    const targetAngle = Math.atan2(cameraDirection.x, cameraDirection.z);
-                    const targetQuaternion = BABYLON.Quaternion.RotationAxis(
-                        BABYLON.Vector3.Up(), 
-                        targetAngle
-                    );
-                    idleCharacter.rotationQuaternion = targetQuaternion;
-                    runningCharacter.rotationQuaternion = targetQuaternion;
-                }
-                
-                if (keys.a) moveVector.addInPlace(right.scale(moveSpeed));
-                if (keys.d) moveVector.addInPlace(right.scale(-moveSpeed));
-
-                if (moveVector.length() > 0) {
-                    currentCharacter.position.addInPlace(moveVector);
-                    idleCharacter.position = currentCharacter.position.clone();
-                    runningCharacter.position = currentCharacter.position.clone();
-                }
-
-                // Update camera
-                window.gameCamera.update();
-            });
-
-            console.log("Idle character properties:", idleCharacter);
-
-            scene.ambientColor = BABYLON.Color3.Black(); // Reduce ambient light
-            scene.clearColor = new BABYLON.Color4(0, 0, 0, 1); // Dark background
+            // Scene settings
+            scene.ambientColor = BABYLON.Color3.Black();
+            scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
             scene.materialsNeedSceneLighting = true;
 
-            let npcs = [];  // Array to store active NPCs
-
-            // Load and setup NPCs
-            if (levelType === 'ladiesroom') {  // Only load NPCs in relevant levels
+            // NPC setup
+            let npcs = [];
+            if (levelType === 'ladiesroom') {
                 const npc1 = await loadNPC1(scene);
                 npcs.push(npc1);
             }
 
-            // Modify the chat UI setup
+            // Chat UI setup
             let chatUI = null;
 
             // Function to find closest NPC
@@ -226,27 +145,22 @@
                     }
                 });
                 
-                // Return the NPC only if within 1 tile (assuming tile size)
                 return closestDistance <= 3 ? closestNPC : null;
             };
 
-            // Modify the 'E' key handler
+            // Chat key handler
             window.addEventListener("keydown", (e) => {
                 if (e.key === "e") {
                     if (!chatUI) {
                         chatUI = new ChatUI();
                     }
                     
-                    // If chat is active, don't handle 'E' key at all
-                    // This allows typing 'E' in the chat
                     if (ChatUI.isActive) {
                         return;
                     }
                     
-                    // Prevent the 'e' from being typed when opening chat
                     e.preventDefault();
                     
-                    // Only try to open chat if it's not active
                     const nearbyNPC = findClosestNPC();
                     if (nearbyNPC) {
                         chatUI.setNPC(nearbyNPC);
