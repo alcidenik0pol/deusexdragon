@@ -49,29 +49,37 @@ export class Controls {
                 this.keys[e.key] = true;
                 this.setAllCharactersInvisible();
                 
+                // Get camera direction for all movements
+                const cameraDirection = this.gameCamera.getCameraDirection();
+                const targetAngle = Math.atan2(cameraDirection.x, cameraDirection.z);
+                
                 // Set the appropriate animation and rotation based on key pressed
                 switch(e.key) {
                     case 'w':
                         this.forwardCharacter.setEnabled(true);
                         this.currentCharacter = this.forwardCharacter;
-                        // Forward keeps default rotation
+                        // Face away from camera
+                        this.forwardCharacter.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+                            BABYLON.Vector3.Up(),
+                            targetAngle
+                        );
                         break;
                     case 's':
                         this.backwardCharacter.setEnabled(true);
                         this.currentCharacter = this.backwardCharacter;
-                        // Rotate 90 degrees for backward walking
+                        // Face towards camera (opposite of forward)
                         this.backwardCharacter.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                             BABYLON.Vector3.Up(),
-                            -Math.PI/2  // 90 degrees
+                            targetAngle
                         );
                         break;
                     case 'a':
                         this.leftCharacter.setEnabled(true);
                         this.currentCharacter = this.leftCharacter;
-                        // Rotate 90 degrees for left strafe
+                        // Face 90 degrees left relative to camera
                         this.leftCharacter.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                             BABYLON.Vector3.Up(),
-                            Math.PI/2  // 90 degrees
+                            targetAngle + Math.PI  // Add 90 degrees
                         );
                         break;
                     case 'd':
@@ -79,7 +87,7 @@ export class Controls {
                         this.currentCharacter = this.rightCharacter;
                         this.rightCharacter.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                             BABYLON.Vector3.Up(),
-                            Math.PI/2
+                            targetAngle + Math.PI
                         );
                         break;
                 }
