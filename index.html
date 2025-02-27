@@ -42,10 +42,11 @@
         import { Singapore2Level } from './levels/singapore2Level.js';
         import { Singapore3Level } from './levels/singapore3Level.js';
         import { LadiesRoomLevel } from './levels/ladiesRoomLevel.js';
-        import { loadCharacters } from './characters/maincharacter.js';  // New import
+        import { loadCharacters } from './characters/maincharacter.js';
         import { ChatUI } from './chat/chatUI.js';
         import { ChatService } from './chat/chatService.js';
         import { loadNPC1 } from './characters/npc1.js';
+        import { GameCamera } from './camera.js';
         
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -62,43 +63,8 @@
         const createScene = async (levelType = 'default') => {
             const scene = new BABYLON.Scene(engine);
             
-            // Camera profiles
-            const thirdPersonProfile = {
-                radius: 5,              
-                beta: Math.PI / 1.8,    
-                target: new BABYLON.Vector3(0, 2.0, 0),  
-                lowerRadiusLimit: 3,    
-                upperRadiusLimit: 10,   
-                lowerBetaLimit: 0.1,
-                upperBetaLimit: Math.PI / 1.2,  // Increased to allow more upward view (about 145 degrees)
-                speed: 0.1,
-                // Add dynamic radius adjustment parameters
-                minRadiusAtMaxBeta: 1.5,  // Minimum radius when looking straight up
-                radiusAdjustThreshold: Math.PI / 2.5  // Start adjusting radius at about 72 degrees
-            };
-
-            // Camera setup
-            const camera = new BABYLON.ArcRotateCamera("camera", 
-                0,    
-                thirdPersonProfile.beta,
-                thirdPersonProfile.radius,
-                thirdPersonProfile.target,
-                scene
-            );
-            
-            camera.lowerRadiusLimit = thirdPersonProfile.lowerRadiusLimit;
-            camera.upperRadiusLimit = thirdPersonProfile.upperRadiusLimit;
-            camera.lowerBetaLimit = thirdPersonProfile.lowerBetaLimit;
-            camera.upperBetaLimit = thirdPersonProfile.upperBetaLimit;
-            
-            // Make camera movement smooth and remove click requirement
-            camera.inputs.attached.mousewheel.detachControl();
-            camera.inputs.attached.pointers.detachControl();
-            camera.inputs.add(new BABYLON.FreeCameraMouseInput());
-            camera.attachControl(canvas, true);
-            camera.inertia = 0.5;
-            camera.angularSensibilityX = 500;
-            camera.angularSensibilityY = 500;
+            // Create camera
+            const gameCamera = new GameCamera(canvas, scene);
 
             // Lighting
             const light = new BABYLON.HemisphericLight("light", 
@@ -130,6 +96,7 @@
 
             // Set currentCharacter to idleCharacter initially
             currentCharacter = idleCharacter;  // Set the initial current character
+            gameCamera.setCharacter(currentCharacter);  // Set the character for the camera
 
             // Modify material properties for all meshes in the model
             idleCharacter.getChildren().forEach(mesh => {  // Use idleCharacter directly
@@ -175,7 +142,7 @@
 
             // Movement setup
             const keys = { w: false, a: false, s: false, d: false };
-            const moveSpeed = thirdPersonProfile.speed;
+            const moveSpeed = gameCamera.thirdPersonProfile.speed;
 
             window.addEventListener("keydown", (e) => {
                 if (ChatUI.isActive) return;  // Block all keys when chat is active
@@ -188,11 +155,9 @@
 
             // Animation Loop
             scene.registerBeforeRender(() => {
-                // Get camera's forward direction (ignoring Y)
-                const cameraDirection = camera.getTarget().subtract(camera.position);
-                cameraDirection.y = 0;
-                cameraDirection.normalize();
-
+                // Get camera's forward direction
+                const cameraDirection = gameCamera.getCameraDirection();
+                
                 // Calculate right vector
                 const right = BABYLON.Vector3.Cross(cameraDirection, BABYLON.Vector3.Up());
 
@@ -200,10 +165,8 @@
                 let moveVector = BABYLON.Vector3.Zero();
                 
                 if (keys.w || keys.s) {
-                    // When pressing W or S, move in the respective direction
                     moveVector.addInPlace(cameraDirection.scale(keys.w ? moveSpeed : -moveSpeed));
                     
-                    // Calculate rotation based on camera direction to show character's back
                     const targetAngle = Math.atan2(cameraDirection.x, cameraDirection.z);
                     const targetQuaternion = BABYLON.Quaternion.RotationAxis(
                         BABYLON.Vector3.Up(), 
@@ -213,36 +176,17 @@
                     runningCharacter.rotationQuaternion = targetQuaternion;
                 }
                 
-                // Add strafe movements
                 if (keys.a) moveVector.addInPlace(right.scale(moveSpeed));
                 if (keys.d) moveVector.addInPlace(right.scale(-moveSpeed));
 
-                // Update character position
                 if (moveVector.length() > 0) {
                     currentCharacter.position.addInPlace(moveVector);
                     idleCharacter.position = currentCharacter.position.clone();
                     runningCharacter.position = currentCharacter.position.clone();
                 }
 
-                // Dynamic camera radius adjustment based on beta angle
-                if (camera.beta > thirdPersonProfile.radiusAdjustThreshold) {
-                    const betaProgress = (camera.beta - thirdPersonProfile.radiusAdjustThreshold) / 
-                        (thirdPersonProfile.upperBetaLimit - thirdPersonProfile.radiusAdjustThreshold);
-                    const targetRadius = BABYLON.Scalar.Lerp(
-                        thirdPersonProfile.radius,
-                        thirdPersonProfile.minRadiusAtMaxBeta,
-                        betaProgress
-                    );
-                    camera.radius = BABYLON.Scalar.Lerp(camera.radius, targetRadius, 0.1);
-                } else {
-                    // Gradually return to normal radius when looking down/forward
-                    camera.radius = BABYLON.Scalar.Lerp(camera.radius, thirdPersonProfile.radius, 0.1);
-                }
-
-                // Update camera target to follow character
-                camera.target.x = currentCharacter.position.x;
-                camera.target.z = currentCharacter.position.z;
-                camera.target.y = currentCharacter.position.y + 2.0; // Updated to match new target height
+                // Update camera
+                gameCamera.update();
             });
 
             console.log("Idle character properties:", idleCharacter);
