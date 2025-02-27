@@ -10,6 +10,7 @@ export class Singapore2Level extends LevelGenerator {
         
         // Initialize effect manager
         this.effectManager = new EffectManager(scene);
+        this.flyingCars = [];  // Array to store flying cars
     }
 
     generateDefaultMaze() {
@@ -119,6 +120,37 @@ export class Singapore2Level extends LevelGenerator {
             building.material = buildingMaterial;
         });
 
+        // Create flying car using simple box mesh
+        const carMaterial = new BABYLON.StandardMaterial("carMat", this.scene);
+        carMaterial.diffuseColor = new BABYLON.Color3(0.7, 0.7, 0.9);
+        carMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.3);
+        carMaterial.specularColor = new BABYLON.Color3(0.8, 0.8, 1.0);
+        
+        const car = BABYLON.MeshBuilder.CreateBox("flyingCar", {
+            width: 20,    // 5x bigger (was 4)
+            height: 5,  // 5x bigger (was 1.5)
+            depth: 10     // 5x bigger (was 2)
+        }, this.scene);
+        
+        car.position = new BABYLON.Vector3(-80, 67.5, -50); // 1.5x higher (was 45)
+        car.rotation = new BABYLON.Vector3(0, 0, 0); // Rotated 90 degrees (was Math.PI / 2)
+        car.material = carMaterial;
+        
+        // Car movement properties
+        const carInfo = {
+            mesh: car,
+            speed: 1.0,
+            startX: -80,
+            endX: 80
+        };
+        this.flyingCars.push(carInfo);
+
+        // Add car update logic to the render loop
+        this.scene.onBeforeRenderObservable.add(() => {
+            this.updateFlyingCars();
+            this.effectManager.update();
+        });
+
         // Add Singapore-specific effects
         this.effectManager.addEffect('fog', {
             baseColors: ['#FFA000', '#1E3F57', '#2A5C1E'],
@@ -141,15 +173,28 @@ export class Singapore2Level extends LevelGenerator {
             autoStart: false  // Ensure it is off by default
         });
 
-        // Add update loop
-        this.scene.onBeforeRenderObservable.add(() => {
-            this.effectManager.update();
-        });
-
         return levelElements;
     }
 
+    updateFlyingCars() {
+        for (const car of this.flyingCars) {
+            // Move car along X axis
+            car.mesh.position.x += car.speed;
+            
+            // Reset position when reaching the end
+            if (car.mesh.position.x > car.endX) {
+                car.mesh.position.x = car.startX;
+            }
+        }
+    }
+
     dispose() {
+        // Clean up flying cars
+        this.flyingCars.forEach(car => {
+            car.mesh.dispose();
+        });
+        this.flyingCars = [];
+        
         this.effectManager.removeEffect('fog');
         this.effectManager.removeEffect('volumetricLight');
         this.effectManager.removeEffect('rain');

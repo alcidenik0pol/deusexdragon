@@ -100,7 +100,7 @@ export class ChatService {
         }
 
         // Update message with full response and add to history
-        message.aiResponse = fullResponse;
+        message.aiResponse = fullResponse || '...';
         this.conversationHistory.push(message);
         
         // Log the conversation history
