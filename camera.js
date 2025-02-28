@@ -34,10 +34,22 @@ export class GameCamera {
             transitionSpeed: 0.05  // Keep smooth transitions
         };
 
+        this.freeCameraProfile = {
+            radius: 5,
+            beta: Math.PI / 2.2,
+            transitionSpeed: 0.1,
+            moveSpeed: 0.5  // Increased from 0.2 to 0.5 for faster movement
+        };
+
         this.defaultProfile = { ...this.thirdPersonProfile };
         this.isInNPCFocus = false;
         this.focusedNPC = null;
         this.isInWaitingMode = false;
+        this.isInFreeMode = false;
+
+        // Add keyboard state tracking
+        this.keys = { w: false, a: false, s: false, d: false };
+        this.setupKeyboardControls();
 
         this.setupCamera();
     }
@@ -64,6 +76,44 @@ export class GameCamera {
         this.camera.inertia = 0.5;
         this.camera.angularSensibilityX = 500;
         this.camera.angularSensibilityY = 500;
+    }
+
+    setupKeyboardControls() {
+        // Handle keydown
+        window.addEventListener("keydown", (e) => {
+            if (this.isInFreeMode && e.key.toLowerCase() in this.keys) {
+                this.keys[e.key.toLowerCase()] = true;
+            }
+        });
+
+        // Handle keyup
+        window.addEventListener("keyup", (e) => {
+            if (this.isInFreeMode && e.key.toLowerCase() in this.keys) {
+                this.keys[e.key.toLowerCase()] = false;
+            }
+        });
+    }
+
+    updateFreeCameraPosition() {
+        if (!this.isInFreeMode) return;
+
+        // Get camera's forward direction, keeping the Y component for vertical movement
+        const forward = this.camera.target.subtract(this.camera.position).normalize();
+        const right = BABYLON.Vector3.Cross(forward, BABYLON.Vector3.Up()).normalize();
+
+        // Calculate movement based on keys
+        const moveVector = new BABYLON.Vector3(0, 0, 0);
+        
+        if (this.keys.w) moveVector.addInPlace(forward.scale(this.freeCameraProfile.moveSpeed));
+        if (this.keys.s) moveVector.addInPlace(forward.scale(-this.freeCameraProfile.moveSpeed));
+        if (this.keys.a) moveVector.addInPlace(right.scale(this.freeCameraProfile.moveSpeed));  // Swapped A/D
+        if (this.keys.d) moveVector.addInPlace(right.scale(-this.freeCameraProfile.moveSpeed)); // Swapped A/D
+
+        // Apply movement to both camera and target
+        if (moveVector.length() > 0) {
+            this.camera.position.addInPlace(moveVector);
+            this.camera.target.addInPlace(moveVector);
+        }
     }
 
     setCharacter(character) {
@@ -160,8 +210,53 @@ export class GameCamera {
         this.camera.upperRadiusLimit = 2.2;
     }
 
+    enterFreeMode() {
+        console.log("Entering free camera mode");
+        this.isInFreeMode = true;
+        
+        // Store current camera settings to restore later
+        this.previousRadius = this.camera.radius;
+        this.previousBeta = this.camera.beta;
+        
+        // Set free camera properties
+        this.camera.radius = this.freeCameraProfile.radius;
+        this.camera.beta = this.freeCameraProfile.beta;
+        
+        // Remove radius limits to allow free movement
+        this.camera.lowerRadiusLimit = 2;
+        this.camera.upperRadiusLimit = 20;
+        this.camera.lowerBetaLimit = 0.1;
+        this.camera.upperBetaLimit = Math.PI - 0.1;
+        
+        // Reset key states
+        Object.keys(this.keys).forEach(key => this.keys[key] = false);
+    }
+
+    exitFreeMode() {
+        console.log("Exiting free camera mode");
+        this.isInFreeMode = false;
+        
+        // Restore previous camera settings
+        this.camera.radius = this.previousRadius;
+        this.camera.beta = this.previousBeta;
+        
+        // Reset camera limits to third person values
+        this.camera.lowerRadiusLimit = this.thirdPersonProfile.lowerRadiusLimit;
+        this.camera.upperRadiusLimit = this.thirdPersonProfile.upperRadiusLimit;
+        this.camera.lowerBetaLimit = this.thirdPersonProfile.lowerBetaLimit;
+        this.camera.upperBetaLimit = this.thirdPersonProfile.upperBetaLimit;
+        
+        // Reset key states
+        Object.keys(this.keys).forEach(key => this.keys[key] = false);
+    }
+
     update() {
         if (!this.currentCharacter) return;
+
+        if (this.isInFreeMode) {
+            this.updateFreeCameraPosition();
+            return;
+        }
 
         if (this.isInNPCFocus && this.focusedNPC) {
             // Existing NPC focus behavior

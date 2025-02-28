@@ -10,7 +10,7 @@ export class Controls {
         this.rightCharacter = rightCharacter;
         this.currentCharacter = idleCharacter;
         this.gameCamera = gameCamera;
-        this.keys = { w: false, a: false, s: false, d: false };
+        this.keys = { w: false, a: false, s: false, d: false, '0': false };
         this.moveSpeed = this.gameCamera.thirdPersonProfile.speed;
         
         this.setupKeyboardControls();
@@ -45,6 +45,23 @@ export class Controls {
     setupKeyboardControls() {
         window.addEventListener("keydown", (e) => {
             if (ChatUI.isActive && e.key !== "e") return;
+            
+            // Add free camera mode toggle
+            if (e.key === '0') {
+                if (!this.keys['0']) {  // Only toggle on initial press
+                    this.keys['0'] = true;
+                    if (this.gameCamera.isInFreeMode) {
+                        this.gameCamera.exitFreeMode();
+                    } else {
+                        this.gameCamera.enterFreeMode();
+                    }
+                }
+                return;
+            }
+
+            // Don't allow movement in free camera mode
+            if (this.gameCamera.isInFreeMode) return;
+
             if (e.key in this.keys) {
                 this.keys[e.key] = true;
                 this.setAllCharactersInvisible();
@@ -96,6 +113,12 @@ export class Controls {
 
         window.addEventListener("keyup", (e) => {
             if (ChatUI.isActive && e.key !== "e") return;
+            
+            if (e.key === '0') {
+                this.keys['0'] = false;
+                return;
+            }
+
             if (e.key in this.keys) {
                 this.keys[e.key] = false;
                 
@@ -116,6 +139,12 @@ export class Controls {
 
     setupAnimationLoop() {
         this.scene.registerBeforeRender(() => {
+            // Don't move character if in free camera mode
+            if (this.gameCamera.isInFreeMode) {
+                this.gameCamera.update();
+                return;
+            }
+
             // Get camera's forward direction
             const cameraDirection = this.gameCamera.getCameraDirection();
             
