@@ -28,6 +28,8 @@
     </style>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 </head>
 <body>
     <canvas id="renderCanvas"></canvas>
@@ -48,6 +50,7 @@
         import { loadNPC1 } from './characters/npc1.js';
         import { GameCamera } from './camera.js';
         import { Controls } from './controls.js';
+        import { Singapore4Level } from './levels/singapore4Level.js';
         
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -59,7 +62,7 @@
         let currentCharacter = null;  // Define currentCharacter here
 
         // Available levels list
-        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'ladiesroom'];
+        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom'];
 
         const createScene = async (levelType = 'default') => {
             const scene = new BABYLON.Scene(engine);
@@ -82,6 +85,9 @@
                     break;
                 case 'singapore3':
                     levelGenerator = new Singapore3Level(scene);
+                    break;
+                case 'singapore4':
+                    levelGenerator = new Singapore4Level(scene);
                     break;
                 case 'ladiesroom':
                     levelGenerator = new LadiesRoomLevel(scene);

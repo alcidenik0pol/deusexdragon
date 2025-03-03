@@ -58,6 +58,15 @@ export const loadCharacters = async (scene) => {
                 if (mesh.material) {
                     mesh.material.emissiveColor = BABYLON.Color3.Black();
                     mesh.material.ambientColor = BABYLON.Color3.Black();
+                    
+                    // Enable material to work with shadows
+                    mesh.material.needDepthPrePass = true;
+                    
+                    // If we're in Singapore4Level, make materials more shadow-friendly
+                    if (scene.name === "Singapore4Level") {
+                        mesh.material.specularColor = BABYLON.Color3.Black();
+                        mesh.material.ambientColor = new BABYLON.Color3(0.02, 0.02, 0.03);
+                    }
                 }
             });
         });
