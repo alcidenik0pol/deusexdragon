@@ -52,6 +52,7 @@
         import { Controls } from './controls.js';
         import { Singapore4Level } from './levels/singapore4Level.js';
         import { NightTestLevel } from './levels/nightTestLevel.js';
+        import { ModernOfficeLevel } from './levels/ModernOfficeLevel.js';
         
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -64,7 +65,7 @@
         let currentCharacter = null;  // Define currentCharacter here
 
         // Available levels list
-        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom', 'nighttest'];
+        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom', 'nighttest', 'modernoffice'];
 
         const createScene = async (levelType = 'default') => {
             const scene = new BABYLON.Scene(engine);
@@ -120,6 +121,9 @@
                     break;
                 case 'nighttest':
                     levelGenerator = new NightTestLevel(scene);
+                    break;
+                case 'modernoffice':
+                    levelGenerator = new ModernOfficeLevel(scene);
                     break;
                 default:
                     levelGenerator = new LevelGenerator(scene);

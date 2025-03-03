@@ -1,0 +1,629 @@
+{
+    "last_node_id": 26,
+    "last_link_id": 42,
+    "nodes": [
+      {
+        "id": 40,
+        "type": "Load Image",
+        "pos": [34, 78],
+        "size": [210, 200],
+        "flags": {},
+        "order": 0,
+        "mode": 0,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "IMAGE",
+            "type": "IMAGE",
+            "links": [53]
+          },
+          {
+            "name": "MASK",
+            "type": "MASK",
+            "links": []
+          }
+        ],
+        "properties": {
+          "image": "mannequin.png"
+        }
+      },
+      {
+        "id": 56,
+        "type": "Load LoRA",
+        "pos": [401, 285],
+        "size": [200, 120],
+        "flags": {},
+        "order": 1,
+        "inputs": [
+          {
+            "name": "model",
+            "type": "MODEL",
+            "link": 51
+          },
+          {
+            "name": "clip",
+            "type": "CLIP",
+            "link": 52
+          }
+        ],
+        "outputs": [
+          {
+            "name": "MODEL",
+            "type": "MODEL",
+            "links": [54]
+          },
+          {
+            "name": "CLIP",
+            "type": "CLIP",
+            "links": [55]
+          }
+        ],
+        "properties": {
+          "lora_name": "FluxAnime v1.3.safetensors",
+          "strength_model": 0.60,
+          "strength_clip": 1.00
+        }
+      },
+      {
+        "id": 12,
+        "type": "Flux Base Model",
+        "pos": [103, 316],
+        "size": [240, 210],
+        "flags": {},
+        "order": 2,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "MODEL",
+            "type": "MODEL",
+            "links": [51]
+          },
+          {
+            "name": "CLIP",
+            "type": "CLIP",
+            "links": [52]
+          }
+        ],
+        "properties": {},
+        "widgets_values": []
+      },
+      {
+        "id": 11,
+        "type": "Load Diffusion Model",
+        "pos": [125, 347],
+        "size": [200, 60],
+        "flags": {},
+        "order": 3,
+        "inputs": [],
+        "outputs": [],
+        "properties": {
+          "ckpt_name": "FluxNext-rev4.safetensors",
+          "weight_type": "default"
+        }
+      },
+      {
+        "id": 58,
+        "type": "Load LoRA",
+        "pos": [401, 399],
+        "size": [200, 120],
+        "flags": {},
+        "order": 4,
+        "inputs": [
+          {
+            "name": "model",
+            "type": "MODEL",
+            "link": 54
+          },
+          {
+            "name": "clip",
+            "type": "CLIP",
+            "link": 55
+          }
+        ],
+        "outputs": [
+          {
+            "name": "MODEL",
+            "type": "MODEL",
+            "links": [56]
+          },
+          {
+            "name": "CLIP",
+            "type": "CLIP",
+            "links": [57]
+          }
+        ],
+        "properties": {
+          "lora_name": "FlatAnimeAM5-1-FLUX-0.4",
+          "strength_model": 0.60,
+          "strength_clip": 1.00
+        }
+      },
+      {
+        "id": 57,
+        "type": "Load LoRA",
+        "pos": [401, 512],
+        "size": [200, 120],
+        "flags": {},
+        "order": 5,
+        "inputs": [
+          {
+            "name": "model",
+            "type": "MODEL",
+            "link": 56
+          },
+          {
+            "name": "clip",
+            "type": "CLIP",
+            "link": 57
+          }
+        ],
+        "outputs": [
+          {
+            "name": "MODEL",
+            "type": "MODEL",
+            "links": [58]
+          },
+          {
+            "name": "CLIP",
+            "type": "CLIP",
+            "links": [59]
+          }
+        ],
+        "properties": {
+          "lora_name": "FluxANIME_STYLE_F40",
+          "strength_model": 0.60,
+          "strength_clip": 1.00
+        }
+      },
+      {
+        "id": 89,
+        "type": "Redux Model",
+        "pos": [664, 229],
+        "size": [240, 400],
+        "flags": {},
+        "order": 6,
+        "inputs": [
+          {
+            "name": "MODEL",
+            "type": "MODEL",
+            "link": 58
+          },
+          {
+            "name": "CLIP",
+            "type": "CLIP",
+            "link": 59
+          }
+        ],
+        "outputs": [],
+        "properties": {}
+      },
+      {
+        "id": 82,
+        "type": "Load CLIP Vision",
+        "pos": [700, 279],
+        "size": [200, 40],
+        "flags": {},
+        "order": 7,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "CLIP_VISION",
+            "type": "CLIP_VISION",
+            "links": [60]
+          }
+        ],
+        "properties": {
+          "clip_name": "bigdga_vision_g.safetensors"
+        }
+      },
+      {
+        "id": 83,
+        "type": "Load Style Model",
+        "pos": [700, 338],
+        "size": [200, 40],
+        "flags": {},
+        "order": 8,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "STYLE_MODEL",
+            "type": "STYLE_MODEL",
+            "links": [61]
+          }
+        ],
+        "properties": {
+          "style_model_name": "kp1-redux-description"
+        }
+      },
+      {
+        "id": 5,
+        "type": "CLIP Text Encode (Positive Prompt)",
+        "pos": [1209, 80],
+        "size": [500, 160],
+        "flags": {},
+        "order": 9,
+        "inputs": [
+          {
+            "name": "clip",
+            "type": "CLIP",
+            "link": null
+          }
+        ],
+        "outputs": [
+          {
+            "name": "CONDITIONING",
+            "type": "CONDITIONING",
+            "links": [62]
+          }
+        ],
+        "properties": {
+          "text": "highly detailed anime image of a fit man standing arms wide, blonde hair and blue eyes, in a black t-shirt and jeans with a confident look, a soft light, soft shadows, plain white background, highly detailed"
+        }
+      },
+      {
+        "id": 21,
+        "type": "FluxGuidance",
+        "pos": [1039, 292],
+        "size": [200, 50],
+        "flags": {},
+        "order": 10,
+        "inputs": [
+          {
+            "name": "conditioning",
+            "type": "CONDITIONING",
+            "link": 62
+          }
+        ],
+        "outputs": [
+          {
+            "name": "CONDITIONING",
+            "type": "CONDITIONING",
+            "links": [63]
+          }
+        ],
+        "properties": {
+          "guidance": 3.5
+        }
+      },
+      {
+        "id": 13,
+        "type": "CLIP Vision Encode",
+        "pos": [883, 398],
+        "size": [200, 50],
+        "flags": {},
+        "order": 11,
+        "inputs": [
+          {
+            "name": "clip_vision",
+            "type": "CLIP_VISION",
+            "link": 60
+          },
+          {
+            "name": "image",
+            "type": "IMAGE",
+            "link": 53
+          }
+        ],
+        "outputs": [
+          {
+            "name": "CLIP_VISION_OUTPUT",
+            "type": "CLIP_VISION_OUTPUT",
+            "links": [64]
+          }
+        ],
+        "properties": {
+          "crop": "none"
+        }
+      },
+      {
+        "id": 84,
+        "type": "Style Model Apply Advanced",
+        "pos": [778, 470],
+        "size": [200, 170],
+        "flags": {},
+        "order": 12,
+        "inputs": [
+          {
+            "name": "conditioning",
+            "type": "CONDITIONING",
+            "link": 63
+          },
+          {
+            "name": "style_model",
+            "type": "STYLE_MODEL",
+            "link": 61
+          },
+          {
+            "name": "clip_vision_output",
+            "type": "CLIP_VISION_OUTPUT",
+            "link": 64
+          },
+          {
+            "name": "strength",
+            "type": "FLOAT",
+            "link": null
+          }
+        ],
+        "outputs": [
+          {
+            "name": "CONDITIONING",
+            "type": "CONDITIONING",
+            "links": [65]
+          }
+        ],
+        "properties": {}
+      },
+      {
+        "id": 25,
+        "type": "RandomNoise",
+        "pos": [1022, 440],
+        "size": [200, 60],
+        "flags": {},
+        "order": 13,
+        "inputs": [
+          {
+            "name": "noise_seed",
+            "type": "INT",
+            "link": null,
+            "widget": {
+              "name": "noise_seed",
+              "value": 559577188676511
+            }
+          },
+          {
+            "name": "control_after_generate",
+            "type": "CONTROL_AFTER_GENERATE",
+            "link": null,
+            "widget": {
+              "name": "control_after_generate",
+              "value": "randomize"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "name": "NOISE",
+            "type": "NOISE",
+            "links": [66]
+          }
+        ],
+        "properties": {}
+      },
+      {
+        "id": 17,
+        "type": "KSamplerSelect",
+        "pos": [1082, 524],
+        "size": [200, 60],
+        "flags": {},
+        "order": 14,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "SAMPLER",
+            "type": "SAMPLER",
+            "links": [67]
+          }
+        ],
+        "properties": {
+          "sampler_name": "euler"
+        }
+      },
+      {
+        "id": 22,
+        "type": "BasicGuider",
+        "pos": [1284, 530],
+        "size": [200, 50],
+        "flags": {},
+        "order": 15,
+        "inputs": [
+          {
+            "name": "model",
+            "type": "MODEL",
+            "link": null
+          },
+          {
+            "name": "conditioning",
+            "type": "CONDITIONING",
+            "link": 65
+          }
+        ],
+        "outputs": [
+          {
+            "name": "GUIDED",
+            "type": "GUIDED",
+            "links": [68]
+          }
+        ],
+        "properties": {}
+      },
+      {
+        "id": 16,
+        "type": "BasicScheduler",
+        "pos": [1080, 583],
+        "size": [200, 100],
+        "flags": {},
+        "order": 16,
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "SGIMS",
+            "type": "SGIMS",
+            "links": [69]
+          }
+        ],
+        "properties": {
+          "model": "simple",
+          "scheduler": "sgm",
+          "steps": 30,
+          "denoise": 1.00
+        }
+      },
+      {
+        "id": 23,
+        "type": "ModelSamplingBox",
+        "pos": [1080, 667],
+        "size": [200, 100],
+        "flags": {},
+        "order": 17,
+        "inputs": [
+          {
+            "name": "model",
+            "type": "MODEL",
+            "link": null
+          }
+        ],
+        "outputs": [
+          {
+            "name": "MODEL",
+            "type": "MODEL",
+            "links": []
+          }
+        ],
+        "properties": {
+          "width": null,
+          "height": null,
+          "max_size": 1.15,
+          "base_size": 0.55
+        }
+      }
+    ],
+    "links": [
+      {
+        "id": 51,
+        "origin_node": 12,
+        "origin_slot": 0,
+        "target_node": 56,
+        "target_slot": 0
+      },
+      {
+        "id": 52,
+        "origin_node": 12,
+        "origin_slot": 1,
+        "target_node": 56,
+        "target_slot": 1
+      },
+      {
+        "id": 53,
+        "origin_node": 40,
+        "origin_slot": 0,
+        "target_node": 13,
+        "target_slot": 1
+      },
+      {
+        "id": 54,
+        "origin_node": 56,
+        "origin_slot": 0,
+        "target_node": 58,
+        "target_slot": 0
+      },
+      {
+        "id": 55,
+        "origin_node": 56,
+        "origin_slot": 1,
+        "target_node": 58,
+        "target_slot": 1
+      },
+      {
+        "id": 56,
+        "origin_node": 58,
+        "origin_slot": 0,
+        "target_node": 57,
+        "target_slot": 0
+      },
+      {
+        "id": 57,
+        "origin_node": 58,
+        "origin_slot": 1,
+        "target_node": 57,
+        "target_slot": 1
+      },
+      {
+        "id": 58,
+        "origin_node": 57,
+        "origin_slot": 0,
+        "target_node": 89,
+        "target_slot": 0
+      },
+      {
+        "id": 59,
+        "origin_node": 57,
+        "origin_slot": 1,
+        "target_node": 89,
+        "target_slot": 1
+      },
+      {
+        "id": 60,
+        "origin_node": 82,
+        "origin_slot": 0,
+        "target_node": 13,
+        "target_slot": 0
+      },
+      {
+        "id": 61,
+        "origin_node": 83,
+        "origin_slot": 0,
+        "target_node": 84,
+        "target_slot": 1
+      },
+      {
+        "id": 62,
+        "origin_node": 5,
+        "origin_slot": 0,
+        "target_node": 21,
+        "target_slot": 0
+      },
+      {
+        "id": 63,
+        "origin_node": 21,
+        "origin_slot": 0,
+        "target_node": 84,
+        "target_slot": 0
+      },
+      {
+        "id": 64,
+        "origin_node": 13,
+        "origin_slot": 0,
+        "target_node": 84,
+        "target_slot": 2
+      },
+      {
+        "id": 65,
+        "origin_node": 84,
+        "origin_slot": 0,
+        "target_node": 22,
+        "target_slot": 1
+      },
+      {
+        "id": 66,
+        "origin_node": 25,
+        "origin_slot": 0,
+        "target_node": null,
+        "target_slot": null
+      },
+      {
+        "id": 67,
+        "origin_node": 17,
+        "origin_slot": 0,
+        "target_node": null,
+        "target_slot": null
+      },
+      {
+        "id": 68,
+        "origin_node": 22,
+        "origin_slot": 0,
+        "target_node": null,
+        "target_slot": null
+      },
+      {
+        "id": 69,
+        "origin_node": 16,
+        "origin_slot": 0,
+        "target_node": null,
+        "target_slot": null
+      }
+    ],
+    "groups": [],
+    "config": {},
+    "extra": {},
+    "version": 0.4
+  }
