@@ -58,13 +58,14 @@
 
         // Add level selection
         let currentScene = null;
-        let currentLevelType = 'default';  // Track current level type
+        // let currentLevelType = 'default';  // Track current level type
+        let currentLevelType = 'ladiesroom';  // Track current level type
         let currentCharacter = null;  // Define currentCharacter here
 
         // Available levels list
         const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom'];
 
-        const createScene = async (levelType = 'default') => {
+            const createScene = async (levelType = 'default') => {
             const scene = new BABYLON.Scene(engine);
             
             // Create camera

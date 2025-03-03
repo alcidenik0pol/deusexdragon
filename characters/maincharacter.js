@@ -83,10 +83,26 @@ export const loadCharacters = async (scene) => {
         ].forEach(char => {
             char.scaling = new BABYLON.Vector3(1, 1, 1);
             char.position = new BABYLON.Vector3(0, 0.1, 0);
-            char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
-                BABYLON.Vector3.Up(), 
-                -Math.PI/2
-            );
+            char.rotationQuaternion = BABYLON.Quaternion.Identity();
+        });
+
+        // Add rotation update function to the scene's render loop
+        scene.registerBeforeRender(() => {
+            const camera = scene.getCameraByName("FollowCam");
+            if (camera) {
+                const yaw = Math.atan2(camera.position.x - idleCharacter.position.x,
+                                     camera.position.z - idleCharacter.position.z);
+                
+                // Apply rotation to all character meshes
+                [idleCharacter, forwardCharacter, backwardCharacter, 
+                 leftCharacter, rightCharacter].forEach(char => {
+                    // Rotate mesh to face away from camera
+                    char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+                        BABYLON.Vector3.Up(),
+                        yaw + Math.PI  // Add PI to make character face away from camera
+                    );
+                });
+            }
         });
 
         console.log("Setting initial visibility states...");

@@ -120,21 +120,33 @@ export class Singapore2Level extends LevelGenerator {
             building.material = buildingMaterial;
         });
 
-        // Create flying car using simple box mesh
-        const carMaterial = new BABYLON.StandardMaterial("carMat", this.scene);
-        carMaterial.diffuseColor = new BABYLON.Color3(0.7, 0.7, 0.9);
-        carMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.3);
-        carMaterial.specularColor = new BABYLON.Color3(0.8, 0.8, 1.0);
+        // Add Marina Bay Sands building
+        const mbsModel = await BABYLON.SceneLoader.ImportMeshAsync(
+            "",
+            "assets/mbs/",
+            "mbs02.glb",
+            this.scene
+        );
         
-        const car = BABYLON.MeshBuilder.CreateBox("flyingCar", {
-            width: 20,    // 5x bigger (was 4)
-            height: 5,  // 5x bigger (was 1.5)
-            depth: 10     // 5x bigger (was 2)
-        }, this.scene);
+        const mbs = mbsModel.meshes[0]; // Get the root mesh
+        mbs.position = new BABYLON.Vector3(0, 0, -40); // Positioned closer to the player's starting area
+        mbs.rotation = new BABYLON.Vector3(0, Math.PI, 0); // Adjust rotation as needed
+        mbs.scaling = new BABYLON.Vector3(20, 20, 20); // Large scale for a landmark building
+
+        // Replace the cube car creation with GLB model loading
+        const carModel = await BABYLON.SceneLoader.ImportMeshAsync(
+            "",
+            "assets/raw/car/",
+            "car03.glb",
+            this.scene
+        );
         
-        car.position = new BABYLON.Vector3(-80, 67.5, -50); // 1.5x higher (was 45)
-        car.rotation = new BABYLON.Vector3(0, 0, 0); // Rotated 90 degrees (was Math.PI / 2)
-        car.material = carMaterial;
+        const car = carModel.meshes[0]; // Get the root mesh
+        car.position = new BABYLON.Vector3(-80, 67.5, -50);
+        car.rotation = new BABYLON.Vector3(0, Math.PI / 2, 0);
+        
+        // Increased scale values to make the car bigger
+        car.scaling = new BABYLON.Vector3(2.0, 2.0, 2.0); // Changed from 0.5 to 2.0
         
         // Car movement properties
         const carInfo = {
