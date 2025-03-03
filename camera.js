@@ -3,35 +3,27 @@ export class GameCamera {
         this.canvas = canvas;
         this.scene = scene;
         this.currentCharacter = null;
-        this.mouseSensitivity = 0.05;
-        this.rotationY = 0;
-
-        // Camera profiles
+        this.mouseSensitivityX = 0.002; // Horizontal (yaw) sensitivity
+        // this.mouseSensitivityY = 0.001; // Vertical (pitch) sensitivity - reduced for finer control
+        this.mouseSensitivityY = 1; // Vertical (pitch) sensitivity - reduced for finer control
+        this.cameraOffset = new BABYLON.Vector3(0, 2.5, 4); // Reduced from (0, 4, 7)
+        
+        // Camera profiles (adjusted to be closer)
         this.thirdPersonProfile = {
-            radius: 7,
-            heightOffset: 4,
-            rotationOffset: 180,
-            cameraAcceleration: 0.015,
-            maxCameraSpeed: 10
+            offsetY: 2.5,  // Reduced from 4
+            offsetZ: 4     // Reduced from 7
         };
 
         this.npcFocusProfile = {
-            radius: 3.2,
-            heightOffset: 3.15,
-            rotationOffset: 180,
-            cameraAcceleration: 0.03,
-            maxCameraSpeed: 20
+            offsetY: 2.15, // Reduced from 3.15
+            offsetZ: 2.2   // Reduced from 3.2
         };
 
         this.waitingProfile = {
-            radius: 3.2,
-            heightOffset: 3.2,
-            rotationOffset: 180,
-            cameraAcceleration: 0.03,
-            maxCameraSpeed: 20
+            offsetY: 2.2,  // Reduced from 3.2
+            offsetZ: 2.2   // Reduced from 3.2
         };
 
-        this.defaultProfile = { ...this.thirdPersonProfile };
         this.isInNPCFocus = false;
         this.focusedNPC = null;
         this.isInWaitingMode = false;
@@ -41,110 +33,106 @@ export class GameCamera {
     }
 
     setupCamera() {
-        // Create follow camera
-        this.camera = new BABYLON.FollowCamera("FollowCam", 
-            new BABYLON.Vector3(100, 20, 50),
+        // Create universal camera
+        this.camera = new BABYLON.UniversalCamera(
+            "UniversalCamera",
+            new BABYLON.Vector3(0, 0, 0),
             this.scene
         );
 
-        // Set initial camera properties
-        this.camera.radius = this.thirdPersonProfile.radius;
-        this.camera.heightOffset = this.thirdPersonProfile.heightOffset;
-        this.camera.rotationOffset = this.thirdPersonProfile.rotationOffset;
-        this.camera.cameraAcceleration = this.thirdPersonProfile.cameraAcceleration;
-        this.camera.maxCameraSpeed = this.thirdPersonProfile.maxCameraSpeed;
+        // Make this the active camera
+        this.scene.activeCamera = this.camera;
 
-        // Enable pointer lock
-        this.scene.onPointerDown = () => {
-            if (!this.scene.getEngine().isPointerLock) {
-                this.canvas.requestPointerLock = this.canvas.requestPointerLock || 
-                                               this.canvas.msRequestPointerLock || 
-                                               this.canvas.mozRequestPointerLock || 
-                                               this.canvas.webkitRequestPointerLock;
-                if (this.canvas.requestPointerLock) {
-                    this.canvas.requestPointerLock();
-                }
+        // Update camera position in render loop
+        this.scene.registerBeforeRender(() => {
+            if (this.currentCharacter) {
+                const targetPosition = this.currentCharacter.position.clone();
+                targetPosition.y += 2; // Look at character's head level
+
+                // Calculate camera position considering both yaw and pitch
+                const pitch = this.camera.rotation.x;
+                const yaw = this.camera.rotation.y;
+
+                // Calculate the vertical offset based on pitch
+                const verticalOffset = Math.sin(pitch) * this.cameraOffset.z;
+                
+                const cameraPosition = new BABYLON.Vector3(
+                    targetPosition.x - Math.sin(yaw) * this.cameraOffset.z * Math.cos(pitch),
+                    targetPosition.y + this.cameraOffset.y - verticalOffset,
+                    targetPosition.z - Math.cos(yaw) * this.cameraOffset.z * Math.cos(pitch)
+                );
+
+                this.camera.position.copyFrom(cameraPosition);
+                
+                // Don't use setTarget as it overrides our rotation
+                const forward = new BABYLON.Vector3(
+                    Math.sin(yaw) * Math.cos(pitch),
+                    -Math.sin(pitch),
+                    Math.cos(yaw) * Math.cos(pitch)
+                );
+                this.camera.setTarget(this.camera.position.add(forward));
             }
-        };
+        });
     }
 
     setupMouseControl() {
         this.scene.onPointerMove = (evt) => {
             if (this.scene.getEngine().isPointerLock) {
-                // Directly set the rotation offset without acceleration
-                this.camera.rotationOffset += evt.movementX * this.mouseSensitivity;
+                this.camera.rotation.y += evt.movementX * this.mouseSensitivityX;
+                this.camera.rotation.x += evt.movementY * this.mouseSensitivityY;
                 
-                // Ensure the camera updates immediately
-                this.camera.update();
+                // Clamp vertical rotation
+                const upperLimit = Math.PI / 3;  // 60 degrees up
+                const lowerLimit = -Math.PI / 3; // 60 degrees down
+                this.camera.rotation.x = Math.min(upperLimit, Math.max(lowerLimit, this.camera.rotation.x));
             }
         };
     }
 
     setCharacter(character) {
         this.currentCharacter = character;
-        this.camera.lockedTarget = character;
     }
 
     focusOnNPC(npc) {
         if (!npc || !npc.mesh) return;
-        
         this.focusedNPC = npc;
         this.isInNPCFocus = true;
-
-        // Update camera properties for NPC focus
-        this.camera.radius = this.npcFocusProfile.radius;
-        this.camera.heightOffset = this.npcFocusProfile.heightOffset;
-        this.camera.cameraAcceleration = this.npcFocusProfile.cameraAcceleration;
-        
-        // Lock camera to NPC
-        this.camera.lockedTarget = npc.mesh;
+        this.cameraOffset.y = this.npcFocusProfile.offsetY;
+        this.cameraOffset.z = this.npcFocusProfile.offsetZ;
     }
 
     clearNPCFocus() {
         this.isInNPCFocus = false;
         this.focusedNPC = null;
-        
-        // Reset camera properties
-        this.camera.radius = this.thirdPersonProfile.radius;
-        this.camera.heightOffset = this.thirdPersonProfile.heightOffset;
-        this.camera.cameraAcceleration = this.thirdPersonProfile.cameraAcceleration;
-        
-        // Lock back to player
-        this.camera.lockedTarget = this.currentCharacter;
+        this.cameraOffset.y = this.thirdPersonProfile.offsetY;
+        this.cameraOffset.z = this.thirdPersonProfile.offsetZ;
     }
 
     focusOnPlayer() {
         if (!this.currentCharacter) return;
-        
         this.isInWaitingMode = true;
         this.isInNPCFocus = false;
-
-        // Update camera properties for waiting mode
-        this.camera.radius = this.waitingProfile.radius;
-        this.camera.heightOffset = this.waitingProfile.heightOffset;
-        this.camera.cameraAcceleration = this.waitingProfile.cameraAcceleration;
-        
-        // Ensure camera is locked to player
-        this.camera.lockedTarget = this.currentCharacter;
+        this.cameraOffset.y = this.waitingProfile.offsetY;
+        this.cameraOffset.z = this.waitingProfile.offsetZ;
     }
 
     clearWaitingFocus() {
         this.isInWaitingMode = false;
-        
-        // Reset to default properties
-        this.camera.radius = this.thirdPersonProfile.radius;
-        this.camera.heightOffset = this.thirdPersonProfile.heightOffset;
-        this.camera.cameraAcceleration = this.thirdPersonProfile.cameraAcceleration;
+        this.cameraOffset.y = this.thirdPersonProfile.offsetY;
+        this.cameraOffset.z = this.thirdPersonProfile.offsetZ;
     }
 
     getCameraDirection() {
-        const cameraForward = this.camera.position.subtract(this.currentCharacter.position);
-        cameraForward.y = 0;
-        return cameraForward.normalize();
+        const forward = this.camera.getForwardRay().direction;
+        forward.y = 0;
+        return forward.normalize();
     }
 
     getCameraYaw() {
-        const direction = this.getCameraDirection();
-        return Math.atan2(direction.x, direction.z);
+        return this.camera.rotation.y;
+    }
+
+    getCameraPitch() {
+        return this.camera.rotation.x;
     }
 } 

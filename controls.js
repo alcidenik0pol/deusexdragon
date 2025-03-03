@@ -43,7 +43,7 @@ export class Controls {
                 this.keys[e.key] = true;
                 this.setAllCharactersInvisible();
                 
-                // Show appropriate animation
+                // Show appropriate animation (swapped left and right)
                 switch(e.key) {
                     case 'w':
                         this.forwardCharacter.setEnabled(true);
@@ -54,12 +54,12 @@ export class Controls {
                         this.currentCharacter = this.backwardCharacter;
                         break;
                     case 'a':
-                        this.leftCharacter.setEnabled(true);
-                        this.currentCharacter = this.leftCharacter;
+                        this.rightCharacter.setEnabled(true);  // Swapped from leftCharacter
+                        this.currentCharacter = this.rightCharacter;  // Swapped
                         break;
                     case 'd':
-                        this.rightCharacter.setEnabled(true);
-                        this.currentCharacter = this.rightCharacter;
+                        this.leftCharacter.setEnabled(true);   // Swapped from rightCharacter
+                        this.currentCharacter = this.leftCharacter;   // Swapped
                         break;
                 }
             }
@@ -83,24 +83,29 @@ export class Controls {
 
     setupMovementLoop() {
         this.scene.registerBeforeRender(() => {
-            // Get camera's forward direction (ignoring Y component for ground movement)
-            const cameraDirection = this.gameCamera.getCameraDirection();
-            const right = BABYLON.Vector3.Cross(cameraDirection, BABYLON.Vector3.Up());
+            // Get camera's forward direction (ignoring vertical component for movement)
+            const forward = new BABYLON.Vector3(
+                Math.sin(this.gameCamera.getCameraYaw()),
+                0,  // Remove vertical component for movement
+                Math.cos(this.gameCamera.getCameraYaw())
+            ).normalize();
+
+            const right = BABYLON.Vector3.Cross(forward, BABYLON.Vector3.Up());
             
             // Calculate movement based on camera direction
             const moveVector = new BABYLON.Vector3(0, 0, 0);
             
             if (this.keys.w) {
-                moveVector.addInPlace(cameraDirection.scale(-this.moveSpeed));
+                moveVector.addInPlace(forward.scale(this.moveSpeed));
             }
             if (this.keys.s) {
-                moveVector.addInPlace(cameraDirection.scale(this.moveSpeed));
+                moveVector.addInPlace(forward.scale(-this.moveSpeed));
             }
             if (this.keys.a) {
-                moveVector.addInPlace(right.scale(-this.moveSpeed));
+                moveVector.addInPlace(right.scale(this.moveSpeed));  // Inverted from -this.moveSpeed
             }
             if (this.keys.d) {
-                moveVector.addInPlace(right.scale(this.moveSpeed));
+                moveVector.addInPlace(right.scale(-this.moveSpeed)); // Inverted from this.moveSpeed
             }
 
             // Apply movement if any keys are pressed

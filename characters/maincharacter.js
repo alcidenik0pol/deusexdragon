@@ -88,18 +88,18 @@ export const loadCharacters = async (scene) => {
 
         // Add rotation update function to the scene's render loop
         scene.registerBeforeRender(() => {
-            const camera = scene.getCameraByName("FollowCam");
+            const camera = scene.getCameraByName("UniversalCamera");
             if (camera) {
-                const yaw = Math.atan2(camera.position.x - idleCharacter.position.x,
-                                     camera.position.z - idleCharacter.position.z);
+                // Get camera's horizontal rotation (yaw)
+                const yaw = camera.rotation.y;
                 
                 // Apply rotation to all character meshes
                 [idleCharacter, forwardCharacter, backwardCharacter, 
                  leftCharacter, rightCharacter].forEach(char => {
-                    // Rotate mesh to face away from camera
+                    // Rotate mesh to face away from camera's horizontal direction
                     char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                         BABYLON.Vector3.Up(),
-                        yaw + Math.PI  // Add PI to make character face away from camera
+                        yaw  // Character follows camera's horizontal rotation
                     );
                 });
             }
