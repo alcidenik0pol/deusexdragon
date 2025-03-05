@@ -51,6 +51,8 @@
         import { GameCamera } from './camera.js';
         import { Controls } from './controls.js';
         import { Singapore4Level } from './levels/singapore4Level.js';
+        import { NightTestLevel } from './levels/nightTestLevel.js';
+        import { ModernOfficeLevel } from './levels/ModernOfficeLevel.js';
         
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -58,21 +60,46 @@
 
         // Add level selection
         let currentScene = null;
-        let currentLevelType = 'default';  // Track current level type
+        // let currentLevelType = 'default';  // Track current level type
+        let currentLevelType = 'nighttest';  // Track current level type
         let currentCharacter = null;  // Define currentCharacter here
 
         // Available levels list
-        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom'];
+        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom', 'nighttest', 'modernoffice'];
 
         const createScene = async (levelType = 'default') => {
             const scene = new BABYLON.Scene(engine);
             
-            // Create camera
-            window.gameCamera = new GameCamera(canvas, scene);
+            // Create and configure camera
+            const gameCamera = new GameCamera(canvas, scene);
+            
+            // Enable pointer lock on scene click
+            scene.onPointerDown = () => {
+                if (!scene.getEngine().isPointerLock) {
+                    canvas.requestPointerLock = canvas.requestPointerLock || 
+                                              canvas.msRequestPointerLock || 
+                                              canvas.mozRequestPointerLock || 
+                                              canvas.webkitRequestPointerLock;
+                    if (canvas.requestPointerLock) {
+                        canvas.requestPointerLock();
+                    }
+                }
+            };
 
-            // Lighting
-            const light = new BABYLON.HemisphericLight("light", 
-                new BABYLON.Vector3(0, 1, 0), scene);
+            // Add pointer move event for camera control
+            scene.onPointerMove = (evt) => {
+                if (scene.getEngine().isPointerLock) {
+                    gameCamera.camera.rotation.y += evt.movementX * 0.002;
+                    gameCamera.camera.rotation.x += evt.movementY * 0.002;
+                    
+                    const upperLimit = Math.PI / 3;
+                    const lowerLimit = -Math.PI / 3;
+                    gameCamera.camera.rotation.x = Math.min(upperLimit, Math.max(lowerLimit, gameCamera.camera.rotation.x));
+                }
+            };
+
+            // Remove any reference to FollowCam
+            scene.name = levelType;  // Just use levelType as scene name
 
             // Check the level type and instantiate the appropriate level generator
             let levelGenerator;
@@ -92,6 +119,12 @@
                 case 'ladiesroom':
                     levelGenerator = new LadiesRoomLevel(scene);
                     break;
+                case 'nighttest':
+                    levelGenerator = new NightTestLevel(scene);
+                    break;
+                case 'modernoffice':
+                    levelGenerator = new ModernOfficeLevel(scene);
+                    break;
                 default:
                     levelGenerator = new LevelGenerator(scene);
             }
@@ -109,12 +142,12 @@
                 backwardCharacter, 
                 leftCharacter, 
                 rightCharacter, 
-                window.gameCamera
+                gameCamera  // Pass the camera instance directly
             );
 
             // Set current character
             currentCharacter = controls.getCurrentCharacter();
-            window.gameCamera.setCharacter(currentCharacter);
+            gameCamera.setCharacter(currentCharacter);
 
             // Scene settings
             scene.ambientColor = BABYLON.Color3.Black();

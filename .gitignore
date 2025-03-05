@@ -1,6 +1,12 @@
 # assets
 *.glb
 *.fbx
+*.zip
+*.blend
+*.png
+*.jpg
+*.jpeg
+*.webp
 
 
 # Logs
