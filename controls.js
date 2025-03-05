@@ -13,7 +13,10 @@ export class Controls {
         
         // Simple movement keys state
         this.keys = { w: false, a: false, s: false, d: false };
-        this.moveSpeed = 0.15; // Adjust this value to control movement speed
+        this.baseMoveSpeed = 0.04; // Base movement speed (reduced from 0.08)
+        this.forwardSpeed = this.baseMoveSpeed * 0.75;  // Forward speed (75% of base)
+        this.backwardSpeed = this.baseMoveSpeed * 0.25; // Backward speed (25% of base)
+        this.strafeSpeed = this.baseMoveSpeed * 0.75;   // Strafe speed (75% of base)
         
         this.setupKeyboardControls();
         this.setupMovementLoop();
@@ -95,10 +98,10 @@ export class Controls {
             // Calculate movement based on camera direction
             const moveVector = new BABYLON.Vector3(0, 0, 0);
             
-            if (this.keys.w) moveVector.addInPlace(forward.scale(this.moveSpeed));
-            if (this.keys.s) moveVector.addInPlace(forward.scale(-this.moveSpeed));
-            if (this.keys.a) moveVector.addInPlace(right.scale(this.moveSpeed));
-            if (this.keys.d) moveVector.addInPlace(right.scale(-this.moveSpeed));
+            if (this.keys.w) moveVector.addInPlace(forward.scale(this.forwardSpeed));
+            if (this.keys.s) moveVector.addInPlace(forward.scale(-this.backwardSpeed));
+            if (this.keys.a) moveVector.addInPlace(right.scale(this.strafeSpeed));
+            if (this.keys.d) moveVector.addInPlace(right.scale(-this.strafeSpeed));
 
             // Apply movement if any keys are pressed and no collision detected
             if (moveVector.length() > 0) {

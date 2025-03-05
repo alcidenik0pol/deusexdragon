@@ -4,6 +4,7 @@ import { FloorComponent } from '../components/FloorComponent.js';
 import { CeilingComponent } from '../components/NEWCeilingComponent.js';
 import { EffectManager } from '../src/effects/EffectManager.js';
 import { NightclubLightEffect } from '../src/effects/NightclubLightEffect.js';
+import { NightclubPanelLightEffect } from '../src/effects/NightclubPanelLightEffect.js';
 
 export class NightClub extends LevelGenerator {
     // Define level boundaries/constraints
@@ -47,7 +48,7 @@ export class NightClub extends LevelGenerator {
             new BABYLON.Vector3(0, 1, 0),
             this.scene
         );
-        this.light.intensity = 0.1; // Start much darker
+        this.light.intensity = 0.05; // Start much darker
         this.light.groundColor = new BABYLON.Color3(0, 0, 0); // Start with black ground color
 
         // Create GUI for light control
@@ -126,9 +127,78 @@ export class NightClub extends LevelGenerator {
         });
         this.nightclubEffect.start();
 
-        // Add effect update to render loop
+        // Add panel light effect
+        this.panelEffect = new NightclubPanelLightEffect(this.scene, {
+            positions: [
+                {
+                    position: new BABYLON.Vector3(
+                        bounds.room.width * 0.1,  // 10% from left wall
+                        bounds.ceiling.y - 1,     // 1 unit below ceiling
+                        bounds.room.length * -0.1 // 10% from back wall
+                    ),
+                    rotation: new BABYLON.Vector3(0, Math.PI/6, 0),
+                    type: 'white'
+                },
+                {
+                    position: new BABYLON.Vector3(
+                        bounds.room.width * -0.1, // 10% from right wall
+                        bounds.ceiling.y - 1,
+                        bounds.room.length * 0.1  // 10% from front wall
+                    ),
+                    rotation: new BABYLON.Vector3(0, -Math.PI/6, 0),
+                    type: 'red'
+                },
+                {
+                    position: new BABYLON.Vector3(
+                        bounds.room.width * -0.2, // 20% from right wall
+                        bounds.ceiling.y - 1,
+                        bounds.room.length * -0.1 // 10% from back wall
+                    ),
+                    rotation: new BABYLON.Vector3(0, Math.PI/4, 0),
+                    type: 'green'
+                }
+            ],
+            movingPositions: [
+                {
+                    position: new BABYLON.Vector3(
+                        0,                      // Center X
+                        bounds.ceiling.y - 2,   // 2 units below ceiling
+                        0                       // Center Z
+                    ),
+                    rotation: new BABYLON.Vector3(0, 0, 0),
+                    type: 'white'
+                },
+                {
+                    position: new BABYLON.Vector3(
+                        bounds.room.width * 0.15,  // 15% from left wall
+                        bounds.ceiling.y - 2,
+                        bounds.room.length * 0.15  // 15% from front wall
+                    ),
+                    rotation: new BABYLON.Vector3(0, 0, 0),
+                    type: 'red'
+                },
+                {
+                    position: new BABYLON.Vector3(
+                        bounds.room.width * -0.15, // 15% from right wall
+                        bounds.ceiling.y - 2,
+                        bounds.room.length * -0.15 // 15% from back wall
+                    ),
+                    rotation: new BABYLON.Vector3(0, 0, 0),
+                    type: 'green'
+                }
+            ],
+            dimensions: {
+                width: bounds.room.width * 0.05,  // 5% of room width
+                height: bounds.room.height * 0.3, // 30% of room height
+                depth: 0.01
+            }
+        });
+        this.panelEffect.start();
+
+        // Add effect updates to render loop
         this.scene.onBeforeRenderObservable.add(() => {
             this.nightclubEffect.update();
+            this.panelEffect.update();
         });
 
         // Create floor
@@ -190,6 +260,9 @@ export class NightClub extends LevelGenerator {
     dispose() {
         if (this.nightclubEffect) {
             this.nightclubEffect.dispose();
+        }
+        if (this.panelEffect) {
+            this.panelEffect.dispose();
         }
         this.scene.onBeforeRenderObservable.clear();
         super.dispose();

@@ -12,61 +12,63 @@ export class NightclubLightEffect {
             },
             ...config
         };
-        this.volumetricLights = [];
         this.spotLights = [];
+        this.sharedMaterial = null;
     }
 
     start() {
         const beamConfig = this.config.beamTypes.nightclub;
         const positions = this.config.positions || [];
 
-        positions.forEach(position => {
-            // Create the actual spotlight FROM THE CEILING
-            const spotlight = new BABYLON.SpotLight(
-                "spotlight",
-                position,  // This is now at ceiling height from the config
-                new BABYLON.Vector3(0, -1, 0),  // Pointing straight down
-                Math.PI / 3,  // Wider angle for better spread
-                4,  // Higher exponent for softer edges
-                this.scene
-            );
-            spotlight.intensity = beamConfig.intensity;
-            spotlight.diffuse = BABYLON.Color3.FromHexString(beamConfig.color);
-
-            // Create a ground light effect for the spot where light hits the floor
-            const groundLight = BABYLON.MeshBuilder.CreateDisc("groundLight", {
-                radius: 3,
-                tessellation: 64  // Higher tessellation for smoother circle
-            }, this.scene);
-            
-            // Position the ground light effect directly below the spotlight
-            groundLight.position = new BABYLON.Vector3(
-                position.x,
-                0.01,  // Slightly above floor to prevent z-fighting
-                position.z
-            );
-            groundLight.rotation = new BABYLON.Vector3(Math.PI/2, 0, 0);  // Lay flat
-
-            // Create gradient material for ground light
-            const groundMaterial = new BABYLON.StandardMaterial("groundLightMat", this.scene);
-            groundMaterial.emissiveColor = BABYLON.Color3.FromHexString(beamConfig.color);
-            groundMaterial.alpha = 0.6;  // Base transparency
-            groundMaterial.disableLighting = true;
+        // Create shared material for ground effects
+        if (!this.sharedMaterial) {
+            this.sharedMaterial = new BABYLON.StandardMaterial("groundLightMat", this.scene);
+            this.sharedMaterial.emissiveColor = BABYLON.Color3.FromHexString(beamConfig.color);
+            this.sharedMaterial.alpha = 0.6;
+            this.sharedMaterial.disableLighting = true;
 
             // Add gradient texture for soft edges and internal glow
             const gradientTexture = new BABYLON.DynamicTexture("gradientTex", 256, this.scene, false);
             const ctx = gradientTexture.getContext();
             const grd = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-            grd.addColorStop(0, 'rgba(255, 255, 255, 0.8)');  // Center is brighter
-            grd.addColorStop(0.4, 'rgba(255, 255, 255, 0.4)'); // Mid fade
-            grd.addColorStop(1, 'rgba(255, 255, 255, 0)');  // Edges are transparent
+            grd.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+            grd.addColorStop(0.4, 'rgba(255, 255, 255, 0.4)');
+            grd.addColorStop(1, 'rgba(255, 255, 255, 0)');
             ctx.fillStyle = grd;
             ctx.fillRect(0, 0, 256, 256);
             gradientTexture.update();
 
-            groundMaterial.opacityTexture = gradientTexture;
-            groundMaterial.emissiveTexture = gradientTexture;
-            groundLight.material = groundMaterial;
+            this.sharedMaterial.opacityTexture = gradientTexture;
+            this.sharedMaterial.emissiveTexture = gradientTexture;
+        }
+
+        // Create fewer spotlights for better performance
+        positions.forEach((position, index) => {
+            // Create the spotlight
+            const spotlight = new BABYLON.SpotLight(
+                "spotlight",
+                position,
+                new BABYLON.Vector3(0, -1, 0),
+                Math.PI / 3,
+                4,
+                this.scene
+            );
+            spotlight.intensity = beamConfig.intensity;
+            spotlight.diffuse = BABYLON.Color3.FromHexString(beamConfig.color);
+
+            // Create a ground light effect
+            const groundLight = BABYLON.MeshBuilder.CreateDisc("groundLight", {
+                radius: 3,
+                tessellation: 16  // Further reduced tessellation
+            }, this.scene);
+            
+            groundLight.position = new BABYLON.Vector3(
+                position.x,
+                0.01,
+                position.z
+            );
+            groundLight.rotation = new BABYLON.Vector3(Math.PI/2, 0, 0);
+            groundLight.material = this.sharedMaterial;
             
             this.spotLights.push({
                 light: spotlight,
@@ -100,6 +102,11 @@ export class NightclubLightEffect {
     }
 
     dispose() {
+        if (this.sharedMaterial) {
+            this.sharedMaterial.dispose();
+        }
+        
+        // Dispose lights and effects
         this.spotLights.forEach(spot => {
             spot.light.dispose();
             spot.groundEffect.dispose();
