@@ -2,6 +2,8 @@ import { LevelGenerator } from '../levelGenerator.js';
 import { WallComponent } from '../components/WallComponent.js';
 import { FloorComponent } from '../components/FloorComponent.js';
 import { CeilingComponent } from '../components/NEWCeilingComponent.js';
+import { EffectManager } from '../src/effects/EffectManager.js';
+import { NightclubLightEffect } from '../src/effects/NightclubLightEffect.js';
 
 export class NightClub extends LevelGenerator {
     // Define level boundaries/constraints
@@ -35,10 +37,99 @@ export class NightClub extends LevelGenerator {
     constructor(scene) {
         super(scene);
         this.components = [];
+        this.light = null;
+        this.effectManager = new EffectManager(scene);
+    }
+
+    setupLighting() {
+        // Create hemispheric light with lower intensity for night effect
+        this.light = new BABYLON.HemisphericLight("light", 
+            new BABYLON.Vector3(0, 1, 0),
+            this.scene
+        );
+        this.light.intensity = 0.1; // Start much darker
+        this.light.groundColor = new BABYLON.Color3(0, 0, 0); // Start with black ground color
+
+        // Create GUI for light control
+        const adt = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+        const panel = new BABYLON.GUI.StackPanel();
+        panel.width = "220px";
+        panel.top = "-25px";
+        panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+        panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+        adt.addControl(panel);
+
+        const header = new BABYLON.GUI.TextBlock();
+        header.text = "Night to Day";
+        header.height = "30px";
+        header.color = "white";
+        panel.addControl(header);
+
+        const slider = new BABYLON.GUI.Slider();
+        slider.minimum = 0;
+        slider.maximum = 1;
+        slider.borderColor = "black";
+        slider.color = "gray";
+        slider.background = "white";
+        slider.value = 0.1; // Start at night
+        slider.height = "20px";
+        slider.width = "200px";
+        slider.onValueChangedObservable.add((value) => {
+            if (this.light) {
+                this.light.intensity = value * 1.2;
+                const groundColorValue = value * 0.3;
+                this.light.groundColor = new BABYLON.Color3(groundColorValue, groundColorValue, groundColorValue);
+            }
+        });
+        panel.addControl(slider);
+
+        // Add ambient light for very subtle base visibility
+        const ambientLight = new BABYLON.HemisphericLight(
+            "ambientLight",
+            new BABYLON.Vector3(0, -1, 0),
+            this.scene
+        );
+        ambientLight.intensity = 0.05;
+        ambientLight.groundColor = new BABYLON.Color3(0, 0, 0);
+        ambientLight.specular = new BABYLON.Color3(0, 0, 0);
+
+        return this.light;
     }
 
     async createLevel() {
         const bounds = NightClub.LEVEL_BOUNDS;
+
+        // Setup lighting first
+        this.setupLighting();
+
+        // Create spotlight positions at ceiling height
+        const spotlightPositions = [
+            new BABYLON.Vector3(0, bounds.ceiling.y - 0.1, 0),  // Center
+            new BABYLON.Vector3(-15, bounds.ceiling.y - 0.1, 15),  // North West
+            new BABYLON.Vector3(15, bounds.ceiling.y - 0.1, 15),   // North East
+            new BABYLON.Vector3(-15, bounds.ceiling.y - 0.1, -15), // South West
+            new BABYLON.Vector3(15, bounds.ceiling.y - 0.1, -15)   // South East
+        ];
+
+        // Add nightclub light effect
+        this.nightclubEffect = new NightclubLightEffect(this.scene, {
+            positions: spotlightPositions,
+            beamTypes: {
+                nightclub: {
+                    color: '#0000FF',
+                    intensity: 0.8,
+                    width: 0.3,
+                    blurKernelSize: 32
+                }
+            }
+        });
+        this.nightclubEffect.start();
+
+        // Add effect update to render loop
+        this.scene.onBeforeRenderObservable.add(() => {
+            this.nightclubEffect.update();
+        });
 
         // Create floor
         const floor = new FloorComponent('nightclub-floor');
@@ -89,18 +180,18 @@ export class NightClub extends LevelGenerator {
         const eastWall = createWall('east-wall', bounds.walls.positions.east, Math.PI / 2);
         const westWall = createWall('west-wall', bounds.walls.positions.west, Math.PI / 2);
 
-        // Setup basic lighting
-        const light = new BABYLON.HemisphericLight(
-            "light",
-            new BABYLON.Vector3(0, 1, 0),
-            this.scene
-        );
-        light.intensity = 0.7;
-
         return {
             ground: floor.mesh,
             walls: [southWall.mesh, northWall.mesh, eastWall.mesh, westWall.mesh],
             cellSize: 1
         };
+    }
+
+    dispose() {
+        if (this.nightclubEffect) {
+            this.nightclubEffect.dispose();
+        }
+        this.scene.onBeforeRenderObservable.clear();
+        super.dispose();
     }
 } 
