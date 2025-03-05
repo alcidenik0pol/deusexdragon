@@ -53,6 +53,7 @@
         import { Singapore4Level } from './levels/singapore4Level.js';
         import { NightTestLevel } from './levels/nightTestLevel.js';
         import { ModernOfficeLevel } from './levels/ModernOfficeLevel.js';
+        import { TestCameraCollision } from './levels/testCameraCollision.js';
         
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -61,11 +62,11 @@
         // Add level selection
         let currentScene = null;
         // let currentLevelType = 'default';  // Track current level type
-        let currentLevelType = 'nighttest';  // Track current level type
+        let currentLevelType = 'testcamera';  // Track current level type
         let currentCharacter = null;  // Define currentCharacter here
 
         // Available levels list
-        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom', 'nighttest', 'modernoffice'];
+        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom', 'nighttest', 'modernoffice', 'testcamera'];
 
         const createScene = async (levelType = 'default') => {
             const scene = new BABYLON.Scene(engine);
@@ -124,6 +125,9 @@
                     break;
                 case 'modernoffice':
                     levelGenerator = new ModernOfficeLevel(scene);
+                    break;
+                case 'testcamera':
+                    levelGenerator = new TestCameraCollision(scene);
                     break;
                 default:
                     levelGenerator = new LevelGenerator(scene);

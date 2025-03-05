@@ -4,8 +4,7 @@ export class GameCamera {
         this.scene = scene;
         this.currentCharacter = null;
         this.mouseSensitivityX = 0.002; // Horizontal (yaw) sensitivity
-        // this.mouseSensitivityY = 0.001; // Vertical (pitch) sensitivity - reduced for finer control
-        this.mouseSensitivityY = 1; // Vertical (pitch) sensitivity - reduced for finer control
+        this.mouseSensitivityY = 0.002; // Vertical (pitch) sensitivity - matched with X for consistency
         this.cameraOffset = new BABYLON.Vector3(0, 2.5, 4); // Reduced from (0, 4, 7)
         
         // Camera profiles (adjusted to be closer)
@@ -33,44 +32,33 @@ export class GameCamera {
     }
 
     setupCamera() {
-        // Create universal camera
         this.camera = new BABYLON.UniversalCamera(
             "UniversalCamera",
             new BABYLON.Vector3(0, 0, 0),
             this.scene
         );
 
-        // Make this the active camera
         this.scene.activeCamera = this.camera;
 
-        // Update camera position in render loop
         this.scene.registerBeforeRender(() => {
             if (this.currentCharacter) {
                 const targetPosition = this.currentCharacter.position.clone();
                 targetPosition.y += 2; // Look at character's head level
 
-                // Calculate camera position considering both yaw and pitch
-                const pitch = this.camera.rotation.x;
                 const yaw = this.camera.rotation.y;
+                const pitch = this.camera.rotation.x;
 
-                // Calculate the vertical offset based on pitch
-                const verticalOffset = Math.sin(pitch) * this.cameraOffset.z;
+                // Calculate orbital camera position
+                const radius = Math.sqrt(this.cameraOffset.z * this.cameraOffset.z + this.cameraOffset.y * this.cameraOffset.y);
                 
                 const cameraPosition = new BABYLON.Vector3(
-                    targetPosition.x - Math.sin(yaw) * this.cameraOffset.z * Math.cos(pitch),
-                    targetPosition.y + this.cameraOffset.y - verticalOffset,
-                    targetPosition.z - Math.cos(yaw) * this.cameraOffset.z * Math.cos(pitch)
+                    targetPosition.x - Math.sin(yaw) * radius * Math.cos(pitch),
+                    targetPosition.y + radius * Math.sin(pitch),
+                    targetPosition.z - Math.cos(yaw) * radius * Math.cos(pitch)
                 );
 
                 this.camera.position.copyFrom(cameraPosition);
-                
-                // Don't use setTarget as it overrides our rotation
-                const forward = new BABYLON.Vector3(
-                    Math.sin(yaw) * Math.cos(pitch),
-                    -Math.sin(pitch),
-                    Math.cos(yaw) * Math.cos(pitch)
-                );
-                this.camera.setTarget(this.camera.position.add(forward));
+                this.camera.setTarget(targetPosition);
             }
         });
     }

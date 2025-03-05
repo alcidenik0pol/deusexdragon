@@ -1,37 +1,32 @@
-import { BaseComponent } from './BaseComponent.js';
+import { FloorComponent } from './FloorComponent.js';
 
-export class CeilingComponent extends BaseComponent {
+export class CeilingComponent extends FloorComponent {
     constructor(id) {
         super(id);
-        this.length = 10;
-        this.width = 10;
-        this.height = 3;
+        // Only add properties specific to ceilings
         this.type = 'solid';  // solid, drop, glass
         this.openings = [];
         this.occlusionBehavior = 'fade';  // fade, hide, partial
     }
 
-    initialize(scene, options = {}) {
-        super.initialize(scene, options);
-        this.createCeilingMesh();
+    createCeilingMesh() {
+        // Reuse floor's mesh creation
+        super.createFloorMesh();
+        
+        // But ALWAYS rotate it to face downward - this is what makes it a ceiling!
+        this.mesh.rotation.x = Math.PI;
     }
 
-    createCeilingMesh() {
-        this.mesh = BABYLON.MeshBuilder.CreateGround(this.id, {
-            width: this.width,
-            height: this.length
-        }, this.scene);
-
-        this.mesh.position = new BABYLON.Vector3(
-            this.position.x,
-            this.height,
-            this.position.z
-        );
-        this.mesh.rotation = new BABYLON.Vector3(Math.PI, 0, 0);
+    setColors(bottomColor, topColor, alpha = 1.0) {
+        if (!this.scene || !this.mesh) return;
         
-        // Create default material
-        const material = new BABYLON.StandardMaterial(`${this.id}-material`, this.scene);
-        material.diffuseColor = new BABYLON.Color3(0.95, 0.95, 0.95);
+        const material = new BABYLON.StandardMaterial(this.id + "-material", this.scene);
+        material.diffuseColor = bottomColor;  // Bottom face (what we see)
+        material.backFaceCulling = false;
+        material.twoSidedLighting = true;
+        material.backFaceColor = topColor;    // Top face (above ceiling)
+        material.alpha = alpha;
+        
         this.mesh.material = material;
     }
 

@@ -13,6 +13,7 @@ export class FloorComponent extends BaseComponent {
     initialize(scene, options = {}) {
         super.initialize(scene, options);
         this.createFloorMesh();
+        this.setCollision(true);  // Enable collisions by default
     }
 
     createFloorMesh() {

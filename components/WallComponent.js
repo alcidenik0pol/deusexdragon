@@ -3,8 +3,8 @@ import { BaseComponent } from './BaseComponent.js';
 export class WallComponent extends BaseComponent {
     constructor(id) {
         super(id);
-        this.height = 3;
-        this.width = 4;
+        this.height = null;
+        this.width = null;
         this.thickness = 0.2;
         this.hasOpenings = false;
         this.openings = [];
@@ -14,9 +14,15 @@ export class WallComponent extends BaseComponent {
     initialize(scene, options = {}) {
         super.initialize(scene, options);
         this.createWallMesh();
+        this.setCollision(true);  // Enable collisions by default
     }
 
     createWallMesh() {
+        if (!this.height || !this.width) {
+            console.error('Wall dimensions not set');
+            return;
+        }
+
         this.mesh = BABYLON.MeshBuilder.CreateBox(this.id, {
             height: this.height,
             width: this.width,
