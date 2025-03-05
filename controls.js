@@ -86,7 +86,7 @@ export class Controls {
             // Get camera's forward direction (ignoring vertical component for movement)
             const forward = new BABYLON.Vector3(
                 Math.sin(this.gameCamera.getCameraYaw()),
-                0,  // Remove vertical component for movement
+                0,
                 Math.cos(this.gameCamera.getCameraYaw())
             ).normalize();
 
@@ -95,23 +95,31 @@ export class Controls {
             // Calculate movement based on camera direction
             const moveVector = new BABYLON.Vector3(0, 0, 0);
             
-            if (this.keys.w) {
-                moveVector.addInPlace(forward.scale(this.moveSpeed));
-            }
-            if (this.keys.s) {
-                moveVector.addInPlace(forward.scale(-this.moveSpeed));
-            }
-            if (this.keys.a) {
-                moveVector.addInPlace(right.scale(this.moveSpeed));  // Inverted from -this.moveSpeed
-            }
-            if (this.keys.d) {
-                moveVector.addInPlace(right.scale(-this.moveSpeed)); // Inverted from this.moveSpeed
-            }
+            if (this.keys.w) moveVector.addInPlace(forward.scale(this.moveSpeed));
+            if (this.keys.s) moveVector.addInPlace(forward.scale(-this.moveSpeed));
+            if (this.keys.a) moveVector.addInPlace(right.scale(this.moveSpeed));
+            if (this.keys.d) moveVector.addInPlace(right.scale(-this.moveSpeed));
 
-            // Apply movement if any keys are pressed
+            // Apply movement if any keys are pressed and no collision detected
             if (moveVector.length() > 0) {
                 const newPosition = this.currentCharacter.position.add(moveVector);
-                this.updateCharacterPositions(newPosition);
+                
+                // Create a ray for collision detection
+                const origin = this.currentCharacter.position.clone();
+                origin.y += 1; // Raise ray origin to middle of character
+                const direction = moveVector.normalize();
+                const length = moveVector.length() + 0.5; // Add small buffer for collision detection
+                
+                const ray = new BABYLON.Ray(origin, direction, length);
+                const hit = this.scene.pickWithRay(ray, (mesh) => {
+                    // Only check collision with meshes that have checkCollisions enabled
+                    return mesh.checkCollisions === true;
+                });
+
+                // Only move if no collision detected
+                if (!hit.hit) {
+                    this.updateCharacterPositions(newPosition);
+                }
             }
         });
     }

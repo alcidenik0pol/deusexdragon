@@ -5,22 +5,22 @@ export class GameCamera {
         this.currentCharacter = null;
         this.mouseSensitivityX = 0.002; // Horizontal (yaw) sensitivity
         this.mouseSensitivityY = 0.002; // Vertical (pitch) sensitivity - matched with X for consistency
-        this.cameraOffset = new BABYLON.Vector3(0, 2.5, 4); // Reduced from (0, 4, 7)
+        this.cameraOffset = new BABYLON.Vector3(0, 2.5, 4); // These values are good
         
-        // Camera profiles (adjusted to be closer)
+        // Camera profiles
         this.thirdPersonProfile = {
-            offsetY: 2.5,  // Reduced from 4
-            offsetZ: 4     // Reduced from 7
+            offsetY: 2.5,  // Good
+            offsetZ: 4     // Good
         };
 
         this.npcFocusProfile = {
-            offsetY: 2.15, // Reduced from 3.15
-            offsetZ: 2.2   // Reduced from 3.2
+            offsetY: 2.15, // Good
+            offsetZ: 2.2   // Good
         };
 
         this.waitingProfile = {
-            offsetY: 2.2,  // Reduced from 3.2
-            offsetZ: 2.2   // Reduced from 3.2
+            offsetY: 2.2,  // Good
+            offsetZ: 2.2   // Good
         };
 
         this.isInNPCFocus = false;
@@ -38,26 +38,51 @@ export class GameCamera {
             this.scene
         );
 
+        // Enable camera collisions
+        this.camera.checkCollisions = true;
+        this.camera.ellipsoid = new BABYLON.Vector3(0.5, 0.5, 0.5);
+
         this.scene.activeCamera = this.camera;
 
         this.scene.registerBeforeRender(() => {
             if (this.currentCharacter) {
                 const targetPosition = this.currentCharacter.position.clone();
-                targetPosition.y += 2; // Look at character's head level
+                targetPosition.y += 2;
 
                 const yaw = this.camera.rotation.y;
                 const pitch = this.camera.rotation.x;
 
-                // Calculate orbital camera position
+                // Calculate desired camera position
                 const radius = Math.sqrt(this.cameraOffset.z * this.cameraOffset.z + this.cameraOffset.y * this.cameraOffset.y);
-                
-                const cameraPosition = new BABYLON.Vector3(
+                const desiredPosition = new BABYLON.Vector3(
                     targetPosition.x - Math.sin(yaw) * radius * Math.cos(pitch),
                     targetPosition.y + radius * Math.sin(pitch),
                     targetPosition.z - Math.cos(yaw) * radius * Math.cos(pitch)
                 );
 
-                this.camera.position.copyFrom(cameraPosition);
+                // Ray test for collision
+                const ray = new BABYLON.Ray(targetPosition, desiredPosition.subtract(targetPosition), radius);
+                const hit = this.scene.pickWithRay(ray);
+
+                let finalPosition;
+                if (hit.hit) {
+                    // If there's a collision, place camera at hit point (slightly offset to prevent clipping)
+                    const offset = targetPosition.subtract(hit.pickedPoint).normalize().scale(0.2);
+                    finalPosition = hit.pickedPoint.add(offset);
+                } else {
+                    // No collision, use desired position
+                    finalPosition = desiredPosition;
+                }
+
+                // Add maximum distance check
+                const maxDistance = 6; // Adjust this value as needed
+                const distanceToTarget = BABYLON.Vector3.Distance(finalPosition, targetPosition);
+                if (distanceToTarget > maxDistance) {
+                    const direction = finalPosition.subtract(targetPosition).normalize();
+                    finalPosition = targetPosition.add(direction.scale(maxDistance));
+                }
+
+                this.camera.position.copyFrom(finalPosition);
                 this.camera.setTarget(targetPosition);
             }
         });

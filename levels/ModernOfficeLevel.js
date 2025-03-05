@@ -1,7 +1,7 @@
 import { LevelGenerator } from '../levelGenerator.js';
 import { WallComponent } from '../components/WallComponent.js';
 import { FloorComponent } from '../components/FloorComponent.js';
-import { CeilingComponent } from '../components/CeilingComponent.js';
+import { CeilingComponent } from '../components/NEWCeilingComponent.js';
 import { MaterialFactory } from '../components/MaterialFactory.js';
 import { loadNPC1 } from '../characters/npc1.js';
 
