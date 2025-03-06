@@ -55,6 +55,7 @@
         import { ModernOfficeLevel } from './levels/ModernOfficeLevel.js';
         import { TestCameraCollision } from './levels/testCameraCollision.js';
         import { NightClub } from './levels/NightClub.js';
+        import { TestNewMeshes } from './levels/TestNewMeshes.js';
         
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -67,7 +68,7 @@
         let currentCharacter = null;  // Define currentCharacter here
 
         // Available levels list
-        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom', 'nighttest', 'modernoffice', 'testcamera', 'nightclub'];
+        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'ladiesroom', 'nighttest', 'modernoffice', 'testcamera', 'nightclub', 'testnewmeshes'];
 
         const createScene = async (levelType = 'default') => {
             const scene = new BABYLON.Scene(engine);
@@ -132,6 +133,9 @@
                     break;
                 case 'nightclub':
                     levelGenerator = new NightClub(scene);
+                    break;
+                case 'testnewmeshes':
+                    levelGenerator = new TestNewMeshes(scene);
                     break;
                 default:
                     levelGenerator = new LevelGenerator(scene);
