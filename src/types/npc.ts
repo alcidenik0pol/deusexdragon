@@ -4,12 +4,20 @@ export interface Position {
   z: number;
 }
 
+export interface AnimationModel {
+  name: string;
+  path: string;
+}
+
 export interface NPCData {
   id: string;
   name: string;
   persona: string;
   position: Position;
-  model_path: string;
+  animations: {
+    [key: string]: string;  // key is animation name (idle, walking, etc), value is path
+  };
+  defaultAnimation: string;  // e.g., "idle"
   scene: string;
   rotation: number;
   scale: number;

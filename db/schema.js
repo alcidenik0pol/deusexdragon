@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS npcs (
   name TEXT NOT NULL,
   persona TEXT NOT NULL,
   position TEXT NOT NULL,
-  model_path TEXT NOT NULL
+  model_path TEXT NOT NULL,  -- Will now store JSON string of animation paths
+  current_animation TEXT NOT NULL DEFAULT 'idle'
 );
 
 -- Conversations Table

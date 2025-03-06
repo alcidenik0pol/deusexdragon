@@ -1,14 +1,7 @@
 export default {
     id: "maggiechow",
     name: "Maggie Chow",
-    animations: {
-        idle: "./assets/characters/npc/purple02f/idle.glb",
-        walking: "./assets/characters/npc/purple02f/walking.glb",
-        fighting: "./assets/characters/npc/purple02f/fighting.glb",
-        dancing01: "./assets/characters/npc/purple02f/dancing01.glb",
-        dancing02: "./assets/characters/npc/purple02f/dancing02.glb"
-    },
-    defaultAnimation: "idle",
+    model: "./assets/character_idle.glb",
     scene: "ladiesroom",
     position: { x: -1, y: 0.1, z: 0 },
     rotation: Math.PI/2,

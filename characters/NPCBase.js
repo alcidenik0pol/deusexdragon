@@ -1,11 +1,67 @@
 import { npcService } from '../services/npcService.js';
 
 export class NPCBase {
+    // Add static default values at class level
+    static DEFAULT_SCALE = 2.0;  // Twice the size of main character
+    static DEFAULT_Y_POSITION = 0.1;  // Same as main character's y position
+
     constructor(npcData, scene) {
         this.data = npcData;
         this.scene = scene;
         this.mesh = null;
+        this.currentAnimation = npcData.defaultAnimation;
         this.currentConversationId = null;
+        
+        // Apply default scale if not specified in npcData
+        this.data.scale = npcData.scale || NPCBase.DEFAULT_SCALE;
+        // Ensure consistent Y position
+        this.data.position.y = NPCBase.DEFAULT_Y_POSITION;
+    }
+
+    async loadModel(animationName) {
+        const modelPath = this.data.animations[animationName];
+        if (!modelPath) {
+            throw new Error(`Animation ${animationName} not found`);
+        }
+
+        try {
+            // If we already have a mesh, remove it
+            if (this.mesh) {
+                this.mesh.dispose();
+            }
+
+            const result = await BABYLON.SceneLoader.ImportMeshAsync(
+                "", 
+                "", 
+                modelPath, 
+                this.scene
+            );
+            
+            this.mesh = result.meshes[0];
+            this.setupMesh(result);
+            this.currentAnimation = animationName;
+            return result;
+        } catch (error) {
+            console.error(`Error loading animation ${animationName}:`, error);
+            throw error;
+        }
+    }
+
+    async setAnimation(animationName) {
+        if (this.currentAnimation === animationName) return;
+        if (!this.data.animations[animationName]) {
+            throw new Error(`Animation ${animationName} not found`);
+        }
+
+        try {
+            await this.loadModel(animationName);
+        } catch (error) {
+            console.error(`Failed to set animation ${animationName}:`, error);
+            // Fallback to default animation if available
+            if (animationName !== this.data.defaultAnimation) {
+                await this.setAnimation(this.data.defaultAnimation);
+            }
+        }
     }
 
     async initialize() {
@@ -18,7 +74,7 @@ export class NPCBase {
                 name: this.data.name,
                 persona: this.data.persona,
                 position: this.data.position,
-                model_path: this.data.model_path,
+                model_path: JSON.stringify(this.data.animations), // Store all animation paths
                 scene: this.data.scene,
                 rotation: this.data.rotation,
                 scale: this.data.scale,
@@ -26,25 +82,9 @@ export class NPCBase {
                 initialMemories: this.data.initialMemories
             });
 
-            console.log('NPC created in database, loading 3D model from:', this.data.model_path);
-
-            try {
-                // Load 3D model
-                const result = await BABYLON.SceneLoader.ImportMeshAsync(
-                    "", 
-                    "", 
-                    this.data.model_path, 
-                    this.scene
-                );
-                
-                console.log('3D model loaded successfully:', result);
-                this.mesh = result.meshes[0];
-                this.setupMesh(result);
-                return this;
-            } catch (modelError) {
-                console.error('Error loading 3D model:', modelError);
-                throw new Error(`Failed to load 3D model: ${modelError.message}`);
-            }
+            // Load the default animation
+            await this.loadModel(this.data.defaultAnimation);
+            return this;
         } catch (error) {
             console.error('Error initializing NPC:', error);
             throw error;
@@ -59,6 +99,13 @@ export class NPCBase {
 
         console.log('Setting up mesh with position:', this.data.position);
 
+        // Use class defaults for consistent scaling
+        this.mesh.scaling = new BABYLON.Vector3(
+            NPCBase.DEFAULT_SCALE,
+            NPCBase.DEFAULT_SCALE,
+            NPCBase.DEFAULT_SCALE
+        );
+
         // Set position, rotation, and scale
         this.mesh.position = new BABYLON.Vector3(
             this.data.position.x,
@@ -68,11 +115,6 @@ export class NPCBase {
         this.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
             BABYLON.Vector3.Up(), 
             this.data.rotation
-        );
-        this.mesh.scaling = new BABYLON.Vector3(
-            this.data.scale,
-            this.data.scale,
-            this.data.scale
         );
 
         // Setup materials

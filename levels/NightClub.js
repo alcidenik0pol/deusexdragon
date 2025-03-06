@@ -5,6 +5,9 @@ import { CeilingComponent } from '../components/NEWCeilingComponent.js';
 import { EffectManager } from '../src/effects/EffectManager.js';
 import { NightclubLightEffect } from '../src/effects/NightclubLightEffect.js';
 import { NightclubPanelLightEffect } from '../src/effects/NightclubPanelLightEffect.js';
+import { Purple02F, loadPurple02F } from '../characters/purple02f.js';
+import { NPCBase } from '../characters/NPCBase.js';
+import baseNPCData from '../npcs/data/purple02f.js';  // Import the base NPC data
 
 export class NightClub extends LevelGenerator {
     // Define level boundaries/constraints
@@ -40,6 +43,7 @@ export class NightClub extends LevelGenerator {
         this.components = [];
         this.light = null;
         this.effectManager = new EffectManager(scene);
+        this.characters = [];  // Array to store all NPCs
     }
 
     setupLighting() {
@@ -96,6 +100,65 @@ export class NightClub extends LevelGenerator {
         ambientLight.specular = new BABYLON.Color3(0, 0, 0);
 
         return this.light;
+    }
+
+    // Add method to handle dance animation cycling
+    setupDanceAnimations() {
+        const danceAnimations = ['dancing01', 'dancing02'];
+        
+        // Setup animation cycling for each character
+        this.characters.forEach(character => {
+            let currentAnimationIndex = 0;  // Track current animation
+
+            const cycleAnimation = async () => {
+                // Cycle to next animation
+                currentAnimationIndex = (currentAnimationIndex + 1) % danceAnimations.length;
+                const nextAnimation = danceAnimations[currentAnimationIndex];
+                
+                try {
+                    await character.setAnimation(nextAnimation);
+                    console.log(`NPC ${character.name} changed dance animation to ${nextAnimation}`);
+                } catch (error) {
+                    console.error(`Failed to set animation ${nextAnimation}:`, error);
+                }
+
+                // Set random timeout for next animation (between 3 and 30 seconds)
+                const nextTimeout = Math.random() * (30000 - 3000) + 3000;
+                setTimeout(cycleAnimation, nextTimeout);
+            };
+
+            // Start the animation cycle
+            cycleAnimation();
+        });
+    }
+
+    // Function to get random position within bounds
+    getRandomPosition() {
+        // Use 80% of room size to keep NPCs away from walls
+        const margin = 0.2;
+        const xRange = NightClub.LEVEL_BOUNDS.room.width * (1 - margin * 2);
+        const zRange = NightClub.LEVEL_BOUNDS.room.length * (1 - margin * 2);
+        
+        return {
+            x: (Math.random() * xRange - xRange / 2),
+            y: NPCBase.DEFAULT_Y_POSITION,
+            z: (Math.random() * zRange - zRange / 2)
+        };
+    }
+
+    // Function to get random rotation
+    getRandomRotation() {
+        return Math.random() * Math.PI * 2; // 0 to 2π
+    }
+
+    startNPCMovement() {
+        this.characters.forEach(npc => {
+            const direction = new BABYLON.Vector3(0.1, 0, 0); // Move along the x-axis
+
+            this.scene.onBeforeRenderObservable.add(() => {
+                npc.mesh.position.addInPlace(direction);
+            });
+        });
     }
 
     async createLevel() {
@@ -250,6 +313,41 @@ export class NightClub extends LevelGenerator {
         const eastWall = createWall('east-wall', bounds.walls.positions.east, Math.PI / 2);
         const westWall = createWall('west-wall', bounds.walls.positions.west, Math.PI / 2);
 
+        // Load and setup multiple Purple02F NPCs
+        try {
+            // Create 10 NPCs
+            for (let i = 0; i < 10; i++) {
+                const npc = new Purple02F(this.scene);
+                
+                // Initialize the NPC
+                await npc.initialize();
+                
+                // Set random position and rotation directly on the mesh
+                const position = this.getRandomPosition();
+                const rotation = this.getRandomRotation();
+                
+                // Override position and rotation after initialization
+                npc.mesh.position = new BABYLON.Vector3(position.x, position.y, position.z);
+                npc.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+                    BABYLON.Vector3.Up(),
+                    rotation
+                );
+
+                console.log(`NPC ${i} positioned at:`, npc.mesh.position);
+
+                this.characters.push(npc);
+                await npc.setAnimation('dancing01');
+            }
+            
+            // Setup dance animation cycling for all NPCs
+            this.setupDanceAnimations();
+
+            // Start NPC movement
+            this.startNPCMovement();
+        } catch (error) {
+            console.error('Failed to load Purple02F NPCs:', error);
+        }
+
         return {
             ground: floor.mesh,
             walls: [southWall.mesh, northWall.mesh, eastWall.mesh, westWall.mesh],
@@ -258,6 +356,13 @@ export class NightClub extends LevelGenerator {
     }
 
     dispose() {
+        // Clear all animation timeouts when disposing
+        if (this.characters) {
+            this.characters.forEach(character => {
+                // Dispose the character mesh
+                character.mesh?.dispose();
+            });
+        }
         if (this.nightclubEffect) {
             this.nightclubEffect.dispose();
         }
