@@ -114,6 +114,9 @@ export const loadCharacters = async (scene) => {
         leftCharacter.setEnabled(false);
         rightCharacter.setEnabled(false);
 
+        // Ensure the character mesh is named appropriately
+        idleCharacter.name = "PlayerCharacter";
+
         console.log("Character loading complete!");
 
         return {

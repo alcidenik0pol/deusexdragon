@@ -6,12 +6,11 @@ export class Purple02F extends NPCBase {
         super(npcData, scene);
         this.name = npcData.name;
         this.id = npcData.id;
-        this.interactionRadius = npcData.interactionRadius;
+        this.interactionRadius = npcData.interactionRadius || 5;
         this.persona = npcData.persona;
     }
 
     async initialize() {
-        // Load the NPC model
         const result = await BABYLON.SceneLoader.ImportMeshAsync(
             "", 
             npcData.animations[this.data.defaultAnimation], 
@@ -20,29 +19,12 @@ export class Purple02F extends NPCBase {
         );
 
         this.mesh = result.meshes[0];
-        this.setupMesh(result);
-
-        // Add interaction trigger for NPC
-        const actionManager = new BABYLON.ActionManager(this.scene);
-        this.mesh.actionManager = actionManager;
-        
-        actionManager.registerAction(
-            new BABYLON.ExecuteCodeAction(
-                BABYLON.ActionManager.OnPickTrigger,
-                async () => {
-                    const conversationId = await this.startConversation();
-                    // Emit an event that the chat UI can listen to
-                    const event = new CustomEvent('npc-chat-started', {
-                        detail: {
-                            npcId: this.id,
-                            conversationId: conversationId,
-                            npcName: this.name
-                        }
-                    });
-                    window.dispatchEvent(event);
-                }
-            )
+        this.mesh.position = new BABYLON.Vector3(
+            this.data.position.x,
+            this.data.position.y,
+            this.data.position.z
         );
+        this.setupMesh(result);
 
         return this;
     }

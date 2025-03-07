@@ -45,9 +45,6 @@
         import { Singapore3Level } from './levels/singapore3Level.js';
         import { LadiesRoomLevel } from './levels/ladiesRoomLevel.js';
         import { loadCharacters } from './characters/maincharacter.js';
-        import { ChatUI } from './chat/chatUI.js';
-        import { ChatService } from './chat/chatService.js';
-        import { loadNPC1 } from './characters/npc1.js';
         import { GameCamera } from './camera.js';
         import { Controls } from './controls.js';
         import { Singapore4Level } from './levels/singapore4Level.js';
@@ -141,7 +138,7 @@
                     levelGenerator = new LevelGenerator(scene);
             }
             
-            const { ground, walls, cellSize, npcs: levelNpcs } = await levelGenerator.createLevel();
+            const { ground, walls, cellSize } = await levelGenerator.createLevel();
 
             // Load characters ONCE
             const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter } = await loadCharacters(scene);
@@ -154,10 +151,9 @@
                 backwardCharacter, 
                 leftCharacter, 
                 rightCharacter, 
-                gameCamera  // Pass the camera instance directly
+                gameCamera
             );
 
-            // Set current character
             currentCharacter = controls.getCurrentCharacter();
             gameCamera.setCharacter(currentCharacter);
 
@@ -166,69 +162,10 @@
             scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
             scene.materialsNeedSceneLighting = true;
 
-            // NPC setup
-            let npcs = [];
-            if (levelType === 'ladiesroom') {
-                const npc1 = await loadNPC1(scene);
-                npcs.push(npc1);
-            } else if (levelType === 'nightclub' && levelNpcs) {
-                npcs = levelNpcs; // Use NPCs from nightclub level
-            }
-
-            // Chat UI setup
-            let chatUI = null;
-
-            // Function to find closest NPC
-            const findClosestNPC = () => {
-                if (!currentCharacter || npcs.length === 0) return null;
-                
-                const playerPos = currentCharacter.position;
-                let closestNPC = null;
-                let closestDistance = Infinity;
-                
-                npcs.forEach(npc => {
-                    const distance = BABYLON.Vector3.Distance(
-                        playerPos,
-                        npc.mesh.position
-                    );
-                    
-                    if (distance < closestDistance) {
-                        closestDistance = distance;
-                        closestNPC = npc;
-                    }
-                });
-                
-                return closestDistance <= 3 ? closestNPC : null;
-            };
-
-            // Chat key handler
-            window.addEventListener("keydown", (e) => {
-                if (e.key === "e") {
-                    if (!chatUI) {
-                        chatUI = new ChatUI();
-                    }
-                    
-                    if (ChatUI.isActive) {
-                        return;
-                    }
-                    
-                    e.preventDefault();
-                    
-                    const nearbyNPC = findClosestNPC();
-                    if (nearbyNPC) {
-                        chatUI.setNPC(nearbyNPC);
-                        chatUI.show();
-                    } else {
-                        console.log("No NPCs nearby. Get closer to talk to someone!");
-                    }
-                }
-            });
-
             return scene;
         };
 
         window.addEventListener("keydown", async (e) => {
-            if (ChatUI.isActive && e.key !== "e") return;  // Block level selection when chat is active
             if (e.key.toLowerCase() === 'l') {
                 // Prompt for level name
                 const newLevel = prompt(
@@ -236,14 +173,12 @@
                     currentLevelType
                 );
                 
-                // Check if input is valid and different from current level
                 if (newLevel && 
                     availableLevels.includes(newLevel.toLowerCase()) && 
                     newLevel.toLowerCase() !== currentLevelType) {
                     
                     currentLevelType = newLevel.toLowerCase();
                     
-                    // Dispose of current scene and create new one
                     if (currentScene) {
                         currentScene.dispose();
                     }
@@ -251,10 +186,9 @@
                 }
             }
             
-            // New rain toggle handler
-            if (!ChatUI.isActive && e.key.toLowerCase() === 'r' && currentLevelType === 'singapore') {
+            // Keep rain toggle handler
+            if (e.key.toLowerCase() === 'r' && currentLevelType === 'singapore') {
                 const scene = currentScene;
-                // Find the level generator instance
                 const levelObjects = scene.meshes.find(mesh => mesh.levelGenerator);
                 if (levelObjects && levelObjects.levelGenerator instanceof SingaporeLevel) {
                     levelObjects.levelGenerator.toggleRain();

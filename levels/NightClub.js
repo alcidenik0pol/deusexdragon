@@ -7,6 +7,7 @@ import { NightclubLightEffect } from '../src/effects/NightclubLightEffect.js';
 import { NightclubPanelLightEffect } from '../src/effects/NightclubPanelLightEffect.js';
 import { Purple02F } from '../characters/purple02f.js';
 import baseNPCData from '../npcs/data/purple02f.js';
+import { DialogueManager } from '../src/dialogue/DialogueManager.js';
 
 export class NightClub extends LevelGenerator {
     // Define level boundaries/constraints
@@ -44,16 +45,7 @@ export class NightClub extends LevelGenerator {
         this.effectManager = new EffectManager(scene);
         this.characters = [];
         this.danceAnimations = ['dancing01', 'dancing02'];
-        this.npcs = []; // Add this to track NPCs for chat system
-
-        // Add event listener for NPC interactions
-        window.addEventListener('npc-chat-started', (event) => {
-            const { npcId, conversationId, npcName } = event.detail;
-            console.log(`Chat started with ${npcName} (${npcId}), conversation ID: ${conversationId}`);
-            // Here you would typically trigger your chat UI
-            // For example:
-            // this.showChatUI(npcId, conversationId, npcName);
-        });
+        this.dialogueManager = new DialogueManager(scene);
     }
 
     setupLighting() {
@@ -302,20 +294,22 @@ export class NightClub extends LevelGenerator {
             for (const config of npcPositions) {
                 const npc = new Purple02F(this.scene);
                 await npc.initialize();
-                npc.data.position = { 
-                    x: config.pos.x, 
-                    y: config.pos.y, 
-                    z: config.pos.z 
-                };
+                
                 npc.mesh.position = config.pos;
                 npc.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                     BABYLON.Vector3.Up(),
                     config.rot
                 );
+                
+                npc.name = config.name;
+                npc.interactionRadius = 5;
+                
                 this.characters.push(npc);
-                this.npcs.push(npc); // Add to npcs array for chat system
                 await npc.setAnimation(this.danceAnimations[Math.floor(Math.random() * 2)]);
             }
+
+            this.dialogueManager.registerNPCs(this.characters);
+            this.dialogueManager.initialize();
 
             this.startDanceAnimations();
 
@@ -326,13 +320,10 @@ export class NightClub extends LevelGenerator {
         const result = {
             ground: floor.mesh,
             walls: [southWall.mesh, northWall.mesh, eastWall.mesh, westWall.mesh],
-            cellSize: 1,
-            npcs: this.npcs // Add NPCs to the return object
+            cellSize: 1
         };
 
-        // Store reference to level generator on ground mesh
         result.ground.levelGenerator = this;
-
         return result;
     }
 
@@ -353,6 +344,7 @@ export class NightClub extends LevelGenerator {
                 character.mesh?.dispose();
             });
         }
+        this.dialogueManager.dispose();
         super.dispose();
     }
 } 
