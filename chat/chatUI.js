@@ -306,16 +306,31 @@ export class ChatUI {
             console.log("No NPC selected for conversation");
             return;
         }
+
+        // Stop character movement and reset keys before showing UI
+        const stopMovementEvent = new CustomEvent('stopCharacterMovement');
+        window.dispatchEvent(stopMovementEvent);
+
+        // Lock player controls
+        const lockControlsEvent = new CustomEvent('lockPlayerControls', { detail: true });
+        window.dispatchEvent(lockControlsEvent);
+
         this.container.style.display = 'block';
         this.isVisible = true;
         ChatUI.isActive = true;
         
         // Focus camera on NPC
-        if (window.gameCamera) {  // Assuming gameCamera is accessible globally
+        if (window.gameCamera) {
             window.gameCamera.focusOnNPC(this.currentNPC);
         }
         
-        this.textArea.focus();
+        // Focus on the text area
+        setTimeout(() => {
+            this.textArea.focus();
+        }, 0);
+
+        // Prevent 'E' from being added to the text area only during activation
+        document.addEventListener('keydown', this.preventEKeyDuringActivation, true);
     }
 
     hide() {
@@ -328,6 +343,20 @@ export class ChatUI {
             if (window.gameCamera) {
                 window.gameCamera.clearNPCFocus();
             }
+
+            // Unlock player controls
+            const event = new CustomEvent('lockPlayerControls', { detail: false });
+            window.dispatchEvent(event);
+
+            // Remove 'E' key prevention
+            document.removeEventListener('keydown', this.preventEKeyDuringActivation, true);
+        }
+    }
+
+    preventEKeyDuringActivation(e) {
+        if (e.key === 'e' && !this.isVisible) {
+            e.stopPropagation();
+            e.preventDefault();
         }
     }
 

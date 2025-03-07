@@ -31,6 +31,7 @@ export class DialogueManager {
         if (nearbyNPC) {
             this.chatUI.setNPC(nearbyNPC);
             this.chatUI.show();
+            this.lockPlayerControls(true);
         } else {
             console.log("No NPCs nearby. Get closer to talk to someone!");
         }
@@ -80,6 +81,11 @@ export class DialogueManager {
         console.log(`Closest NPC: ${closestNPC?.name}, Distance: ${closestDistance}, Radius: ${interactionRadius}`);
         
         return closestDistance <= interactionRadius ? closestNPC : null;
+    }
+
+    lockPlayerControls(lock) {
+        const event = new CustomEvent('lockPlayerControls', { detail: lock });
+        window.dispatchEvent(event);
     }
 
     dispose() {

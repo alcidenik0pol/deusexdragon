@@ -90,7 +90,7 @@ export class GameCamera {
 
     setupMouseControl() {
         this.scene.onPointerMove = (evt) => {
-            if (this.scene.getEngine().isPointerLock) {
+            if (ChatUI.isActive || this.scene.getEngine().isPointerLock) {
                 this.camera.rotation.y += evt.movementX * this.mouseSensitivityX;
                 this.camera.rotation.x += evt.movementY * this.mouseSensitivityY;
                 

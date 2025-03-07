@@ -53,6 +53,7 @@
         import { TestCameraCollision } from './levels/testCameraCollision.js';
         import { NightClub } from './levels/NightClub.js';
         import { TestNewMeshes } from './levels/TestNewMeshes.js';
+        import { DebugControls } from './debugControls.js';
         
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true);
@@ -81,7 +82,11 @@
                                               canvas.mozRequestPointerLock || 
                                               canvas.webkitRequestPointerLock;
                     if (canvas.requestPointerLock) {
-                        canvas.requestPointerLock();
+                        try {
+                            canvas.requestPointerLock();
+                        } catch (error) {
+                            console.error("Pointer lock request failed:", error);
+                        }
                     }
                 }
             };
@@ -165,37 +170,6 @@
             return scene;
         };
 
-        window.addEventListener("keydown", async (e) => {
-            if (e.key.toLowerCase() === 'l') {
-                // Prompt for level name
-                const newLevel = prompt(
-                    `Enter level name (${availableLevels.join(', ')}):`,
-                    currentLevelType
-                );
-                
-                if (newLevel && 
-                    availableLevels.includes(newLevel.toLowerCase()) && 
-                    newLevel.toLowerCase() !== currentLevelType) {
-                    
-                    currentLevelType = newLevel.toLowerCase();
-                    
-                    if (currentScene) {
-                        currentScene.dispose();
-                    }
-                    currentScene = await createScene(currentLevelType);
-                }
-            }
-            
-            // Keep rain toggle handler
-            if (e.key.toLowerCase() === 'r' && currentLevelType === 'singapore') {
-                const scene = currentScene;
-                const levelObjects = scene.meshes.find(mesh => mesh.levelGenerator);
-                if (levelObjects && levelObjects.levelGenerator instanceof SingaporeLevel) {
-                    levelObjects.levelGenerator.toggleRain();
-                }
-            }
-        });
-
         const main = async () => {
             currentScene = await createScene(currentLevelType);
             engine.runRenderLoop(() => {
@@ -203,6 +177,9 @@
                     currentScene.render();
                 }
             });
+
+            // Initialize debug controls
+            new DebugControls();
         };
 
         main();

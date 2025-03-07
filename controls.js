@@ -18,8 +18,18 @@ export class Controls {
         this.backwardSpeed = this.baseMoveSpeed * 0.25; // Backward speed (25% of base)
         this.strafeSpeed = this.baseMoveSpeed * 0.75;   // Strafe speed (75% of base)
         
+        this.movementLocked = false;  // Add a flag to lock movement
+
         this.setupKeyboardControls();
         this.setupMovementLoop();
+
+        window.addEventListener('lockPlayerControls', (e) => {
+            this.movementLocked = e.detail;
+        });
+
+        window.addEventListener('stopCharacterMovement', () => {
+            this.stopCharacterMovement();
+        });
     }
 
     setAllCharactersInvisible() {
@@ -38,9 +48,20 @@ export class Controls {
         this.rightCharacter.position = newPosition;
     }
 
+    stopCharacterMovement() {
+        // Reset all movement keys
+        this.keys = { w: false, a: false, s: false, d: false };
+        this.setAllCharactersInvisible();
+        this.idleCharacter.setEnabled(true);
+        this.currentCharacter = this.idleCharacter;
+    }
+
     setupKeyboardControls() {
         window.addEventListener("keydown", (e) => {
-            if (ChatUI.isActive && e.key !== "e") return;
+            // Allow 'E' key to be typed in the text area when chat UI is active
+            if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
+
+            if (this.movementLocked || (ChatUI.isActive && e.key !== "e")) return;
             
             if (e.key in this.keys) {
                 this.keys[e.key] = true;
@@ -69,7 +90,10 @@ export class Controls {
         });
 
         window.addEventListener("keyup", (e) => {
-            if (ChatUI.isActive && e.key !== "e") return;
+            // Allow 'E' key to be typed in the text area when chat UI is active
+            if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
+
+            if (this.movementLocked || (ChatUI.isActive && e.key !== "e")) return;
             
             if (e.key in this.keys) {
                 this.keys[e.key] = false;
