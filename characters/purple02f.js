@@ -21,6 +21,29 @@ export class Purple02F extends NPCBase {
 
         this.mesh = result.meshes[0];
         this.setupMesh(result);
+
+        // Add interaction trigger for NPC
+        const actionManager = new BABYLON.ActionManager(this.scene);
+        this.mesh.actionManager = actionManager;
+        
+        actionManager.registerAction(
+            new BABYLON.ExecuteCodeAction(
+                BABYLON.ActionManager.OnPickTrigger,
+                async () => {
+                    const conversationId = await this.startConversation();
+                    // Emit an event that the chat UI can listen to
+                    const event = new CustomEvent('npc-chat-started', {
+                        detail: {
+                            npcId: this.id,
+                            conversationId: conversationId,
+                            npcName: this.name
+                        }
+                    });
+                    window.dispatchEvent(event);
+                }
+            )
+        );
+
         return this;
     }
 

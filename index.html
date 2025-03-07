@@ -141,7 +141,7 @@
                     levelGenerator = new LevelGenerator(scene);
             }
             
-            const { ground, walls, cellSize } = await levelGenerator.createLevel();
+            const { ground, walls, cellSize, npcs: levelNpcs } = await levelGenerator.createLevel();
 
             // Load characters ONCE
             const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter } = await loadCharacters(scene);
@@ -171,6 +171,8 @@
             if (levelType === 'ladiesroom') {
                 const npc1 = await loadNPC1(scene);
                 npcs.push(npc1);
+            } else if (levelType === 'nightclub' && levelNpcs) {
+                npcs = levelNpcs; // Use NPCs from nightclub level
             }
 
             // Chat UI setup

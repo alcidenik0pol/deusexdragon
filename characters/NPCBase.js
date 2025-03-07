@@ -54,7 +54,17 @@ export class NPCBase {
         }
 
         try {
+            // Store current position and rotation before loading new model
+            const currentPosition = this.mesh ? this.mesh.position.clone() : null;
+            const currentRotation = this.mesh ? this.mesh.rotationQuaternion.clone() : null;
+
             await this.loadModel(animationName);
+
+            // Restore position and rotation after loading new model
+            if (currentPosition && currentRotation) {
+                this.mesh.position = currentPosition;
+                this.mesh.rotationQuaternion = currentRotation;
+            }
         } catch (error) {
             console.error(`Failed to set animation ${animationName}:`, error);
             // Fallback to default animation if available
