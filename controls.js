@@ -61,7 +61,7 @@ export class Controls {
             // Allow 'E' key to be typed in the text area when chat UI is active
             if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
 
-            if (this.movementLocked || (ChatUI.isActive && e.key !== "e")) return;
+            if (this.movementLocked) return;
             
             if (e.key in this.keys) {
                 this.keys[e.key] = true;
@@ -93,7 +93,7 @@ export class Controls {
             // Allow 'E' key to be typed in the text area when chat UI is active
             if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
 
-            if (this.movementLocked || (ChatUI.isActive && e.key !== "e")) return;
+            if (this.movementLocked) return;
             
             if (e.key in this.keys) {
                 this.keys[e.key] = false;

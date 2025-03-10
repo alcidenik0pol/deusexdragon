@@ -1,24 +1,65 @@
+import { Minimap } from './src/ui/Minimap.js';
+
 export class LevelGenerator {
-    constructor(scene) {
+    // Default level boundaries - can be overridden by child classes
+    static LEVEL_BOUNDS = {
+        floor: {
+            y: 0,
+            width: 100,
+            length: 100
+        },
+        ceiling: {
+            y: 10,
+            width: 100,
+            length: 100
+        },
+        walls: {
+            height: 10,
+            positions: {
+                north: new BABYLON.Vector3(0, 5, 50),
+                south: new BABYLON.Vector3(0, 5, -50),
+                east: new BABYLON.Vector3(50, 5, 0),
+                west: new BABYLON.Vector3(-50, 5, 0)
+            }
+        },
+        room: {
+            width: 100,
+            length: 100,
+            height: 10
+        }
+    };
+
+    // Default configuration - can be overridden by child classes
+    static DEFAULT_CONFIG = {
+        cellSize: 4,
+        mazeSize: 16,
+        lightIntensity: 1.0,
+        lightPosition: new BABYLON.Vector3(0, 1, 0)
+    };
+
+    constructor(scene, config = {}) {
         this.scene = scene;
-        this.mazeSize = 16;
-        this.cellSize = 4;
+        this.config = { ...LevelGenerator.DEFAULT_CONFIG, ...config };
+        this.mazeSize = this.config.mazeSize;
+        this.cellSize = this.config.cellSize;
         this.walls = [];
+        this.components = [];
+        this.minimap = new Minimap(scene);
+        window.currentLevel = this;
     }
 
     setupLighting() {
-        // Default bright overhead lighting
         const light = new BABYLON.HemisphericLight(
             "defaultLight", 
-            new BABYLON.Vector3(0, 1, 0),  // Directly overhead
+            this.config.lightPosition,
             this.scene
         );
-        light.intensity = 1.0;
+        light.intensity = this.config.lightIntensity;
         return light;
     }
 
     createProceduralTextures() {
-        // Floor texture
+        // Default textures - can be overridden
         const floorTexture = new BABYLON.DynamicTexture("floorTex", 512, this.scene);
         const floorCtx = floorTexture.getContext();
         floorCtx.fillStyle = "#8B4513";
@@ -34,7 +75,6 @@ export class LevelGenerator {
         }
         floorTexture.update();
 
-        // Wall texture
         const wallTexture = new BABYLON.DynamicTexture("wallTex", 512, this.scene);
         const wallCtx = wallTexture.getContext();
         wallCtx.fillStyle = "#666633";
@@ -49,71 +89,76 @@ export class LevelGenerator {
     }
 
     generateDefaultMaze() {
+        // Default empty maze with boundaries - can be overridden
         const maze = Array(this.mazeSize).fill().map(() => Array(this.mazeSize).fill(false));
-
-        // Outer boundaries
+        
+        // Outer boundaries only
         for (let i = 0; i < this.mazeSize; i++) {
             maze[0][i] = maze[this.mazeSize-1][i] = true;
             maze[i][0] = maze[i][this.mazeSize-1] = true;
         }
 
-        // Central open area (6-9)
-        for (let x = 6; x <= 9; x++) {
-            for (let z = 6; z <= 9; z++) {
-                maze[x][z] = false;
-            }
-        }
-
-        // Random walls
-        for (let x = 1; x < this.mazeSize-1; x++) {
-            for (let z = 1; z < this.mazeSize-1; z++) {
-                if (x < 6 || x > 9 || z < 6 || z > 9) {
-                    maze[x][z] = Math.random() < 0.15;
-                }
-            }
-        }
-
         return maze;
     }
 
+    createGround(bounds = LevelGenerator.LEVEL_BOUNDS.floor) {
+        const ground = BABYLON.MeshBuilder.CreateGround("ground", 
+            { width: bounds.width, height: bounds.length }, 
+            this.scene
+        );
+        ground.position.y = bounds.y;
+        return ground;
+    }
+
+    createWalls(bounds = LevelGenerator.LEVEL_BOUNDS.walls) {
+        return []; // Default implementation returns no walls - override in child classes
+    }
+
     async createLevel() {
+        const bounds = this.constructor.LEVEL_BOUNDS;
+        
         // Setup lighting first
         const light = this.setupLighting();
 
+        // Create textures
         const { floorTexture, wallTexture } = this.createProceduralTextures();
-        const maze = this.generateDefaultMaze();
 
-        // Ground
-        const ground = BABYLON.MeshBuilder.CreateGround("ground", 
-            { width: this.mazeSize * this.cellSize, height: this.mazeSize * this.cellSize }, this.scene);
-        ground.position.y = -0.1;
+        // Create ground
+        const ground = this.createGround(bounds.floor);
         ground.material = new BABYLON.StandardMaterial("groundMat", this.scene);
         ground.material.diffuseTexture = floorTexture;
 
-        // Walls
-        const wallMat = new BABYLON.StandardMaterial("wallMat", this.scene);
-        wallMat.diffuseTexture = wallTexture;
-        
-        for (let x = 0; x < this.mazeSize; x++) {
-            for (let z = 0; z < this.mazeSize; z++) {
-                if (maze[x][z]) {
-                    const wall = BABYLON.MeshBuilder.CreateBox("wall", 
-                        { width: this.cellSize, height: this.cellSize, depth: this.cellSize }, this.scene);
-                    wall.position = new BABYLON.Vector3(
-                        (x - this.mazeSize/2 + 0.5) * this.cellSize,
-                        this.cellSize/2,
-                        (z - this.mazeSize/2 + 0.5) * this.cellSize
-                    );
-                    wall.material = wallMat;
-                    this.walls.push(wall);
-                }
-            }
-        }
+        // Create walls
+        const walls = this.createWalls(bounds.walls);
 
-        return {
+        // Store result
+        const result = {
             ground,
-            walls: this.walls,
-            cellSize: this.cellSize
+            walls,
+            cellSize: this.cellSize,
+            bounds
         };
+
+        result.ground.levelGenerator = this;
+        return result;
+    }
+
+    dispose() {
+        // Clean up walls
+        this.walls.forEach(wall => {
+            if (wall) wall.dispose();
+        });
+        this.walls = [];
+
+        // Clean up components
+        this.components?.forEach(component => {
+            if (component?.dispose) component.dispose();
+        });
+        this.components = [];
+
+        // Clean up minimap
+        if (this.minimap) {
+            this.minimap.dispose();
+        }
     }
 } 

@@ -1,5 +1,6 @@
 import { LevelGenerator } from '../levelGenerator.js';
 import { EffectManager } from '../src/effects/EffectManager.js';
+import { Minimap } from '../src/ui/Minimap.js';
 
 export class Singapore2Level extends LevelGenerator {
     constructor(scene) {
@@ -11,6 +12,13 @@ export class Singapore2Level extends LevelGenerator {
         // Initialize effect manager
         this.effectManager = new EffectManager(scene);
         this.flyingCars = [];  // Array to store flying cars
+        
+        // Initialize minimap
+        this.minimap = new Minimap(scene);
+        
+        // Assign this instance to window.currentLevel
+        window.currentLevel = this;
+        console.log("Singapore2Level initialized, currentLevel set:", window.currentLevel);
     }
 
     generateDefaultMaze() {
@@ -210,6 +218,12 @@ export class Singapore2Level extends LevelGenerator {
         this.effectManager.removeEffect('fog');
         this.effectManager.removeEffect('volumetricLight');
         this.effectManager.removeEffect('rain');
+        
+        // Clean up minimap
+        if (this.minimap) {
+            this.minimap.dispose();
+        }
+        
         super.dispose();
     }
 } 
