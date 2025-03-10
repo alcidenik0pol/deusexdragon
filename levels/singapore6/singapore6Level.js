@@ -1,22 +1,8 @@
 import { LevelGenerator } from '../../levelGenerator.js';
 import { UOBBuilding } from './buildings.js';
+import { WORLD_CONFIG } from '../../config.js';
 
 export class Singapore6Level extends LevelGenerator {
-    // Override default bounds if needed
-    static LEVEL_BOUNDS = {
-        ...LevelGenerator.LEVEL_BOUNDS,
-        floor: {
-            y: 0,
-            width: 80,  // Custom size
-            length: 80
-        },
-        room: {
-            width: 80,
-            length: 80,
-            height: 8
-        }
-    };
-
     constructor(scene, config = {}) {
         const customConfig = {
             ...LevelGenerator.DEFAULT_CONFIG,
@@ -33,9 +19,15 @@ export class Singapore6Level extends LevelGenerator {
         const uobBuilding = new UOBBuilding();
         await uobBuilding.initialize(this.scene);
         
-        // Position the building (you can adjust these coordinates as needed)
-        uobBuilding.mesh.position = new BABYLON.Vector3(0, 0, 0);
-        uobBuilding.collisionMesh.position = uobBuilding.mesh.position;
+        // Move the building away from the spawn point
+        const buildingPosition = new BABYLON.Vector3(
+            WORLD_CONFIG.GRID_CELL_SIZE * 20,  // 20 cells to the right
+            0,
+            WORLD_CONFIG.GRID_CELL_SIZE * 20   // 20 cells forward
+        );
+        
+        uobBuilding.mesh.position = buildingPosition;
+        uobBuilding.collisionMesh.position = buildingPosition;
         
         // Add to components array for proper cleanup
         this.components.push(uobBuilding);

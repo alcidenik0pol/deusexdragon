@@ -6,27 +6,27 @@ export class LevelGenerator {
     static LEVEL_BOUNDS = {
         floor: {
             y: 0,
-            width: WORLD_CONFIG.GRID_CELL_SIZE * 100,
-            length: WORLD_CONFIG.GRID_CELL_SIZE * 100
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 100,  // 100 meters wide
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 100  // 100 meters long
         },
         ceiling: {
-            y: WORLD_CONFIG.GRID_CELL_SIZE * 10,
-            width: WORLD_CONFIG.GRID_CELL_SIZE * 100,
-            length: WORLD_CONFIG.GRID_CELL_SIZE * 100
+            y: WORLD_CONFIG.GRID_CELL_SIZE * 3,
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 20,
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 20
         },
         walls: {
-            height: WORLD_CONFIG.GRID_CELL_SIZE * 10,
+            height: WORLD_CONFIG.GRID_CELL_SIZE * 3,
             positions: {
-                north: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 5, WORLD_CONFIG.GRID_CELL_SIZE * 50),
-                south: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 5, -WORLD_CONFIG.GRID_CELL_SIZE * 50),
-                east: new BABYLON.Vector3(WORLD_CONFIG.GRID_CELL_SIZE * 50, WORLD_CONFIG.GRID_CELL_SIZE * 5, 0),
-                west: new BABYLON.Vector3(-WORLD_CONFIG.GRID_CELL_SIZE * 50, WORLD_CONFIG.GRID_CELL_SIZE * 5, 0)
+                north: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 1.5, WORLD_CONFIG.GRID_CELL_SIZE * 10),
+                south: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 1.5, -WORLD_CONFIG.GRID_CELL_SIZE * 10),
+                east: new BABYLON.Vector3(WORLD_CONFIG.GRID_CELL_SIZE * 10, WORLD_CONFIG.GRID_CELL_SIZE * 1.5, 0),
+                west: new BABYLON.Vector3(-WORLD_CONFIG.GRID_CELL_SIZE * 10, WORLD_CONFIG.GRID_CELL_SIZE * 1.5, 0)
             }
         },
         room: {
-            width: WORLD_CONFIG.GRID_CELL_SIZE * 100,
-            length: WORLD_CONFIG.GRID_CELL_SIZE * 100,
-            height: WORLD_CONFIG.GRID_CELL_SIZE * 10
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 20,
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 20,
+            height: WORLD_CONFIG.GRID_CELL_SIZE * 3
         }
     };
 
@@ -60,49 +60,50 @@ export class LevelGenerator {
     }
 
     createProceduralTextures() {
-        const textureSize = 2048;
+        const textureSize = 4096;  // Increased resolution
         const floorTexture = new BABYLON.DynamicTexture("floorTex", textureSize, this.scene);
         const floorCtx = floorTexture.getContext();
         
-        // Light grey background
-        floorCtx.fillStyle = "#E0E0E0";
+        // White background
+        floorCtx.fillStyle = "#FFFFFF";
         floorCtx.fillRect(0, 0, textureSize, textureSize);
         
-        // Darker lines for better visibility
-        floorCtx.strokeStyle = "#CCCCCC";
-        floorCtx.lineWidth = 2;
-        
-        // Scale lines based on floor dimensions
+        // Calculate pixels per grid cell
         const bounds = this.constructor.LEVEL_BOUNDS.floor;
-        const pixelsPerCell = textureSize / bounds.width; // One cell = one meter
+        const gridCells = 100;
+        const pixelsPerCell = textureSize / gridCells;
         
-        // Draw vertical lines
-        for (let x = 0; x <= bounds.width; x++) {
-            const xPos = x * pixelsPerCell;
-            floorCtx.beginPath();
-            floorCtx.moveTo(xPos, 0);
-            floorCtx.lineTo(xPos, textureSize);
-            floorCtx.stroke();
+        // Draw grid and numbers
+        floorCtx.strokeStyle = "#000000";
+        floorCtx.lineWidth = 4;  // Thicker lines
+        floorCtx.font = `bold ${pixelsPerCell/2}px Arial`;  // Bigger, bold font
+        floorCtx.textAlign = "center";
+        floorCtx.textBaseline = "middle";
+        
+        let cellNumber = 0;
+        
+        // Draw vertical and horizontal lines + cell numbers
+        for (let x = 0; x < gridCells; x++) {
+            for (let z = 0; z < gridCells; z++) {
+                const xPos = x * pixelsPerCell;
+                const zPos = z * pixelsPerCell;
+                
+                // Draw cell borders
+                floorCtx.strokeRect(xPos, zPos, pixelsPerCell, pixelsPerCell);
+                
+                // Draw cell number
+                cellNumber++;
+                floorCtx.fillStyle = "#000000";
+                floorCtx.fillText(
+                    cellNumber.toString(),
+                    xPos + pixelsPerCell/2,
+                    zPos + pixelsPerCell/2
+                );
+            }
         }
         
-        // Draw horizontal lines
-        for (let z = 0; z <= bounds.length; z++) {
-            const zPos = z * pixelsPerCell;
-            floorCtx.beginPath();
-            floorCtx.moveTo(0, zPos);
-            floorCtx.lineTo(textureSize, zPos);
-            floorCtx.stroke();
-        }
         floorTexture.update();
-
-        // Keep existing wall texture
-        const wallTexture = new BABYLON.DynamicTexture("wallTex", textureSize, this.scene);
-        const wallCtx = wallTexture.getContext();
-        wallCtx.fillStyle = "#666633";
-        wallCtx.fillRect(0, 0, textureSize, textureSize);
-        wallTexture.update();
-
-        return { floorTexture, wallTexture };
+        return { floorTexture };
     }
 
     generateDefaultMaze() {
@@ -118,7 +119,7 @@ export class LevelGenerator {
         return maze;
     }
 
-    createGround(bounds = LevelGenerator.LEVEL_BOUNDS.floor) {
+    createGround(bounds = this.constructor.LEVEL_BOUNDS.floor) {
         const ground = BABYLON.MeshBuilder.CreateGround("ground", 
             { width: bounds.width, height: bounds.length }, 
             this.scene
@@ -138,7 +139,7 @@ export class LevelGenerator {
         const light = this.setupLighting();
 
         // Create textures
-        const { floorTexture, wallTexture } = this.createProceduralTextures();
+        const { floorTexture } = this.createProceduralTextures();
 
         // Create ground
         const ground = this.createGround(bounds.floor);

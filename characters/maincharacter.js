@@ -38,33 +38,49 @@ export const loadCharacters = async (scene) => {
         // Get the standard dimensions from JSON
         const { width, height, depth } = characterData.standardDimensions;
         
-        // Apply standard dimensions to all character states
-        [
-            idleCharacterResult,
-            forwardCharacterResult,
-            backwardCharacterResult,
-            leftCharacterResult,
-            rightCharacterResult
-        ].forEach(result => {
-            const rootMesh = result.meshes[0];
-            rootMesh.scaling = new BABYLON.Vector3(width, height, depth);
-            rootMesh.position = new BABYLON.Vector3(0, 0, 0);
-            rootMesh.rotationQuaternion = BABYLON.Quaternion.Identity();
+// Apply standard dimensions to all character states
+// Apply standard dimensions to all character states
+[idleCharacterResult, forwardCharacterResult, backwardCharacterResult, 
+    leftCharacterResult, rightCharacterResult].forEach(result => {
+       const rootMesh = result.meshes[0];
+       
+       // Debug log the current dimensions
+       console.log("Raw model dimensions:", {
+           height: rootMesh.getBoundingInfo().boundingBox.maximumWorld.y - 
+                   rootMesh.getBoundingInfo().boundingBox.minimumWorld.y,
+           desired: characterData.standardDimensions.height
+       });
+       
+       // Use the scaleFactor from the metadata instead of calculating it
+       const scaleFactor = characterData.scaleFactor;
+       console.log("Using scaleFactor from metadata:", scaleFactor);
+       
+       // Apply uniform scaling to maintain proportions
+       rootMesh.scaling = new BABYLON.Vector3(scaleFactor, scaleFactor, scaleFactor);
+       
+       // Ensure the mesh is visible and positioned correctly
+       rootMesh.position = new BABYLON.Vector3(0, 0, 0);
+       rootMesh.visibility = 1;
+       rootMesh.isVisible = true;
+       
+       // Keep the rotation setup
+       rootMesh.rotationQuaternion = BABYLON.Quaternion.Identity();
 
-            // Apply material properties
-            result.meshes.forEach(mesh => {
-                if (mesh.material) {
-                    mesh.material.emissiveColor = BABYLON.Color3.Black();
-                    mesh.material.ambientColor = BABYLON.Color3.Black();
-                    mesh.material.needDepthPrePass = true;
-                    
-                    if (scene.name === "Singapore4Level") {
-                        mesh.material.specularColor = BABYLON.Color3.Black();
-                        mesh.material.ambientColor = new BABYLON.Color3(0.02, 0.02, 0.03);
-                    }
+        // Apply material properties
+        result.meshes.forEach(mesh => {
+            if (mesh.material) {
+                mesh.material.emissiveColor = BABYLON.Color3.Black();
+                mesh.material.ambientColor = BABYLON.Color3.Black();
+                mesh.material.needDepthPrePass = true;
+                mesh.material.alpha = 1; // Ensure material is not transparent
+                
+                if (scene.name === "Singapore4Level") {
+                    mesh.material.specularColor = BABYLON.Color3.Black();
+                    mesh.material.ambientColor = new BABYLON.Color3(0.02, 0.02, 0.03);
                 }
-            });
+            }
         });
+    });
 
         // Get references to the root meshes
         const idleCharacter = idleCharacterResult.meshes[0];
