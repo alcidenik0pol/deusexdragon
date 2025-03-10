@@ -2,13 +2,17 @@ export const loadCharacters = async (scene) => {
     try {
         console.log("Starting to load character models...");
         
-        // Load all character animations
+        // Load character metadata first
+        const characterData = await fetch('./assets/characters/pc/pc.json').then(r => r.json());
+        const basePath = "./assets/characters/pc/";
+        
+        // Load all character animations with updated paths
         const modelPromises = [
-            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_idle.glb", scene),
-            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_walk.glb", scene),
-            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_walkb.glb", scene),
-            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_sleft.glb", scene),
-            BABYLON.SceneLoader.ImportMeshAsync("", "./assets/", "pdenton_sright.glb", scene)
+            BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_idle.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_walk.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_walkb.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_sleft.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_sright.glb", scene)
         ];
 
         const results = await Promise.all(modelPromises.map(p => p.catch(error => {
@@ -29,24 +33,12 @@ export const loadCharacters = async (scene) => {
             rightCharacterResult
         ] = results;
 
-        console.log("All models loaded, extracting root meshes...");
+        console.log("All models loaded, applying standard dimensions...");
         
-        // Get the root mesh for each animation
-        const idleCharacter = idleCharacterResult.meshes[0];
-        const forwardCharacter = forwardCharacterResult.meshes[0];
-        const backwardCharacter = backwardCharacterResult.meshes[0];
-        const leftCharacter = leftCharacterResult.meshes[0];
-        const rightCharacter = rightCharacterResult.meshes[0];
-
-        // Verify all meshes exist
-        if (!idleCharacter || !forwardCharacter || !backwardCharacter || 
-            !leftCharacter || !rightCharacter) {
-            throw new Error("One or more character meshes are missing");
-        }
-
-        console.log("Applying material properties...");
-
-        // Apply material properties to all character meshes
+        // Get the standard dimensions from JSON
+        const { width, height, depth } = characterData.standardDimensions;
+        
+        // Apply standard dimensions to all character states
         [
             idleCharacterResult,
             forwardCharacterResult,
@@ -54,15 +46,18 @@ export const loadCharacters = async (scene) => {
             leftCharacterResult,
             rightCharacterResult
         ].forEach(result => {
+            const rootMesh = result.meshes[0];
+            rootMesh.scaling = new BABYLON.Vector3(width, height, depth);
+            rootMesh.position = new BABYLON.Vector3(0, 0, 0);
+            rootMesh.rotationQuaternion = BABYLON.Quaternion.Identity();
+
+            // Apply material properties
             result.meshes.forEach(mesh => {
                 if (mesh.material) {
                     mesh.material.emissiveColor = BABYLON.Color3.Black();
                     mesh.material.ambientColor = BABYLON.Color3.Black();
-                    
-                    // Enable material to work with shadows
                     mesh.material.needDepthPrePass = true;
                     
-                    // If we're in Singapore4Level, make materials more shadow-friendly
                     if (scene.name === "Singapore4Level") {
                         mesh.material.specularColor = BABYLON.Color3.Black();
                         mesh.material.ambientColor = new BABYLON.Color3(0.02, 0.02, 0.03);
@@ -71,50 +66,35 @@ export const loadCharacters = async (scene) => {
             });
         });
 
-        console.log("Setting up common properties...");
-
-        // Set up common properties for all character states
-        [
-            idleCharacter,
-            forwardCharacter,
-            backwardCharacter,
-            leftCharacter,
-            rightCharacter
-        ].forEach(char => {
-            char.scaling = new BABYLON.Vector3(1, 1, 1);
-            char.position = new BABYLON.Vector3(0, 0.1, 0);
-            char.rotationQuaternion = BABYLON.Quaternion.Identity();
-        });
+        // Get references to the root meshes
+        const idleCharacter = idleCharacterResult.meshes[0];
+        const forwardCharacter = forwardCharacterResult.meshes[0];
+        const backwardCharacter = backwardCharacterResult.meshes[0];
+        const leftCharacter = leftCharacterResult.meshes[0];
+        const rightCharacter = rightCharacterResult.meshes[0];
 
         // Add rotation update function to the scene's render loop
         scene.registerBeforeRender(() => {
             const camera = scene.getCameraByName("UniversalCamera");
             if (camera) {
-                // Get camera's horizontal rotation (yaw)
                 const yaw = camera.rotation.y;
-                
-                // Apply rotation to all character meshes
                 [idleCharacter, forwardCharacter, backwardCharacter, 
                  leftCharacter, rightCharacter].forEach(char => {
-                    // Rotate mesh to face away from camera's horizontal direction
                     char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                         BABYLON.Vector3.Up(),
-                        yaw  // Character follows camera's horizontal rotation
+                        yaw
                     );
                 });
             }
         });
 
-        console.log("Setting initial visibility states...");
-
-        // Start with idle animation visible, others hidden
+        // Set initial visibility states
         idleCharacter.setEnabled(true);
         forwardCharacter.setEnabled(false);
         backwardCharacter.setEnabled(false);
         leftCharacter.setEnabled(false);
         rightCharacter.setEnabled(false);
 
-        // Ensure the character mesh is named appropriately
         idleCharacter.name = "PlayerCharacter";
 
         console.log("Character loading complete!");

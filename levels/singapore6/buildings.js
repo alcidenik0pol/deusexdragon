@@ -22,22 +22,29 @@ export class UOBBuilding extends BaseComponent {
 
         this.mesh = result.meshes[0];
         
-        // Apply the standard dimensions from JSON
+        // Apply the scaleFactor from JSON (not the standardDimensions!)
         this.mesh.scaling = new BABYLON.Vector3(
-            this.dimensions.width,
-            this.dimensions.height,
-            this.dimensions.depth
+            buildingData.scaleFactor,
+            buildingData.scaleFactor,
+            buildingData.scaleFactor
         );
         
         this.mesh.position = this.position;
         this.mesh.rotationQuaternion = this.rotation;
 
-        // Set up collision box using the same dimensions
+        // Create collision box using standardDimensions
         this.collisionMesh = BABYLON.MeshBuilder.CreateBox("uob_collision", {
-            width: this.dimensions.width,
-            height: this.dimensions.height,
-            depth: this.dimensions.depth
+            width: 1,
+            height: 1,
+            depth: 1
         }, scene);
+        
+        // Scale the collision box instead of setting its dimensions
+        this.collisionMesh.scaling = new BABYLON.Vector3(
+            this.dimensions.width,
+            this.dimensions.height,
+            this.dimensions.depth
+        );
         
         this.collisionMesh.visibility = 0;
         this.collisionMesh.checkCollisions = true;
