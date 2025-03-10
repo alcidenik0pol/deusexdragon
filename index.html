@@ -30,6 +30,112 @@
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    
+    <script type="module">
+    import { loadCharacters } from './characters/maincharacter.js';
+    import { GameCamera } from './camera.js';
+    import { Controls } from './controls.js';
+    import { DebugControls } from './debugControls.js';
+    
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
+    const debugOverlay = document.getElementById("debugOverlay");
+
+    let currentScene = null;
+    let currentLevelType = 'singapore5';
+    let currentCharacter = null;
+
+    // Initialize debug controls at the start with the switchLevel callback
+    const debugControls = new DebugControls(async (newLevelType) => {
+        if (currentScene) {
+            currentScene.dispose();
+        }
+        currentLevelType = newLevelType;
+        currentScene = await createScene(currentLevelType);
+    });
+
+    const createScene = async (levelType = 'default') => {
+        const scene = new BABYLON.Scene(engine);
+        
+        // Create and configure camera
+        const gameCamera = new GameCamera(canvas, scene);
+        
+        // Use the existing instance's getLevelGenerator method
+        const levelGenerator = debugControls.getLevelGenerator(levelType, scene);
+        
+        // Enable pointer lock on scene click
+        scene.onPointerDown = () => {
+            if (!scene.getEngine().isPointerLock) {
+                canvas.requestPointerLock = canvas.requestPointerLock || 
+                                          canvas.msRequestPointerLock || 
+                                          canvas.mozRequestPointerLock || 
+                                          canvas.webkitRequestPointerLock;
+                if (canvas.requestPointerLock) {
+                    try {
+                        canvas.requestPointerLock();
+                    } catch (error) {
+                        console.error("Pointer lock request failed:", error);
+                    }
+                }
+            }
+        };
+
+        // Add pointer move event for camera control
+        scene.onPointerMove = (evt) => {
+            if (scene.getEngine().isPointerLock) {
+                gameCamera.camera.rotation.y += evt.movementX * 0.002;
+                gameCamera.camera.rotation.x += evt.movementY * 0.002;
+                
+                const upperLimit = Math.PI / 3;
+                const lowerLimit = -Math.PI / 3;
+                gameCamera.camera.rotation.x = Math.min(upperLimit, Math.max(lowerLimit, gameCamera.camera.rotation.x));
+            }
+        };
+
+        scene.name = levelType;
+
+        const { ground, walls, cellSize } = await levelGenerator.createLevel();
+
+        // Load characters ONCE
+        const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter } = await loadCharacters(scene);
+        
+        // Initialize controls with all character models
+        const controls = new Controls(
+            scene, 
+            idleCharacter, 
+            forwardCharacter, 
+            backwardCharacter, 
+            leftCharacter, 
+            rightCharacter, 
+            gameCamera
+        );
+
+        currentCharacter = controls.getCurrentCharacter();
+        gameCamera.setCharacter(currentCharacter);
+
+        // Scene settings
+        scene.ambientColor = BABYLON.Color3.Black();
+        scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+        scene.materialsNeedSceneLighting = true;
+
+        return scene;
+    };
+
+    const main = async () => {
+        currentScene = await createScene(currentLevelType);
+        engine.runRenderLoop(() => {
+            if (currentScene) {
+                currentScene.render();
+            }
+        });
+    };
+
+    main();
+
+    window.addEventListener("resize", () => {
+        engine.resize();
+    });
+    </script>
 </head>
 <body>
     <canvas id="renderCanvas"></canvas>
@@ -37,168 +143,5 @@
         Position: (0, 0, 0)<br>
         Rotation: 0
     </div>
-
-    <script type="module">
-        import { LevelGenerator } from './levelGenerator.js';
-        import { SingaporeLevel } from './levels/singaporeLevel.js';
-        import { Singapore2Level } from './levels/singapore2Level.js';
-        import { Singapore3Level } from './levels/singapore3Level.js';
-        import { LadiesRoomLevel } from './levels/ladiesRoomLevel.js';
-        import { loadCharacters } from './characters/maincharacter.js';
-        import { GameCamera } from './camera.js';
-        import { Controls } from './controls.js';
-        import { Singapore4Level } from './levels/singapore4Level.js';
-        import { NightTestLevel } from './levels/nightTestLevel.js';
-        import { ModernOfficeLevel } from './levels/ModernOfficeLevel.js';
-        import { TestCameraCollision } from './levels/testCameraCollision.js';
-        import { NightClub } from './levels/NightClub.js';
-        import { TestNewMeshes } from './levels/TestNewMeshes.js';
-        import { Singapore5Level } from './levels/singapore5/singapore5Level.js';
-        import { DebugControls } from './debugControls.js';
-        
-        const canvas = document.getElementById("renderCanvas");
-        const engine = new BABYLON.Engine(canvas, true);
-        const debugOverlay = document.getElementById("debugOverlay");
-
-        // Add level selection
-        let currentScene = null;
-        // let currentLevelType = 'default';  // Track current level type
-        let currentLevelType = 'singapore5';  // Change default level to singapore5 for testing
-        let currentCharacter = null;  // Define currentCharacter here
-
-        // Available levels list
-        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'singapore5', 'ladiesroom', 'nighttest', 'modernoffice', 'testcamera', 'nightclub', 'testnewmeshes'];
-
-        const createScene = async (levelType = 'default') => {
-            const scene = new BABYLON.Scene(engine);
-            
-            // Create and configure camera
-            const gameCamera = new GameCamera(canvas, scene);
-            
-            // Enable pointer lock on scene click
-            scene.onPointerDown = () => {
-                if (!scene.getEngine().isPointerLock) {
-                    canvas.requestPointerLock = canvas.requestPointerLock || 
-                                              canvas.msRequestPointerLock || 
-                                              canvas.mozRequestPointerLock || 
-                                              canvas.webkitRequestPointerLock;
-                    if (canvas.requestPointerLock) {
-                        try {
-                            canvas.requestPointerLock();
-                        } catch (error) {
-                            console.error("Pointer lock request failed:", error);
-                        }
-                    }
-                }
-            };
-
-            // Add pointer move event for camera control
-            scene.onPointerMove = (evt) => {
-                if (scene.getEngine().isPointerLock) {
-                    gameCamera.camera.rotation.y += evt.movementX * 0.002;
-                    gameCamera.camera.rotation.x += evt.movementY * 0.002;
-                    
-                    const upperLimit = Math.PI / 3;
-                    const lowerLimit = -Math.PI / 3;
-                    gameCamera.camera.rotation.x = Math.min(upperLimit, Math.max(lowerLimit, gameCamera.camera.rotation.x));
-                }
-            };
-
-            // Remove any reference to FollowCam
-            scene.name = levelType;  // Just use levelType as scene name
-
-            // Check the level type and instantiate the appropriate level generator
-            let levelGenerator;
-            switch (levelType) {
-                case 'singapore':
-                    levelGenerator = new SingaporeLevel(scene);
-                    break;
-                case 'singapore2':
-                    levelGenerator = new Singapore2Level(scene);
-                    break;
-                case 'singapore3':
-                    levelGenerator = new Singapore3Level(scene);
-                    break;
-                case 'singapore4':
-                    levelGenerator = new Singapore4Level(scene);
-                    break;
-                case 'singapore5':
-                    levelGenerator = new Singapore5Level(scene);
-                    break;
-                case 'ladiesroom':
-                    levelGenerator = new LadiesRoomLevel(scene);
-                    break;
-                case 'nighttest':
-                    levelGenerator = new NightTestLevel(scene);
-                    break;
-                case 'modernoffice':
-                    levelGenerator = new ModernOfficeLevel(scene);
-                    break;
-                case 'testcamera':
-                    levelGenerator = new TestCameraCollision(scene);
-                    break;
-                case 'nightclub':
-                    levelGenerator = new NightClub(scene);
-                    break;
-                case 'testnewmeshes':
-                    levelGenerator = new TestNewMeshes(scene);
-                    break;
-                default:
-                    levelGenerator = new LevelGenerator(scene);
-            }
-            
-            const { ground, walls, cellSize } = await levelGenerator.createLevel();
-
-            // Load characters ONCE
-            const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter } = await loadCharacters(scene);
-            
-            // Initialize controls with all character models
-            const controls = new Controls(
-                scene, 
-                idleCharacter, 
-                forwardCharacter, 
-                backwardCharacter, 
-                leftCharacter, 
-                rightCharacter, 
-                gameCamera
-            );
-
-            currentCharacter = controls.getCurrentCharacter();
-            gameCamera.setCharacter(currentCharacter);
-
-            // Scene settings
-            scene.ambientColor = BABYLON.Color3.Black();
-            scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
-            scene.materialsNeedSceneLighting = true;
-
-            return scene;
-        };
-
-        const main = async () => {
-            const switchLevel = async (newLevelType) => {
-                if (currentScene) {
-                    currentScene.dispose();
-                }
-                currentLevelType = newLevelType;
-                currentScene = await createScene(currentLevelType);
-            };
-
-            currentScene = await createScene(currentLevelType);
-            engine.runRenderLoop(() => {
-                if (currentScene) {
-                    currentScene.render();
-                }
-            });
-
-            // Initialize debug controls with the switchLevel callback
-            new DebugControls(switchLevel);
-        };
-
-        main();
-
-        window.addEventListener("resize", () => {
-            engine.resize();
-        });
-    </script>
 </body>
 </html>

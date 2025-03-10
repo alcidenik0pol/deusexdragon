@@ -1,40 +1,41 @@
 import { Minimap } from './src/ui/Minimap.js';
+import { WORLD_CONFIG } from './config.js';
 
 export class LevelGenerator {
     // Default level boundaries - can be overridden by child classes
     static LEVEL_BOUNDS = {
         floor: {
             y: 0,
-            width: 100,
-            length: 100
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 100,
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 100
         },
         ceiling: {
-            y: 10,
-            width: 100,
-            length: 100
+            y: WORLD_CONFIG.GRID_CELL_SIZE * 10,
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 100,
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 100
         },
         walls: {
-            height: 10,
+            height: WORLD_CONFIG.GRID_CELL_SIZE * 10,
             positions: {
-                north: new BABYLON.Vector3(0, 5, 50),
-                south: new BABYLON.Vector3(0, 5, -50),
-                east: new BABYLON.Vector3(50, 5, 0),
-                west: new BABYLON.Vector3(-50, 5, 0)
+                north: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 5, WORLD_CONFIG.GRID_CELL_SIZE * 50),
+                south: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 5, -WORLD_CONFIG.GRID_CELL_SIZE * 50),
+                east: new BABYLON.Vector3(WORLD_CONFIG.GRID_CELL_SIZE * 50, WORLD_CONFIG.GRID_CELL_SIZE * 5, 0),
+                west: new BABYLON.Vector3(-WORLD_CONFIG.GRID_CELL_SIZE * 50, WORLD_CONFIG.GRID_CELL_SIZE * 5, 0)
             }
         },
         room: {
-            width: 100,
-            length: 100,
-            height: 10
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 100,
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 100,
+            height: WORLD_CONFIG.GRID_CELL_SIZE * 10
         }
     };
 
     // Default configuration - can be overridden by child classes
     static DEFAULT_CONFIG = {
-        cellSize: 4,
+        cellSize: WORLD_CONFIG.GRID_CELL_SIZE,
         mazeSize: 16,
         lightIntensity: 1.0,
-        lightPosition: new BABYLON.Vector3(0, 1, 0)
+        lightPosition: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE, 0)
     };
 
     constructor(scene, config = {}) {
@@ -59,30 +60,46 @@ export class LevelGenerator {
     }
 
     createProceduralTextures() {
-        // Default textures - can be overridden
-        const floorTexture = new BABYLON.DynamicTexture("floorTex", 512, this.scene);
+        const textureSize = 2048;
+        const floorTexture = new BABYLON.DynamicTexture("floorTex", textureSize, this.scene);
         const floorCtx = floorTexture.getContext();
-        floorCtx.fillStyle = "#8B4513";
-        floorCtx.fillRect(0, 0, 512, 512);
-        floorCtx.strokeStyle = "#654321";
-        for (let i = 0; i < 512; i += 64) {
+        
+        // Light grey background
+        floorCtx.fillStyle = "#E0E0E0";
+        floorCtx.fillRect(0, 0, textureSize, textureSize);
+        
+        // Darker lines for better visibility
+        floorCtx.strokeStyle = "#CCCCCC";
+        floorCtx.lineWidth = 2;
+        
+        // Scale lines based on floor dimensions
+        const bounds = this.constructor.LEVEL_BOUNDS.floor;
+        const pixelsPerCell = textureSize / bounds.width; // One cell = one meter
+        
+        // Draw vertical lines
+        for (let x = 0; x <= bounds.width; x++) {
+            const xPos = x * pixelsPerCell;
             floorCtx.beginPath();
-            floorCtx.moveTo(i, 0);
-            floorCtx.lineTo(i, 512);
-            floorCtx.moveTo(0, i);
-            floorCtx.lineTo(512, i);
+            floorCtx.moveTo(xPos, 0);
+            floorCtx.lineTo(xPos, textureSize);
+            floorCtx.stroke();
+        }
+        
+        // Draw horizontal lines
+        for (let z = 0; z <= bounds.length; z++) {
+            const zPos = z * pixelsPerCell;
+            floorCtx.beginPath();
+            floorCtx.moveTo(0, zPos);
+            floorCtx.lineTo(textureSize, zPos);
             floorCtx.stroke();
         }
         floorTexture.update();
 
-        const wallTexture = new BABYLON.DynamicTexture("wallTex", 512, this.scene);
+        // Keep existing wall texture
+        const wallTexture = new BABYLON.DynamicTexture("wallTex", textureSize, this.scene);
         const wallCtx = wallTexture.getContext();
         wallCtx.fillStyle = "#666633";
-        wallCtx.fillRect(0, 0, 512, 512);
-        for (let i = 0; i < 50; i++) {
-            wallCtx.fillStyle = `rgba(0,${Math.random()*255},0,0.3)`;
-            wallCtx.fillRect(Math.random()*512, Math.random()*512, 32, 32);
-        }
+        wallCtx.fillRect(0, 0, textureSize, textureSize);
         wallTexture.update();
 
         return { floorTexture, wallTexture };

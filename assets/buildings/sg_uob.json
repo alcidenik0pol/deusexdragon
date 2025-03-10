@@ -1,0 +1,20 @@
+{
+  "id": "sg_uob",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.7704956531524658,
+    "height": 0.9999258816242218,
+    "depth": 0.7424468398094177
+  },
+  "standardDimensions": {
+    "width": 11.558291479078187,
+    "height": 15,
+    "depth": 11.137528092633676
+  },
+  "scaleFactor": 15.001111858045785,
+  "gridFootprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "collisionType": "box"
+}

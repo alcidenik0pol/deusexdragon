@@ -1,6 +1,7 @@
-import { LevelGenerator } from './levelGenerator.js';
+import { LevelGenerator } from '../../levelGenerator.js';
+import { UOBBuilding } from './buildings.js';
 
-export class CustomLevel extends LevelGenerator {
+export class Singapore6Level extends LevelGenerator {
     // Override default bounds if needed
     static LEVEL_BOUNDS = {
         ...LevelGenerator.LEVEL_BOUNDS,
@@ -19,10 +20,27 @@ export class CustomLevel extends LevelGenerator {
     constructor(scene, config = {}) {
         const customConfig = {
             ...LevelGenerator.DEFAULT_CONFIG,
-            mazeSize: 20, // Only override maze size, NOT cell size
+            mazeSize: 20, // Keep this if needed
             ...config
         };
         super(scene, customConfig);
+    }
+
+    async createLevel() {
+        const result = await super.createLevel();
+        
+        // Add UOB building
+        const uobBuilding = new UOBBuilding();
+        await uobBuilding.initialize(this.scene);
+        
+        // Position the building (you can adjust these coordinates as needed)
+        uobBuilding.mesh.position = new BABYLON.Vector3(0, 0, 0);
+        uobBuilding.collisionMesh.position = uobBuilding.mesh.position;
+        
+        // Add to components array for proper cleanup
+        this.components.push(uobBuilding);
+
+        return result;
     }
 
     generateDefaultMaze() {
@@ -31,13 +49,10 @@ export class CustomLevel extends LevelGenerator {
         return maze;
     }
 
-    // Override any other methods as needed
     createWalls(bounds = this.constructor.LEVEL_BOUNDS.walls) {
         // Custom wall creation logic
         const walls = [];
         // Add your wall creation code here
         return walls;
     }
-
-    // Add any custom methods specific to this level
 } 

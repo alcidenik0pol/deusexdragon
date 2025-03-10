@@ -1,0 +1,39 @@
+{
+    "name": "Test Grid Level",
+    "metadata": {
+        "author": "Developer",
+        "version": "1.0"
+    },
+    "grid": {
+        "width": 20,
+        "height": 20,
+        "cells": [
+            {
+                "x": 5,
+                "y": 5,
+                "object": {
+                    "type": "BUILDING",
+                    "variant": "CORPORATE_HQ",
+                    "rotation": 0
+                }
+            },
+            {
+                "x": 8,
+                "y": 8,
+                "object": {
+                    "type": "VEHICLE_SPAWN",
+                    "variant": "FLYING_CAR",
+                    "direction": 90
+                }
+            }
+        ]
+    },
+    "paths": [
+        {
+            "id": "path1",
+            "type": "VEHICLE_PATH",
+            "points": [[8, 8], [8, 12], [12, 12], [12, 8]],
+            "height": 50
+        }
+    ]
+} 
