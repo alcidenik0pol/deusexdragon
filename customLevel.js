@@ -1,4 +1,5 @@
 import { LevelGenerator } from './levelGenerator.js';
+import { WORLD_CONFIG } from './config.js';
 
 export class CustomLevel extends LevelGenerator {
     // Override default bounds if needed
@@ -6,20 +7,20 @@ export class CustomLevel extends LevelGenerator {
         ...LevelGenerator.LEVEL_BOUNDS,
         floor: {
             y: 0,
-            width: 80,  // Custom size
-            length: 80
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 80,
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 80
         },
         room: {
-            width: 80,
-            length: 80,
-            height: 8
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 80,
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 80,
+            height: WORLD_CONFIG.GRID_CELL_SIZE * 8
         }
     };
 
     constructor(scene, config = {}) {
         const customConfig = {
             ...LevelGenerator.DEFAULT_CONFIG,
-            mazeSize: 20, // Only override maze size, NOT cell size
+            mazeSize: 80,  // Match the floor size
             ...config
         };
         super(scene, customConfig);
@@ -40,4 +41,9 @@ export class CustomLevel extends LevelGenerator {
     }
 
     // Add any custom methods specific to this level
+
+    setupSkybox() {
+        // Use parent's blue sky implementation for now
+        super.setupSkybox();
+    }
 } 

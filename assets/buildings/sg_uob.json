@@ -7,14 +7,17 @@
     "depth": 0.7424468398094177
   },
   "standardDimensions": {
-    "width": 11.558291479078187,
-    "height": 15,
-    "depth": 11.137528092633676
+    "width": 11.558291479078186,
+    "height": 14.999999999999996,
+    "depth": 11.137528092633673
   },
-  "scaleFactor": 15.001111858045785,
+  "scaleFactor": 15.001111858045782,
   "gridFootprint": {
     "width": 12,
     "depth": 12
   },
-  "collisionType": "box"
+  "collisionType": "box",
+  "sizeMultiplier": 1,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 1
 }

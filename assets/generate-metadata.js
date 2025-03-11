@@ -284,6 +284,9 @@ async function processGLBFile(filePath, category) {
       width: Math.ceil(standardDimensions.width),
       depth: Math.ceil(standardDimensions.depth)
     };
+
+    // Add sizeMultiplier with default value of 1
+    const sizeMultiplier = 1;
     
     return {
       filePath,
@@ -292,12 +295,40 @@ async function processGLBFile(filePath, category) {
       rawDimensions,
       standardDimensions,
       scaleFactor,
-      gridFootprint
+      gridFootprint,
+      sizeMultiplier
     };
   } catch (error) {
     console.error(`Error processing ${fileName}:`, error);
     return null;
   }
+}
+
+// Function to recalculate metadata when sizeMultiplier is changed
+function recalculateMetadata(metadata) {
+  // Create a deep copy of the metadata to avoid modifying the original
+  const updatedMetadata = JSON.parse(JSON.stringify(metadata));
+  
+  // Get the original dimensions before any size multiplier was applied
+  const originalScaleFactor = updatedMetadata.scaleFactor / updatedMetadata.sizeMultiplier;
+  
+  // Apply the new size multiplier to the scale factor
+  updatedMetadata.scaleFactor = originalScaleFactor * updatedMetadata.sizeMultiplier;
+  
+  // Recalculate standard dimensions
+  updatedMetadata.standardDimensions = {
+    width: updatedMetadata.rawDimensions.width * updatedMetadata.scaleFactor,
+    height: updatedMetadata.rawDimensions.height * updatedMetadata.scaleFactor,
+    depth: updatedMetadata.rawDimensions.depth * updatedMetadata.scaleFactor
+  };
+  
+  // Recalculate grid footprint
+  updatedMetadata.gridFootprint = {
+    width: Math.ceil(updatedMetadata.standardDimensions.width),
+    depth: Math.ceil(updatedMetadata.standardDimensions.depth)
+  };
+  
+  return updatedMetadata;
 }
 
 // Process character folder with multiple animations
@@ -348,11 +379,19 @@ async function processCharacterFolder(folderPath) {
     standardDimensions: baseModelData.standardDimensions,
     scaleFactor: baseModelData.scaleFactor,
     gridFootprint: baseModelData.gridFootprint,
-    collisionType: 'capsule'
+    collisionType: 'capsule',
+    sizeMultiplier: 1 // Default size multiplier
+  };
+  
+  // Add utility for recalculation
+  const metadataWithUtil = {
+    ...metadata,
+    // Add comment about how to use sizeMultiplier
+    _comment: "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
   };
   
   // Write metadata to file
-  fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+  fs.writeFileSync(metadataPath, JSON.stringify(metadataWithUtil, null, 2));
   console.log(`Created metadata for character ${characterName}`);
 }
 
@@ -386,11 +425,19 @@ async function processStandardAsset(filePath, category) {
     standardDimensions: assetData.standardDimensions,
     scaleFactor: assetData.scaleFactor,
     gridFootprint: assetData.gridFootprint,
-    collisionType: category === 'characters' ? 'capsule' : 'box'
+    collisionType: category === 'characters' ? 'capsule' : 'box',
+    sizeMultiplier: 1 // Default size multiplier
+  };
+  
+  // Add utility for recalculation
+  const metadataWithUtil = {
+    ...metadata,
+    // Add comment about how to use sizeMultiplier
+    _comment: "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
   };
   
   // Write metadata to file
-  fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+  fs.writeFileSync(metadataPath, JSON.stringify(metadataWithUtil, null, 2));
   console.log(`Created metadata for ${fileName}`);
 }
 

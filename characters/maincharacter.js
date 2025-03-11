@@ -71,7 +71,7 @@ export const loadCharacters = async (scene) => {
             if (mesh.material) {
                 mesh.material.emissiveColor = BABYLON.Color3.Black();
                 mesh.material.ambientColor = BABYLON.Color3.Black();
-                mesh.material.needDepthPrePass = true;
+                mesh.material.needDepthPrePass = false;
                 mesh.material.alpha = 1; // Ensure material is not transparent
                 
                 if (scene.name === "Singapore4Level") {
