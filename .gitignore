@@ -1,5 +1,6 @@
 # assets
 *.glb
+*.gltf
 *.fbx
 *.zip
 *.blend
