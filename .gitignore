@@ -1,5 +1,8 @@
 # assets
 *.glb
+!assets/characters/**/*.glb
+!assets/buildings/**/*.glb
+!assets/furniture/**/*.glb
 *.gltf
 *.fbx
 *.zip

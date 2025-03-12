@@ -1,0 +1,23 @@
+################
+#.1S.S.........#
+#.4S.S...W..2..#
+#.8S.S.........#
+#.6S.S.........#
+#.5S.S.........#
+#.3S.S.........#
+#..............#
+#.7............#
+################
+
+
+# = map border
+1 = sg_ful_high02
+2 = sg_mbs_low02
+3 = sg_capitas_high02
+4 = sg_parkview_high02
+5 = sg_ouc_high02
+6 = sg_republic_high02
+7 = sg_shops_high02
+8 = sg_uob_high02
+S = streetlight
+. = empty space

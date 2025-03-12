@@ -30,6 +30,7 @@
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
     <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.gridMaterial.min.js"></script>
     
     <script type="module">
     import { loadCharacters } from './characters/maincharacter.js';
@@ -97,7 +98,7 @@
         const { ground, walls, cellSize } = await levelGenerator.createLevel();
 
         // Load characters ONCE
-        const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter } = await loadCharacters(scene);
+        const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter } = await loadCharacters(scene);
         
         // Initialize controls with all character models
         const controls = new Controls(
@@ -107,6 +108,7 @@
             backwardCharacter, 
             leftCharacter, 
             rightCharacter, 
+            runCharacter,
             gameCamera
         );
 

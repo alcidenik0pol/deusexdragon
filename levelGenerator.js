@@ -38,7 +38,7 @@ export class LevelGenerator {
         lightIntensity: 1.0,
         lightPosition: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE, 0),
         skyboxSize: 1000,
-        skyColor: new BABYLON.Color3(0.4, 0.6, 1.0), // Light blue sky
+        skyColor: new BABYLON.Color3(0.2, 0.2, 0.2), // Dark grey sky
     };
 
     constructor(scene, config = {}) {
@@ -63,72 +63,23 @@ export class LevelGenerator {
         return light;
     }
 
-    createProceduralTextures() {
-        const textureSize = 4096;  // Increased resolution
-        const floorTexture = new BABYLON.DynamicTexture("floorTex", textureSize, this.scene);
-        const floorCtx = floorTexture.getContext();
-        
-        // White background
-        floorCtx.fillStyle = "#FFFFFF";
-        floorCtx.fillRect(0, 0, textureSize, textureSize);
-        
-        // Calculate pixels per grid cell based on actual world size
-        const bounds = this.constructor.LEVEL_BOUNDS.floor;
-        const gridCells = bounds.width / WORLD_CONFIG.GRID_CELL_SIZE;  // Use actual size
-        const pixelsPerCell = textureSize / gridCells;
-        
-        // Draw grid and numbers
-        floorCtx.strokeStyle = "#000000";
-        floorCtx.lineWidth = 4;  // Thicker lines
-        floorCtx.font = `bold ${pixelsPerCell/4}px Arial`;  // Reduced font size to 1/4 (was 1/2)
-        floorCtx.textAlign = "center";
-        floorCtx.textBaseline = "middle";
-        
-        let cellNumber = 0;
-        
-        // Draw vertical and horizontal lines + cell numbers
-        for (let x = 0; x < gridCells; x++) {
-            for (let z = 0; z < gridCells; z++) {
-                const xPos = x * pixelsPerCell;
-                const zPos = z * pixelsPerCell;
-                
-                // Draw cell borders
-                floorCtx.strokeRect(xPos, zPos, pixelsPerCell, pixelsPerCell);
-                
-                // Draw cell number
-                cellNumber++;
-                floorCtx.fillStyle = "#000000";
-                floorCtx.fillText(
-                    cellNumber.toString(),
-                    xPos + pixelsPerCell/2,
-                    zPos + pixelsPerCell/2
-                );
-            }
-        }
-        
-        floorTexture.update();
-        return { floorTexture };
-    }
-
-    generateDefaultMaze() {
-        // Default empty maze with boundaries - can be overridden
-        const maze = Array(this.mazeSize).fill().map(() => Array(this.mazeSize).fill(false));
-        
-        // Outer boundaries only
-        for (let i = 0; i < this.mazeSize; i++) {
-            maze[0][i] = maze[this.mazeSize-1][i] = true;
-            maze[i][0] = maze[i][this.mazeSize-1] = true;
-        }
-
-        return maze;
-    }
-
     createGround(bounds = this.constructor.LEVEL_BOUNDS.floor) {
         const ground = BABYLON.MeshBuilder.CreateGround("ground", 
             { width: bounds.width, height: bounds.length }, 
             this.scene
         );
         ground.position.y = bounds.y;
+
+        // Create and configure grid material
+        const gridMaterial = new BABYLON.GridMaterial("groundMaterial", this.scene);
+        gridMaterial.majorUnitFrequency = 1;
+        gridMaterial.minorUnitVisibility = 0;
+        gridMaterial.gridRatio = 1; // Match GRID_CELL_SIZE
+        gridMaterial.opacity = 1;
+        gridMaterial.lineColor = new BABYLON.Color3(1, 0.843, 0); // Gold lines (#FFD700)
+        gridMaterial.mainColor = new BABYLON.Color3(0.1, 0.1, 0.1); // Very dark gray, almost black
+        
+        ground.material = gridMaterial;
         return ground;
     }
 
@@ -169,13 +120,8 @@ export class LevelGenerator {
         // Setup skybox
         this.setupSkybox();
 
-        // Create textures
-        const { floorTexture } = this.createProceduralTextures();
-
-        // Create ground
+        // Create ground (now using GridMaterial)
         const ground = this.createGround(bounds.floor);
-        ground.material = new BABYLON.StandardMaterial("groundMat", this.scene);
-        ground.material.diffuseTexture = floorTexture;
 
         // Create walls
         const walls = this.createWalls(bounds.walls);

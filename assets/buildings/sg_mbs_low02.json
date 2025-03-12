@@ -1,0 +1,23 @@
+{
+  "id": "sg_mbs_low02",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.5292015373706818,
+    "height": 0.5149185955524445,
+    "depth": 0.9999895095825195
+  },
+  "standardDimensions": {
+    "width": 77.08036890805724,
+    "height": 75.00000000000001,
+    "depth": 145.6525630779056
+  },
+  "scaleFactor": 145.65409105012844,
+  "gridFootprint": {
+    "width": 78,
+    "depth": 146
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 5,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 5
+}

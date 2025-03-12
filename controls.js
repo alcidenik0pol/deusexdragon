@@ -1,22 +1,24 @@
 import { ChatUI } from './chat/chatUI.js';
 
 export class Controls {
-    constructor(scene, idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, gameCamera) {
+    constructor(scene, idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter, gameCamera) {
         this.scene = scene;
         this.idleCharacter = idleCharacter;
         this.forwardCharacter = forwardCharacter;
         this.backwardCharacter = backwardCharacter;
         this.leftCharacter = leftCharacter;
         this.rightCharacter = rightCharacter;
+        this.runCharacter = runCharacter;
         this.currentCharacter = idleCharacter;
         this.gameCamera = gameCamera;
         
         // Simple movement keys state
-        this.keys = { w: false, a: false, s: false, d: false };
+        this.keys = { w: false, a: false, s: false, d: false, shift: false };
         this.baseMoveSpeed = 0.04; // Base movement speed (reduced from 0.08)
         this.forwardSpeed = this.baseMoveSpeed * 0.75;  // Forward speed (75% of base)
         this.backwardSpeed = this.baseMoveSpeed * 0.25; // Backward speed (25% of base)
         this.strafeSpeed = this.baseMoveSpeed * 0.75;   // Strafe speed (75% of base)
+        this.sprintMultiplier = 8.0; // Added sprint multiplier
         
         this.movementLocked = false;  // Add a flag to lock movement
 
@@ -38,6 +40,7 @@ export class Controls {
         this.backwardCharacter.setEnabled(false);
         this.leftCharacter.setEnabled(false);
         this.rightCharacter.setEnabled(false);
+        this.runCharacter.setEnabled(false);
     }
 
     updateCharacterPositions(newPosition) {
@@ -46,11 +49,12 @@ export class Controls {
         this.backwardCharacter.position = newPosition;
         this.leftCharacter.position = newPosition;
         this.rightCharacter.position = newPosition;
+        this.runCharacter.position = newPosition;
     }
 
     stopCharacterMovement() {
         // Reset all movement keys
-        this.keys = { w: false, a: false, s: false, d: false };
+        this.keys = { w: false, a: false, s: false, d: false, shift: false };
         this.setAllCharactersInvisible();
         this.idleCharacter.setEnabled(true);
         this.currentCharacter = this.idleCharacter;
@@ -63,28 +67,35 @@ export class Controls {
 
             if (this.movementLocked) return;
             
-            if (e.key in this.keys) {
-                this.keys[e.key] = true;
+            if (e.key.toLowerCase() in this.keys) {
+                this.keys[e.key.toLowerCase()] = true;
                 this.setAllCharactersInvisible();
                 
-                // Show appropriate animation (swapped left and right)
-                switch(e.key) {
-                    case 'w':
-                        this.forwardCharacter.setEnabled(true);
-                        this.currentCharacter = this.forwardCharacter;
-                        break;
-                    case 's':
-                        this.backwardCharacter.setEnabled(true);
-                        this.currentCharacter = this.backwardCharacter;
-                        break;
-                    case 'a':
-                        this.rightCharacter.setEnabled(true);  // Swapped from leftCharacter
-                        this.currentCharacter = this.rightCharacter;  // Swapped
-                        break;
-                    case 'd':
-                        this.leftCharacter.setEnabled(true);   // Swapped from rightCharacter
-                        this.currentCharacter = this.leftCharacter;   // Swapped
-                        break;
+                // Only set character animations for WASD keys
+                if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
+                    switch(e.key.toLowerCase()) {
+                        case 'w':
+                            if (this.keys.shift) {
+                                this.runCharacter.setEnabled(true);
+                                this.currentCharacter = this.runCharacter;
+                            } else {
+                                this.forwardCharacter.setEnabled(true);
+                                this.currentCharacter = this.forwardCharacter;
+                            }
+                            break;
+                        case 's':
+                            this.backwardCharacter.setEnabled(true);
+                            this.currentCharacter = this.backwardCharacter;
+                            break;
+                        case 'a':
+                            this.rightCharacter.setEnabled(true);  // Swapped from leftCharacter
+                            this.currentCharacter = this.rightCharacter;  // Swapped
+                            break;
+                        case 'd':
+                            this.leftCharacter.setEnabled(true);   // Swapped from rightCharacter
+                            this.currentCharacter = this.leftCharacter;   // Swapped
+                            break;
+                    }
                 }
             }
         });
@@ -95,15 +106,25 @@ export class Controls {
 
             if (this.movementLocked) return;
             
-            if (e.key in this.keys) {
-                this.keys[e.key] = false;
+            if (e.key.toLowerCase() in this.keys) {
+                this.keys[e.key.toLowerCase()] = false;
                 
-                // If no movement keys are pressed, return to idle
-                if (!Object.values(this.keys).some(key => key)) {
-                    this.setAllCharactersInvisible();
-                    this.idleCharacter.setEnabled(true);
-                    this.currentCharacter = this.idleCharacter;
+                // Only handle character state for WASD keys
+                if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
+                    // If no movement keys are pressed, return to idle
+                    if (!Object.values(this.keys).some(key => key)) {
+                        this.setAllCharactersInvisible();
+                        this.idleCharacter.setEnabled(true);
+                        this.currentCharacter = this.idleCharacter;
+                    }
                 }
+            }
+
+            if (e.key.toLowerCase() === 'shift' && this.keys.w) {
+                // Switch from run to walk animation when releasing shift
+                this.setAllCharactersInvisible();
+                this.forwardCharacter.setEnabled(true);
+                this.currentCharacter = this.forwardCharacter;
             }
         });
     }
@@ -122,7 +143,12 @@ export class Controls {
             // Calculate movement based on camera direction
             const moveVector = new BABYLON.Vector3(0, 0, 0);
             
-            if (this.keys.w) moveVector.addInPlace(forward.scale(this.forwardSpeed));
+            // Apply sprint multiplier when shift+w are pressed
+            const currentForwardSpeed = this.keys.shift && this.keys.w 
+                ? this.forwardSpeed * this.sprintMultiplier 
+                : this.forwardSpeed;
+
+            if (this.keys.w) moveVector.addInPlace(forward.scale(currentForwardSpeed));
             if (this.keys.s) moveVector.addInPlace(forward.scale(-this.backwardSpeed));
             if (this.keys.a) moveVector.addInPlace(right.scale(this.strafeSpeed));
             if (this.keys.d) moveVector.addInPlace(right.scale(-this.strafeSpeed));
@@ -140,8 +166,14 @@ export class Controls {
                 const ray = new BABYLON.Ray(origin, direction, length);
                 const hit = this.scene.pickWithRay(ray, (mesh) => {
                     // Only check collision with meshes that have checkCollisions enabled
-                    return mesh.checkCollisions === true;
+                    // AND ignore meshes marked as walkthrough
+                    return mesh.checkCollisions === true && !mesh.isWalkthrough;
                 });
+
+                // Log collision if detected
+                if (hit.hit) {
+                    console.log("Collision detected with:", hit.pickedMesh ? hit.pickedMesh.name : "unnamed mesh");
+                }
 
                 // Only move if no collision detected
                 if (!hit.hit) {

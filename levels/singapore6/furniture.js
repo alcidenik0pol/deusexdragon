@@ -7,30 +7,7 @@ export class Streetlight extends BaseComponent {
 
     async initialize(scene, options = {}) {
         super.initialize(scene, options);
-
-        // Load dimensions from JSON
-        const furnitureData = await fetch('/assets/furniture/streetlight01.json').then(r => r.json());
-        this.dimensions = furnitureData.standardDimensions;
-
-        // Load the mesh
-        const result = await BABYLON.SceneLoader.ImportMeshAsync(
-            "",
-            "assets/furniture/",
-            "streetlight01.glb",
-            scene
-        );
-
-        this.mesh = result.meshes[0];
-        
-        // Apply the scaleFactor from JSON
-        this.mesh.scaling = new BABYLON.Vector3(
-            furnitureData.scaleFactor,
-            furnitureData.scaleFactor,
-            furnitureData.scaleFactor
-        );
-        
-        this.mesh.position = this.position;
-        this.mesh.rotationQuaternion = this.rotation;
+        await this.loadAsset('furniture', 'streetlight01');
 
         // Create collision box using standardDimensions
         this.collisionMesh = BABYLON.MeshBuilder.CreateBox("streetlight_collision", {
@@ -50,5 +27,9 @@ export class Streetlight extends BaseComponent {
         this.collisionMesh.checkCollisions = true;
         this.collisionMesh.position = this.mesh.position;
         this.collisionMesh.rotationQuaternion = this.mesh.rotationQuaternion;
+    }
+
+    dispose() {
+        super.dispose();
     }
 } 

@@ -8,6 +8,7 @@ export class BaseComponent {
         this.collisionMesh = null;
         this.parentNode = null;
         this.attachPoints = [];
+        this.floorOffset = 0; // New property to track floor offset
     }
 
     initialize(scene, options = {}) {
@@ -46,6 +47,58 @@ export class BaseComponent {
         }
         if (this.collisionMesh && this.collisionMesh !== this.mesh) {
             this.collisionMesh.dispose();
+        }
+    }
+
+    // New method to handle asset loading
+    async loadAsset(assetType, assetId) {
+        const jsonPath = `/assets/${assetType}/${assetId}.json`;
+        const assetData = await fetch(jsonPath).then(r => r.json());
+        this.dimensions = assetData.standardDimensions;
+
+        // Load the mesh
+        const result = await BABYLON.SceneLoader.ImportMeshAsync(
+            "",
+            `assets/${assetType}/`,
+            `${assetId}.glb`,
+            this.scene
+        );
+
+        this.mesh = result.meshes[0];
+        
+        // Apply the scaleFactor from JSON
+        const scale = assetData.scaleFactor;
+        this.mesh.scaling = new BABYLON.Vector3(scale, scale, scale);
+        
+        // Calculate floor offset based on raw model dimensions
+        const rawHeight = assetData.rawDimensions.height;
+        this.floorOffset = (rawHeight * scale) / 2;
+        
+        // Position the mesh with the bottom at y=0
+        this.position.y = this.floorOffset;
+        this.mesh.position = this.position;
+        this.mesh.rotationQuaternion = this.rotation;
+
+        return assetData;
+    }
+
+    // New helper method to get the world position at floor level
+    getFloorPosition() {
+        return new BABYLON.Vector3(
+            this.position.x,
+            0, // Always at y=0
+            this.position.z
+        );
+    }
+
+    // New helper to set position while maintaining floor contact
+    setWorldPosition(x, z) {
+        this.position = new BABYLON.Vector3(x, this.floorOffset, z);
+        if (this.mesh) {
+            this.mesh.position = this.position;
+        }
+        if (this.collisionMesh) {
+            this.collisionMesh.position = this.position;
         }
     }
 } 

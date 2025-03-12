@@ -1,0 +1,23 @@
+{
+  "id": "sg_shops_high01",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 1.0006956458091736,
+    "height": 0.27346979081630707,
+    "depth": 0.49490030109882355
+  },
+  "standardDimensions": {
+    "width": 16.46664661825879,
+    "height": 4.5,
+    "depth": 8.143683250339862
+  },
+  "scaleFactor": 16.455199627598734,
+  "gridFootprint": {
+    "width": 17,
+    "depth": 9
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 0.3,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 0.3
+}
