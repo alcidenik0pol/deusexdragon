@@ -35,8 +35,6 @@ export class LevelGenerator {
     static DEFAULT_CONFIG = {
         cellSize: WORLD_CONFIG.GRID_CELL_SIZE,
         mazeSize: 16,
-        lightIntensity: 1.0,
-        lightPosition: new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE, 0),
         skyboxSize: 1000,
         skyColor: new BABYLON.Color3(0.2, 0.2, 0.2), // Dark grey sky
     };
@@ -51,16 +49,6 @@ export class LevelGenerator {
         this.minimap = new Minimap(scene);
         this.skyboxComponent = new SkyboxComponent(scene);
         window.currentLevel = this;
-    }
-
-    setupLighting() {
-        const light = new BABYLON.HemisphericLight(
-            "defaultLight", 
-            this.config.lightPosition,
-            this.scene
-        );
-        light.intensity = this.config.lightIntensity;
-        return light;
     }
 
     createGround(bounds = this.constructor.LEVEL_BOUNDS.floor) {
@@ -114,13 +102,10 @@ export class LevelGenerator {
     async createLevel() {
         const bounds = this.constructor.LEVEL_BOUNDS;
         
-        // Setup lighting first
-        const light = this.setupLighting();
-
         // Setup skybox
         this.setupSkybox();
 
-        // Create ground (now using GridMaterial)
+        // Create ground
         const ground = this.createGround(bounds.floor);
 
         // Create walls

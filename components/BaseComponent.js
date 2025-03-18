@@ -56,6 +56,12 @@ export class BaseComponent {
         const assetData = await fetch(jsonPath).then(r => r.json());
         this.dimensions = assetData.standardDimensions;
 
+        // Add improved debug logging with clear asset identification
+        console.log(`----- LOADING ASSET: ${assetId} (${assetType}) -----`);
+        console.log(`${assetId} standard dimensions:`, this.dimensions);
+        console.log(`${assetId} raw dimensions:`, assetData.rawDimensions);
+        console.log(`${assetId} scale factor:`, assetData.scaleFactor);
+
         // Load the mesh
         const result = await BABYLON.SceneLoader.ImportMeshAsync(
             "",
@@ -78,6 +84,10 @@ export class BaseComponent {
         this.position.y = this.floorOffset;
         this.mesh.position = this.position;
         this.mesh.rotationQuaternion = this.rotation;
+
+        console.log(`${assetId} mesh loaded. Floor offset: ${this.floorOffset}`);
+        console.log(`${assetId} mesh position:`, this.mesh.position);
+        console.log(`----- END LOADING ${assetId} -----`);
 
         return assetData;
     }

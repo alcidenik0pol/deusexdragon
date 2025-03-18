@@ -21,7 +21,6 @@ export class Singapore6Level extends LevelGenerator {
         const customConfig = {
             ...LevelGenerator.DEFAULT_CONFIG,
             mazeSize: 160,  // Doubled from 80 to match floor size
-            lightIntensity: 0, // Start with no light
             ...config
         };
         super(scene, customConfig);
@@ -115,32 +114,35 @@ export class Singapore6Level extends LevelGenerator {
             this.components.push(building);
         }
 
-        // Define streetlight positions based on the ASCII map
+        // UPDATED: Reduced streetlight positions to just 2 near the origin
         const STREETLIGHT_POSITIONS = [
-            // Left column of lights
-            { x: -60, z: 70 },  // Next to Fulton
-            { x: -60, z: 50 },  // Next to Parkview
-            { x: -60, z: 30 },  // Next to UOBHigh
-            { x: -60, z: 10 },  // Next to Republic
-            { x: -60, z: -10 }, // Next to OUC
-            { x: -60, z: -30 }, // Next to Capitas
-            
-            // Right column of lights
-            { x: -50, z: 70 },
-            { x: -50, z: 50 },
-            { x: -50, z: 30 },
-            { x: -50, z: 10 },
-            { x: -50, z: -10 },
-            { x: -50, z: -30 }
+            { x: -5, z: 5 },  // Near origin
+            { x: 5, z: -5 }   // Near origin
         ];
         
         // Add streetlights
-        for (const pos of STREETLIGHT_POSITIONS) {
+        for (let i = 0; i < STREETLIGHT_POSITIONS.length; i++) {
+            const pos = STREETLIGHT_POSITIONS[i];
             const streetlight = new Streetlight();
-            await streetlight.initialize(this.scene);
+            
+            // For the second streetlight (index 1), add a 90-degree rotation
+            const options = { debug: true };
+            if (i === 1) {
+                options.rotation = new BABYLON.Vector3(0, Math.PI/2, 0); // 90 degrees around Y-axis
+            }
+            
+            await streetlight.initialize(this.scene, options);
             
             const worldPos = this.getWorldPosition(pos.x, pos.z);
             streetlight.setWorldPosition(worldPos.x, worldPos.z);
+            
+            // Register the light component with the lighting system
+            if (this.lighting && streetlight.lightComponent) {
+                this.lighting.registerSpotlight(streetlight.lightComponent);
+                console.log(`Streetlight ${i+1} positioned at: ${worldPos.x}, ${worldPos.z}${i === 1 ? ' with 90° rotation' : ''}`);
+            } else {
+                console.warn("Failed to register streetlight - light component missing");
+            }
             
             this.components.push(streetlight);
         }
