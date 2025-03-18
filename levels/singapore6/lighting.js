@@ -39,6 +39,12 @@ export class Singapore6Lighting {
             }
             
             this.clusterManager.registerLight(spotlight);
+            
+            // Also register the projector if it exists
+            if (spotlight.parent && spotlight.parent.lightProjector) {
+                this.clusterManager.registerLight(spotlight.parent.lightProjector);
+            }
+            
             console.log(`Registered spotlight at position: ${spotlight.getAbsolutePosition().toString()}`);
             console.log(`Light properties: intensity=${spotlight.intensity}, range=${spotlight.range}`);
         } else {
@@ -100,11 +106,53 @@ export class Singapore6Lighting {
             this.spotlights.forEach(spotlight => {
                 if (spotlight) {
                     spotlight.intensity = value * spotlight.baseIntensity;
+                    
+                    // Also update the projector if it exists
+                    if (spotlight.parent && spotlight.parent.lightProjector) {
+                        spotlight.parent.lightProjector.intensity = value * spotlight.baseIntensity * 0.7;
+                    }
+                    
                     console.log(`Updated spotlight intensity to: ${spotlight.intensity}`);
                 }
             });
         });
         panel.addControl(spotSlider);
+
+        // Add particle visibility control
+        const particleHeader = new BABYLON.GUI.TextBlock();
+        particleHeader.text = "Dust Particles";
+        particleHeader.height = "30px";
+        particleHeader.color = "white";
+        panel.addControl(particleHeader);
+        
+        const particleSlider = new BABYLON.GUI.Slider();
+        particleSlider.minimum = 0;
+        particleSlider.maximum = 1;
+        particleSlider.value = 1.0; // Default value
+        particleSlider.height = "20px";
+        particleSlider.width = "200px";
+        particleSlider.color = "gray";
+        particleSlider.background = "white";
+        particleSlider.borderColor = "black";
+        particleSlider.onValueChangedObservable.add((value) => {
+            // Update all spotlights' particle systems
+            this.spotlights.forEach(spotlight => {
+                if (spotlight && spotlight.parent) {
+                    const streetlight = spotlight.parent;
+                    if (streetlight.particleSystem) {
+                        if (value > 0) {
+                            // Only update if particles should be visible based on distance
+                            if (streetlight.isParticleActive) {
+                                streetlight.particleSystem.emitRate = 30 * value;
+                            }
+                        } else {
+                            streetlight.particleSystem.emitRate = 0;
+                        }
+                    }
+                }
+            });
+        });
+        panel.addControl(particleSlider);
     }
 
     dispose() {

@@ -16,6 +16,7 @@ export const WORLD_CONFIG = {
         VERTICAL_CLUSTERS: 4,      // Number of vertical divisions
         LIGHT_FADE_START: 0.8,     // Distance at which lights start fading
         LIGHT_FADE_END: 1.0,       // Distance at which lights are fully faded
-        DEFAULT_LIGHT_RANGE: 15    // Default range for lights in meters
+        DEFAULT_LIGHT_RANGE: 15,   // Default range for lights in meters
+        PARTICLE_VISIBILITY_RANGE: 10.5 // Range at which particles become visible (70% of light range)
     }
 };
