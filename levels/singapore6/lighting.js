@@ -4,13 +4,19 @@ import { WORLD_CONFIG } from '../../config.js';
 export class Singapore6Lighting {
     constructor(scene) {
         this.scene = scene;
-        this.clusterManager = new ClusterManager(scene);
+        this.lightManager = new ClusterManager(scene, {
+            maxActiveLights: 3, // Hard limit based on shader constraints
+            debug: true // Enable debug logging temporarily
+        });
         this.hemisphericLight = null;
-        this.spotlights = [];
+        this.streetlights = [];
         
         this.scene.ambientColor = BABYLON.Color3.Black();
         this.setupLighting();
         this.setupLightingControls();
+        
+        // Register a scene observer to update light positions when objects move
+        this.setupPositionUpdates();
     }
 
     setupLighting() {
@@ -24,32 +30,19 @@ export class Singapore6Lighting {
         this.hemisphericLight.specular = new BABYLON.Color3(0, 0, 0);
     }
 
-    registerSpotlight(spotlight) {
-        if (spotlight) {
-            this.spotlights.push(spotlight);
-            
-            // Ensure the light has the required properties
-            if (spotlight.baseIntensity === undefined) {
-                spotlight.baseIntensity = spotlight.intensity || 1.0;
-            }
-            
-            // Make sure range is set
-            if (!spotlight.range) {
-                spotlight.range = WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE;
-            }
-            
-            this.clusterManager.registerLight(spotlight);
-            
-            // Also register the projector if it exists
-            if (spotlight.parent && spotlight.parent.lightProjector) {
-                this.clusterManager.registerLight(spotlight.parent.lightProjector);
-            }
-            
-            console.log(`Registered spotlight at position: ${spotlight.getAbsolutePosition().toString()}`);
-            console.log(`Light properties: intensity=${spotlight.intensity}, range=${spotlight.range}`);
-        } else {
-            console.warn("Attempted to register undefined spotlight");
+    registerStreetlight(streetlight) {
+        if (!streetlight) {
+            console.warn("Attempted to register undefined streetlight");
+            return;
         }
+        
+        // Register the streetlight with the light manager
+        streetlight.registerWithLightingSystem(this.lightManager);
+        
+        // Store the streetlight for later updates
+        this.streetlights.push(streetlight);
+        
+        console.log(`Registered streetlight at position: ${streetlight.mesh.position.toString()}`);
     }
 
     setupLightingControls() {
@@ -102,19 +95,29 @@ export class Singapore6Lighting {
         spotSlider.background = "white";
         spotSlider.borderColor = "black";
         spotSlider.onValueChangedObservable.add((value) => {
-            // Update all spotlights with the new intensity
-            this.spotlights.forEach(spotlight => {
-                if (spotlight) {
-                    spotlight.intensity = value * spotlight.baseIntensity;
+            // Update all streetlights' light properties
+            this.streetlights.forEach(streetlight => {
+                if (streetlight && streetlight.lightId) {
+                    // Update the main spotlight intensity
+                    this.lightManager.updateLightProperty(
+                        streetlight.lightId, 
+                        'intensity', 
+                        value * 5.0
+                    );
                     
-                    // Also update the projector if it exists
-                    if (spotlight.parent && spotlight.parent.lightProjector) {
-                        spotlight.parent.lightProjector.intensity = value * spotlight.baseIntensity * 0.7;
+                    // Update the projector intensity
+                    if (streetlight.projectorId) {
+                        this.lightManager.updateLightProperty(
+                            streetlight.projectorId, 
+                            'intensity', 
+                            value * 4.0
+                        );
                     }
-                    
-                    console.log(`Updated spotlight intensity to: ${spotlight.intensity}`);
                 }
             });
+            
+            // Force light manager to update
+            this.lightManager.updateLights();
         });
         panel.addControl(spotSlider);
 
@@ -135,19 +138,16 @@ export class Singapore6Lighting {
         particleSlider.background = "white";
         particleSlider.borderColor = "black";
         particleSlider.onValueChangedObservable.add((value) => {
-            // Update all spotlights' particle systems
-            this.spotlights.forEach(spotlight => {
-                if (spotlight && spotlight.parent) {
-                    const streetlight = spotlight.parent;
-                    if (streetlight.particleSystem) {
-                        if (value > 0) {
-                            // Only update if particles should be visible based on distance
-                            if (streetlight.isParticleActive) {
-                                streetlight.particleSystem.emitRate = 30 * value;
-                            }
-                        } else {
-                            streetlight.particleSystem.emitRate = 0;
+            // Update all streetlights' particle systems
+            this.streetlights.forEach(streetlight => {
+                if (streetlight && streetlight.particleSystem) {
+                    if (value > 0) {
+                        // Only update if particles should be visible based on distance
+                        if (streetlight.isParticleActive) {
+                            streetlight.particleSystem.emitRate = 30 * value;
                         }
+                    } else {
+                        streetlight.particleSystem.emitRate = 0;
                     }
                 }
             });
@@ -155,10 +155,30 @@ export class Singapore6Lighting {
         panel.addControl(particleSlider);
     }
 
+    setupPositionUpdates() {
+        // Update light positions when the scene renders
+        this.scene.registerBeforeRender(() => {
+            // Check if any streetlights have moved and update their light positions
+            this.streetlights.forEach(streetlight => {
+                if (streetlight && streetlight.mesh) {
+                    // Check if the mesh has moved since last update
+                    if (!streetlight._lastPosition || 
+                        !streetlight.mesh.position.equals(streetlight._lastPosition)) {
+                        
+                        // Update the light position
+                        streetlight.updateLightPosition(this.lightManager);
+                        
+                        // Store the current position for next comparison
+                        streetlight._lastPosition = streetlight.mesh.position.clone();
+                    }
+                }
+            });
+        });
+    }
+
     dispose() {
         if (this.hemisphericLight) {
             this.hemisphericLight.dispose();
         }
-        // No need to dispose spotlights here as they're owned by their parent components
     }
 } 

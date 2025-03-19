@@ -4,9 +4,9 @@ import { WORLD_CONFIG } from '../../config.js';
 export class Streetlight extends BaseComponent {
     constructor() {
         super('streetlight01');
-        this.lightComponent = null;
+        this.lightId = null;
+        this.projectorId = null;
         this.lightMesh = null;
-        this.lightProjector = null;
         this.particleSystem = null;
         this.FIXED_LIGHT_HEIGHT = 2.64; // Fixed light height in meters
         // this.FIXED_LIGHT_HEIGHT = 2.65; // Fixed light height in meters
@@ -39,8 +39,8 @@ export class Streetlight extends BaseComponent {
         // Create a rectangular light bulb mesh
         this.createRectangularLightBulb(scene, lightHeight);
         
-        // Create spotlight at the same position with adjusted angle
-        this.createSpotlight(scene, lightHeight);
+        // Create light properties (not actual lights)
+        this.createLightProperties(scene, lightHeight);
         
         // Create dust particles
         this.createDustParticles(scene, lightHeight);
@@ -55,77 +55,90 @@ export class Streetlight extends BaseComponent {
         console.log(`Streetlight initialized. Model height: ${actualHeight}, Fixed light height: ${lightHeight}`);
     }
 
-    createSpotlight(scene, lightHeight) {
-        // Create spotlight
-        this.lightComponent = new BABYLON.SpotLight(
-            "streetlight_spot",
-            new BABYLON.Vector3(0, lightHeight, this.LIGHT_FORWARD_OFFSET), // Position with forward offset
-            new BABYLON.Vector3(0, -Math.cos(this.LIGHT_ANGLE), Math.sin(this.LIGHT_ANGLE)), // Direction vector based on angle
-            this.LIGHT_ANGLE,
-            6, // Slightly reduced exponent for stronger center illumination
-            scene
-        );
+    createLightProperties(scene, lightHeight) {
+        // Create spotlight properties
+        this.lightProperties = {
+            position: new BABYLON.Vector3(0, lightHeight, this.LIGHT_FORWARD_OFFSET),
+            direction: new BABYLON.Vector3(0, -Math.cos(this.LIGHT_ANGLE), Math.sin(this.LIGHT_ANGLE)),
+            type: 'spot',
+            angle: this.LIGHT_ANGLE,
+            intensity: 5.0,
+            range: WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 1.5,
+            diffuse: new BABYLON.Color3(1, 0.98, 0.92),
+            specular: new BABYLON.Color3(0.5, 0.5, 0.5)
+        };
         
-        // Parent to the mesh so it follows all transformations
-        this.lightComponent.parent = this.mesh;
-        this.lightComponent.baseIntensity = 5.0; // Increased from 2.0 to 5.0
-        this.lightComponent.intensity = this.lightComponent.baseIntensity;
-        this.lightComponent.range = WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 1.5; // Increased range by 50%
-        this.lightComponent.diffuse = new BABYLON.Color3(1, 0.98, 0.92); // Slightly warm white light
-        this.lightComponent.specular = new BABYLON.Color3(0.5, 0.5, 0.5); // Increased specular for stronger highlights
-        
-        // Add projective texture for more realistic light pattern
-        this.createLightTexture(scene);
-        
-        this.lightComponent.shadowEnabled = false;
+        // Create projector properties
+        this.projectorProperties = {
+            position: this.lightProperties.position.clone(),
+            direction: this.lightProperties.direction.clone(),
+            type: 'spot',
+            angle: this.lightProperties.angle,
+            intensity: this.lightProperties.intensity * 0.8,
+            range: this.lightProperties.range,
+            diffuse: this.lightProperties.diffuse.clone(),
+            specular: BABYLON.Color3.Black()
+        };
     }
 
-    createLightTexture(scene) {
-        // Create a dynamic texture for the light projection
-        const textureSize = 512; // Increased from 256 for higher resolution
-        const lightTexture = new BABYLON.DynamicTexture("lightTexture", textureSize, scene, false);
-        const ctx = lightTexture.getContext();
+    // Method to register with lighting system
+    registerWithLightingSystem(lightManager) {
+        if (!lightManager) return;
         
-        // Create a gradient for the light falloff
-        const gradient = ctx.createRadialGradient(
-            textureSize/2, textureSize/2, 0,
-            textureSize/2, textureSize/2, textureSize/2
+        // Transform light position to world space
+        const worldMatrix = this.mesh.getWorldMatrix();
+        const worldPos = BABYLON.Vector3.TransformCoordinates(
+            this.lightProperties.position, 
+            worldMatrix
         );
         
-        // Add color stops for a more natural light falloff - adjusted for stronger light
-        gradient.addColorStop(0, "rgba(255, 255, 255, 1.0)");
-        gradient.addColorStop(0.6, "rgba(255, 255, 255, 0.9)"); // Stronger middle area
-        gradient.addColorStop(0.8, "rgba(255, 255, 255, 0.7)"); // Stronger outer area
-        gradient.addColorStop(0.9, "rgba(255, 255, 255, 0.3)");
-        gradient.addColorStop(1.0, "rgba(255, 255, 255, 0.0)");
+        // Transform direction to world space (direction is a vector, so we use transformNormal)
+        const worldDir = BABYLON.Vector3.TransformNormal(
+            this.lightProperties.direction,
+            worldMatrix
+        );
+        worldDir.normalize();
         
-        // Fill the texture with the gradient
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, textureSize, textureSize);
+        // Register the main spotlight
+        const spotlightProps = {
+            ...this.lightProperties,
+            position: worldPos,
+            direction: worldDir
+        };
+        this.lightId = lightManager.registerLight(spotlightProps);
         
-        // Update the texture
-        lightTexture.update();
+        // Register the projector
+        const projectorProps = {
+            ...this.projectorProperties,
+            position: worldPos,
+            direction: worldDir
+        };
+        this.projectorId = lightManager.registerLight(projectorProps);
+    }
+
+    // Update light position when streetlight moves
+    updateLightPosition(lightManager) {
+        if (!lightManager || !this.lightId || !this.projectorId) return;
         
-        // Create a projector for the light
-        this.lightProjector = new BABYLON.SpotLight(
-            "lightProjector",
-            this.lightComponent.position.clone(),
-            this.lightComponent.direction.clone(),
-            this.lightComponent.angle,
-            10, // Adjusted for stronger projection
-            scene
+        // Transform light position to world space
+        const worldMatrix = this.mesh.getWorldMatrix();
+        const worldPos = BABYLON.Vector3.TransformCoordinates(
+            this.lightProperties.position, 
+            worldMatrix
         );
         
-        // Parent to the same parent as the main light
-        this.lightProjector.parent = this.mesh;
+        // Transform direction to world space
+        const worldDir = BABYLON.Vector3.TransformNormal(
+            this.lightProperties.direction,
+            worldMatrix
+        );
+        worldDir.normalize();
         
-        // Set up the projector with stronger intensity
-        this.lightProjector.intensity = this.lightComponent.intensity * 0.8; // Increased from 0.7 to 0.8
-        this.lightProjector.range = this.lightComponent.range;
-        this.lightProjector.projectionTexture = lightTexture;
-        this.lightProjector.diffuse = this.lightComponent.diffuse;
-        this.lightProjector.specular = BABYLON.Color3.Black(); // No specular for the projector
-        this.lightProjector.shadowEnabled = false;
+        // Update the registered lights
+        lightManager.updateLightProperty(this.lightId, 'position', worldPos);
+        lightManager.updateLightProperty(this.lightId, 'direction', worldDir);
+        lightManager.updateLightProperty(this.projectorId, 'position', worldPos);
+        lightManager.updateLightProperty(this.projectorId, 'direction', worldDir);
     }
 
     createRectangularLightBulb(scene, lightHeight) {
@@ -138,7 +151,8 @@ export class Streetlight extends BaseComponent {
         
         // Create an emissive material for the light bulb
         const lightMaterial = new BABYLON.StandardMaterial("lightMaterial", scene);
-        lightMaterial.emissiveColor = new BABYLON.Color3(1, 1, 1); // White emissive color
+        // Make it much brighter with higher emissive values
+        lightMaterial.emissiveColor = new BABYLON.Color3(5.0, 5.0, 4.5); // Much brighter than pure white
         lightMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
         lightMaterial.specularColor = new BABYLON.Color3(1, 1, 1);
         lightMaterial.disableLighting = true;
@@ -155,13 +169,7 @@ export class Streetlight extends BaseComponent {
         // Parent to the mesh so it follows all transformations
         this.lightMesh.parent = this.mesh;
         
-        // Add a point light inside the bulb for additional illumination effect
-        const bulbLight = new BABYLON.PointLight("bulbLight", new BABYLON.Vector3(0, 0, 0), scene);
-        bulbLight.parent = this.lightMesh;
-        bulbLight.intensity = 1.0; // Increased from 0.5 to 1.0
-        bulbLight.diffuse = new BABYLON.Color3(1, 0.98, 0.92); // Match main light color
-        bulbLight.specular = new BABYLON.Color3(1, 1, 1);
-        bulbLight.range = 0.8; // Increased from 0.5 to 0.8
+        // NO ACTUAL LIGHT CREATION - rely only on emissive material
     }
 
     createDustParticles(scene, lightHeight) {
@@ -232,7 +240,7 @@ export class Streetlight extends BaseComponent {
         
         // Calculate the direction vector based on the light angle
         // This makes particles move along the light beam
-        const directionVector = this.lightComponent.direction.clone();
+        const directionVector = this.lightProperties.direction.clone();
         directionVector.scaleInPlace(-1); // Reverse direction to move upward along beam
         
         // Set the gravity to be opposite of the light direction (upward along beam)
@@ -272,7 +280,7 @@ export class Streetlight extends BaseComponent {
         if (!this.scene || !this.scene.activeCamera || !this.particleSystem) return;
         
         const camera = this.scene.activeCamera;
-        const lightPos = this.lightComponent.getAbsolutePosition();
+        const lightPos = this.lightProperties.position;
         const distance = BABYLON.Vector3.Distance(camera.position, lightPos);
         
         // Calculate visibility based on distance
@@ -325,24 +333,10 @@ export class Streetlight extends BaseComponent {
     }
 
     dispose() {
-        if (this.lightComponent) {
-            this.lightComponent.dispose();
-        }
-        if (this.lightProjector) {
-            if (this.lightProjector.projectionTexture) {
-                this.lightProjector.projectionTexture.dispose();
-            }
-            this.lightProjector.dispose();
-        }
         if (this.lightMesh) {
             // Dispose of any materials or child lights
             if (this.lightMesh.material) {
                 this.lightMesh.material.dispose();
-            }
-            // Find and dispose the bulb light if it exists
-            const bulbLight = this.scene.getLightByName("bulbLight");
-            if (bulbLight) {
-                bulbLight.dispose();
             }
             this.lightMesh.dispose();
         }

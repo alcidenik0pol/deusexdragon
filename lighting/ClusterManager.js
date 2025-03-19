@@ -1,153 +1,197 @@
 import { WORLD_CONFIG } from '../config.js';
-import { Cluster } from './Cluster.js';
 
 export class ClusterManager {
-    constructor(scene) {
+    constructor(scene, options = {}) {
         this.scene = scene;
-        this.clusters = new Map();
-        this.lights = new Set();
+        this.lightRegistry = new Map(); // Store light properties instead of actual lights
+        this.activeLights = [];
+        this.MAX_ACTIVE_LIGHTS = options.maxActiveLights || 
+                                WORLD_CONFIG.LIGHTING.MAX_LIGHTS_PER_MESH || 3;
+        
+        // Create a fixed pool of lights that will be repositioned
+        this.createLightPool();
+        
+        // Set up update loop
         this.setupUpdateLoop();
-    }
-
-    getClusterKey(x, y, z) {
-        return `${x},${y},${z}`;
-    }
-
-    getClusterForPosition(position) {
-        const size = WORLD_CONFIG.LIGHTING.CLUSTER_SIZE;
-        const x = Math.floor(position.x / size);
-        const y = Math.floor(position.y / size);
-        const z = Math.floor(position.z / size);
-        const key = this.getClusterKey(x, y, z);
         
-        if (!this.clusters.has(key)) {
-            this.clusters.set(key, new Cluster(x, y, z));
+        // Debug mode
+        this.debug = options.debug || false;
+    }
+    
+    createLightPool() {
+        // Create a fixed pool of lights (the maximum number allowed by shaders)
+        this.activeLights = [];
+        
+        for (let i = 0; i < this.MAX_ACTIVE_LIGHTS; i++) {
+            // Create a point light that we'll reposition as needed
+            const light = new BABYLON.PointLight(`poolLight_${i}`, new BABYLON.Vector3(0, 0, 0), this.scene);
+            light.intensity = 0; // Start with zero intensity
+            light.range = WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE;
+            light.diffuse = new BABYLON.Color3(1, 0.98, 0.92); // Warm white
+            light.specular = new BABYLON.Color3(0.5, 0.5, 0.5);
+            
+            this.activeLights.push(light);
         }
         
-        return this.clusters.get(key);
+        console.log(`Created light pool with ${this.activeLights.length} lights`);
     }
-
-    registerLight(light) {
-        if (!light) {
-            console.warn("Attempted to register null or undefined light");
-            return;
+    
+    registerLight(lightProperties) {
+        if (!lightProperties || !lightProperties.position) {
+            console.warn("Attempted to register invalid light properties");
+            return null;
         }
         
-        this.lights.add(light);
-        this.updateLightClusters(light);
-        console.log(`Registered light. Total lights: ${this.lights.size}`);
+        // Generate a unique ID for this light
+        const lightId = `light_${this.lightRegistry.size}`;
+        
+        // Store the light properties in our registry
+        this.lightRegistry.set(lightId, {
+            position: lightProperties.position.clone(),
+            intensity: lightProperties.intensity || 1.0,
+            diffuse: lightProperties.diffuse ? lightProperties.diffuse.clone() : new BABYLON.Color3(1, 1, 1),
+            specular: lightProperties.specular ? lightProperties.specular.clone() : new BABYLON.Color3(0.5, 0.5, 0.5),
+            range: lightProperties.range || WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE,
+            type: lightProperties.type || 'point',
+            direction: lightProperties.direction ? lightProperties.direction.clone() : null,
+            angle: lightProperties.angle || Math.PI/4
+        });
+        
+        console.log(`Registered light properties. Total registered: ${this.lightRegistry.size}`);
+        return lightId;
     }
-
-    updateLightClusters(light) {
-        if (!light) return;
+    
+    unregisterLight(lightId) {
+        if (!lightId || !this.lightRegistry.has(lightId)) return;
+        
+        this.lightRegistry.delete(lightId);
+        console.log(`Unregistered light. Total registered: ${this.lightRegistry.size}`);
+    }
+    
+    updateLightProperty(lightId, property, value) {
+        if (!lightId || !this.lightRegistry.has(lightId)) return;
+        
+        const lightProps = this.lightRegistry.get(lightId);
+        
+        // Handle special cases for vector properties
+        if (property === 'position' || property === 'direction') {
+            if (value && value.clone) {
+                lightProps[property] = value.clone();
+            }
+        } else {
+            // For simple properties like intensity, diffuse, etc.
+            if (property === 'diffuse' || property === 'specular') {
+                if (value && value.clone) {
+                    lightProps[property] = value.clone();
+                }
+            } else {
+                lightProps[property] = value;
+            }
+        }
+    }
+    
+    updateLights() {
+        const camera = this.scene.activeCamera;
+        if (!camera) return;
         
         try {
-            const range = light.range || WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE;
-            const position = light.getAbsolutePosition();
+            // Get all registered lights as array with their IDs
+            const allLights = Array.from(this.lightRegistry.entries()).map(([id, props]) => ({
+                id,
+                ...props
+            }));
             
-            // Calculate affected clusters based on light's position and range
-            const minPos = position.subtract(new BABYLON.Vector3(range, range, range));
-            const maxPos = position.add(new BABYLON.Vector3(range, range, range));
+            if (this.debug) {
+                console.log(`Total registered lights: ${allLights.length}`);
+                allLights.forEach((light, i) => {
+                    console.log(`Light ${i}: pos=${light.position.toString()}, type=${light.type}`);
+                });
+            }
             
-            const minCluster = this.getClusterForPosition(minPos);
-            const maxCluster = this.getClusterForPosition(maxPos);
+            // Calculate distance for each light
+            allLights.forEach(light => {
+                if (!light.position) {
+                    console.warn(`Light ${light.id} has no position!`, light);
+                    light.distance = Infinity;
+                    return;
+                }
+                light.distance = BABYLON.Vector3.Distance(camera.position, light.position);
+            });
             
-            // Add light to all affected clusters
-            for (let x = minCluster.x; x <= maxCluster.x; x++) {
-                for (let y = minCluster.y; y <= maxCluster.y; y++) {
-                    for (let z = minCluster.z; z <= maxCluster.z; z++) {
-                        const key = this.getClusterKey(x, y, z);
-                        if (!this.clusters.has(key)) {
-                            this.clusters.set(key, new Cluster(x, y, z));
+            // Filter lights that are actually close enough to matter
+            const visibleLights = allLights.filter(light => {
+                return light.distance < (light.range || WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE) * 1.5;
+            });
+            
+            // Sort by distance (closest first)
+            visibleLights.sort((a, b) => a.distance - b.distance);
+            
+            // Use only the top N lights (our pool size)
+            const topLights = visibleLights.slice(0, this.MAX_ACTIVE_LIGHTS);
+            
+            if (this.debug || true) { // Always log for now to help debug
+                console.log(`Active lights: ${topLights.length}/${allLights.length} (visible: ${visibleLights.length})`);
+                topLights.forEach((light, index) => {
+                    console.log(`Light ${index}: ID=${light.id}, Distance=${light.distance.toFixed(2)}, Position=${light.position.toString()}`);
+                });
+            }
+            
+            // Reposition and configure our pool lights to match the top lights
+            for (let i = 0; i < this.activeLights.length; i++) {
+                const poolLight = this.activeLights[i];
+                
+                if (i < topLights.length) {
+                    // We have a registered light to use
+                    const sourceLight = topLights[i];
+                    
+                    // Copy position and properties
+                    poolLight.position.copyFrom(sourceLight.position);
+                    poolLight.intensity = sourceLight.intensity;
+                    poolLight.diffuse.copyFrom(sourceLight.diffuse);
+                    poolLight.specular.copyFrom(sourceLight.specular);
+                    poolLight.range = sourceLight.range;
+                    
+                    // For spotlights, try to approximate with point light
+                    if (sourceLight.type === 'spot' && sourceLight.direction) {
+                        // Create a spotlight instead of point light if needed
+                        if (poolLight.getClassName() !== "SpotLight") {
+                            // We can't change light type at runtime, so we'll just approximate
+                            // Reduce range to approximate spotlight falloff
+                            poolLight.range *= 0.7;
+                            // Increase intensity to compensate for smaller area
+                            poolLight.intensity *= 1.2;
+                        } else {
+                            // If it's already a spotlight, set direction
+                            poolLight.direction = sourceLight.direction.clone();
+                            poolLight.angle = sourceLight.angle || Math.PI/4;
                         }
-                        this.clusters.get(key).addLight(light);
                     }
+                } else {
+                    // No registered light for this pool light, turn it off
+                    poolLight.intensity = 0;
                 }
             }
         } catch (error) {
-            console.error("Error updating light clusters:", error);
+            console.error("Error updating lights:", error);
         }
     }
-
-    getVisibleClusters(camera) {
-        if (!camera) return [];
-        
-        try {
-            // Get the view projection matrix
-            const viewMatrix = camera.getViewMatrix();
-            const projectionMatrix = camera.getProjectionMatrix();
-            const viewProjection = viewMatrix.multiply(projectionMatrix);
-            
-            // Create frustum planes from the view projection matrix
-            const frustumPlanes = BABYLON.Frustum.GetPlanes(viewProjection);
-            
-            // Filter clusters that are in the frustum
-            return Array.from(this.clusters.values()).filter(cluster => {
-                // Create a simple array of 8 corners for the bounding box
-                const corners = [
-                    new BABYLON.Vector3(cluster.bounds.min.x, cluster.bounds.min.y, cluster.bounds.min.z),
-                    new BABYLON.Vector3(cluster.bounds.max.x, cluster.bounds.min.y, cluster.bounds.min.z),
-                    new BABYLON.Vector3(cluster.bounds.min.x, cluster.bounds.max.y, cluster.bounds.min.z),
-                    new BABYLON.Vector3(cluster.bounds.max.x, cluster.bounds.max.y, cluster.bounds.min.z),
-                    new BABYLON.Vector3(cluster.bounds.min.x, cluster.bounds.min.y, cluster.bounds.max.z),
-                    new BABYLON.Vector3(cluster.bounds.max.x, cluster.bounds.min.y, cluster.bounds.max.z),
-                    new BABYLON.Vector3(cluster.bounds.min.x, cluster.bounds.max.y, cluster.bounds.max.z),
-                    new BABYLON.Vector3(cluster.bounds.max.x, cluster.bounds.max.y, cluster.bounds.max.z)
-                ];
-                
-                // Check if any corner is inside the frustum
-                for (const corner of corners) {
-                    let inside = true;
-                    for (const plane of frustumPlanes) {
-                        if (plane.dotCoordinate(corner) < 0) {
-                            inside = false;
-                            break;
-                        }
-                    }
-                    if (inside) return true;
-                }
-                return false;
-            });
-        } catch (error) {
-            console.error("Error getting visible clusters:", error);
-            return [];
-        }
-    }
-
+    
     setupUpdateLoop() {
+        // Use a less frequent update for light selection to improve performance
+        let frameCount = 0;
+        const UPDATE_FREQUENCY = 10; // Update every 10 frames
+        
         this.scene.registerBeforeRender(() => {
             try {
-                const camera = this.scene.activeCamera;
-                if (!camera) return;
-
-                // Get visible clusters
-                const visibleClusters = this.getVisibleClusters(camera);
-                
-                // Update light intensities based on distance to camera
-                for (const cluster of visibleClusters) {
-                    for (const light of cluster.lights) {
-                        if (!light) continue;
-                        
-                        const distance = BABYLON.Vector3.Distance(
-                            camera.position,
-                            light.getAbsolutePosition()
-                        );
-                        
-                        // Calculate fade factor
-                        const fadeStart = WORLD_CONFIG.LIGHTING.LIGHT_FADE_START * WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE;
-                        const fadeEnd = WORLD_CONFIG.LIGHTING.LIGHT_FADE_END * WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE;
-                        const fadeFactor = Math.max(0, Math.min(1, 
-                            1 - (distance - fadeStart) / (fadeEnd - fadeStart)
-                        ));
-                        
-                        if (light.baseIntensity !== undefined) {
-                            light.intensity = light.baseIntensity * fadeFactor;
-                        }
-                    }
+                // Only update periodically to save performance
+                frameCount++;
+                if (frameCount >= UPDATE_FREQUENCY) {
+                    this.updateLights();
+                    frameCount = 0;
                 }
             } catch (error) {
-                console.error("Error in cluster update loop:", error);
+                console.error("Error in update loop:", error);
             }
         });
     }
-} 
+}

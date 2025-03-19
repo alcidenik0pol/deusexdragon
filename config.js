@@ -13,6 +13,7 @@ export const WORLD_CONFIG = {
     LIGHTING: {
         CLUSTER_SIZE: 8,           // Size of each cluster in grid cells (8x8x8)
         MAX_LIGHTS_PER_CLUSTER: 3, // Maximum lights per cluster (N=3)
+        MAX_LIGHTS_PER_MESH: 3,    // Maximum lights that can affect a single mesh
         VERTICAL_CLUSTERS: 4,      // Number of vertical divisions
         LIGHT_FADE_START: 0.8,     // Distance at which lights start fading
         LIGHT_FADE_END: 1.0,       // Distance at which lights are fully faded

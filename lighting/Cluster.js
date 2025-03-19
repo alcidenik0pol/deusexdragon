@@ -5,11 +5,22 @@ export class Cluster {
         this.x = x;
         this.y = y;
         this.z = z;
-        this.lights = new Set();
+        this.lights = [];  // Changed from Set to Array for prioritization
         this.bounds = this.calculateBounds();
         
-        // Create a proper BoundingBox for frustum checks
+        // Create a proper BoundingBox for frustum checks with correctly initialized vectors
         this.boundingBox = new BABYLON.BoundingBox(this.bounds.min, this.bounds.max);
+        // Initialize vectorsWorld which is required for IsInFrustum
+        this.boundingBox.vectorsWorld = [
+            new BABYLON.Vector3(this.bounds.min.x, this.bounds.min.y, this.bounds.min.z),
+            new BABYLON.Vector3(this.bounds.max.x, this.bounds.min.y, this.bounds.min.z),
+            new BABYLON.Vector3(this.bounds.min.x, this.bounds.max.y, this.bounds.min.z),
+            new BABYLON.Vector3(this.bounds.max.x, this.bounds.max.y, this.bounds.min.z),
+            new BABYLON.Vector3(this.bounds.min.x, this.bounds.min.y, this.bounds.max.z),
+            new BABYLON.Vector3(this.bounds.max.x, this.bounds.min.y, this.bounds.max.z),
+            new BABYLON.Vector3(this.bounds.min.x, this.bounds.max.y, this.bounds.max.z),
+            new BABYLON.Vector3(this.bounds.max.x, this.bounds.max.y, this.bounds.max.z)
+        ];
     }
 
     calculateBounds() {
@@ -37,14 +48,44 @@ export class Cluster {
     }
 
     addLight(light) {
-        if (this.lights.size < WORLD_CONFIG.LIGHTING.MAX_LIGHTS_PER_CLUSTER) {
-            this.lights.add(light);
+        // Don't add duplicates
+        if (this.lights.includes(light)) return true;
+        
+        // Add the light to the array
+        this.lights.push(light);
+        
+        // Sort lights by importance (intensity * range)
+        this.sortLightsByImportance();
+        
+        // Keep only the most important lights up to the maximum
+        if (this.lights.length > WORLD_CONFIG.LIGHTING.MAX_LIGHTS_PER_CLUSTER) {
+            this.lights.length = WORLD_CONFIG.LIGHTING.MAX_LIGHTS_PER_CLUSTER;
+            return false;
+        }
+        return true;
+    }
+
+    sortLightsByImportance() {
+        this.lights.sort((a, b) => {
+            // Calculate importance as intensity * range
+            const importanceA = (a.intensity || 1) * (a.range || WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE);
+            const importanceB = (b.intensity || 1) * (b.range || WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE);
+            // Sort in descending order (most important first)
+            return importanceB - importanceA;
+        });
+    }
+
+    removeLight(light) {
+        const index = this.lights.indexOf(light);
+        if (index !== -1) {
+            this.lights.splice(index, 1);
             return true;
         }
         return false;
     }
 
-    removeLight(light) {
-        return this.lights.delete(light);
+    // New method to check if the cluster intersects with a frustum
+    intersectsFrustum(frustumPlanes) {
+        return BABYLON.BoundingBox.IsInFrustum(this.boundingBox.vectorsWorld, frustumPlanes);
     }
 } 

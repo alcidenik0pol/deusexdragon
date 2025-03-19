@@ -114,41 +114,52 @@ export class Singapore6Level extends LevelGenerator {
             this.components.push(building);
         }
 
-        // UPDATED: Reduced streetlight positions to just 2 near the origin
+        // UPDATED: Place streetlights according to the map (S positions)
+        // Based on the map, streetlights are in two columns next to buildings
         const STREETLIGHT_POSITIONS = [
-            { x: -5, z: 5 },  // Near origin
-            { x: 5, z: -5 }   // Near origin
+            // First column of streetlights (x = -60)
+            { x: -60, z: 70 },
+            { x: -60, z: 50 },
+            { x: -60, z: 30 },
+            { x: -60, z: 10 },
+            { x: -60, z: -10 },
+            { x: -60, z: -30 },
+            
+            // Second column of streetlights (x = -50)
+            { x: -50, z: 70 },
+            { x: -50, z: 50 },
+            { x: -50, z: 30 },
+            { x: -50, z: 10 },
+            { x: -50, z: -10 },
+            { x: -50, z: -30 },
         ];
         
-        // Add streetlights
+        // Add streetlights with proper clustering
         for (let i = 0; i < STREETLIGHT_POSITIONS.length; i++) {
             const pos = STREETLIGHT_POSITIONS[i];
             const streetlight = new Streetlight();
             
-            // For the second streetlight (index 1), add a 90-degree rotation
-            const options = { debug: true };
-            if (i === 1) {
-                options.rotation = new BABYLON.Vector3(0, Math.PI/2, 0); // 90 degrees around Y-axis
-            }
+            // No special rotation needed based on the map
+            const options = { debug: false }; // Set debug to false in production
             
             await streetlight.initialize(this.scene, options);
             
             const worldPos = this.getWorldPosition(pos.x, pos.z);
             streetlight.setWorldPosition(worldPos.x, worldPos.z);
             
-            // Register the light component with the lighting system
-            if (this.lighting && streetlight.lightComponent) {
-                this.lighting.registerSpotlight(streetlight.lightComponent);
-                console.log(`Streetlight ${i+1} positioned at: ${worldPos.x}, ${worldPos.z}${i === 1 ? ' with 90° rotation' : ''}`);
+            // Register the streetlight with the lighting system
+            if (this.lighting) {
+                this.lighting.registerStreetlight(streetlight);
+                console.log(`Streetlight ${i+1} positioned at: ${worldPos.x}, ${worldPos.z}`);
             } else {
-                console.warn("Failed to register streetlight - light component missing");
+                console.warn("Failed to register streetlight - lighting system missing");
             }
             
             this.components.push(streetlight);
         }
 
-        // Adjust water position to align with grid
-        const WATER_POSITION = { x: 0, z: 50 }; // Center position from the 'W' on map
+        // Adjust water position to align with grid (W on the map is at x=0, z=50)
+        const WATER_POSITION = { x: 0, z: 50 };
         const waterArea = new WaterArea();
         await waterArea.initialize(this.scene);
         
