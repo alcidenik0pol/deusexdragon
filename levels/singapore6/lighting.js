@@ -25,7 +25,7 @@ export class Singapore6Lighting {
             new BABYLON.Vector3(0, 1, 0),
             this.scene
         );
-        this.hemisphericLight.intensity = 0.3;
+        this.hemisphericLight.intensity = 0.2;
         this.hemisphericLight.groundColor = new BABYLON.Color3(0.1, 0.1, 0.1); // Add some ground color
         this.hemisphericLight.specular = new BABYLON.Color3(0, 0, 0);
     }
@@ -65,7 +65,7 @@ export class Singapore6Lighting {
         const slider = new BABYLON.GUI.Slider();
         slider.minimum = 0;
         slider.maximum = 1;
-        slider.value = 0.3; // Match default intensity
+        slider.value = 0.2;
         slider.height = "20px";
         slider.width = "200px";
         slider.color = "gray";
@@ -87,8 +87,8 @@ export class Singapore6Lighting {
 
         const spotSlider = new BABYLON.GUI.Slider();
         spotSlider.minimum = 0;
-        spotSlider.maximum = 2; // Allow higher intensity
-        spotSlider.value = 1.0; // Default value
+        spotSlider.maximum = 2;
+        spotSlider.value = 0.7;
         spotSlider.height = "20px";
         spotSlider.width = "200px";
         spotSlider.color = "gray";
@@ -98,19 +98,19 @@ export class Singapore6Lighting {
             // Update all streetlights' light properties
             this.streetlights.forEach(streetlight => {
                 if (streetlight && streetlight.lightId) {
-                    // Update the main spotlight intensity
+                    // Update the main spotlight intensity with reduced base value
                     this.lightManager.updateLightProperty(
                         streetlight.lightId, 
                         'intensity', 
-                        value * 5.0
+                        value * 3.0
                     );
                     
-                    // Update the projector intensity
+                    // Update the projector intensity with reduced base value
                     if (streetlight.projectorId) {
                         this.lightManager.updateLightProperty(
                             streetlight.projectorId, 
                             'intensity', 
-                            value * 4.0
+                            value * 2.0
                         );
                     }
                 }

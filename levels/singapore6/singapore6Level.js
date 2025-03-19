@@ -139,8 +139,20 @@ export class Singapore6Level extends LevelGenerator {
             const pos = STREETLIGHT_POSITIONS[i];
             const streetlight = new Streetlight();
             
-            // No special rotation needed based on the map
-            const options = { debug: false }; // Set debug to false in production
+            // Determine rotation based on which column the streetlight is in
+            let rotation;
+            if (pos.x === -60) {
+                // First column - rotate 90 degrees (facing right)
+                rotation = new BABYLON.Vector3(0, Math.PI/2, 0);
+            } else {
+                // Second column - rotate 270 degrees (facing left)
+                rotation = new BABYLON.Vector3(0, 3 * Math.PI/2, 0);
+            }
+            
+            const options = { 
+                debug: false,
+                rotation: rotation
+            };
             
             await streetlight.initialize(this.scene, options);
             
@@ -150,7 +162,7 @@ export class Singapore6Level extends LevelGenerator {
             // Register the streetlight with the lighting system
             if (this.lighting) {
                 this.lighting.registerStreetlight(streetlight);
-                console.log(`Streetlight ${i+1} positioned at: ${worldPos.x}, ${worldPos.z}`);
+                console.log(`Streetlight ${i+1} positioned at: ${worldPos.x}, ${worldPos.z} with rotation ${rotation.y/Math.PI * 180} degrees`);
             } else {
                 console.warn("Failed to register streetlight - lighting system missing");
             }

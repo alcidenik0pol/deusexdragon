@@ -108,13 +108,26 @@ export class ClusterManager {
                 });
             }
             
-            // Calculate distance for each light
+            // Calculate distance and check if light is in front of camera
             allLights.forEach(light => {
                 if (!light.position) {
                     console.warn(`Light ${light.id} has no position!`, light);
                     light.distance = Infinity;
+                    light.inFrustum = false;
                     return;
                 }
+                
+                // Calculate vector from camera to light
+                const cameraToLight = light.position.subtract(camera.position);
+                
+                // Calculate dot product with camera direction to check if light is in front
+                const cameraDirVector = camera.getDirection(BABYLON.Vector3.Forward());
+                const dotProduct = BABYLON.Vector3.Dot(cameraDirVector, cameraToLight.normalize());
+                
+                // Light is in front of camera if dot product is positive
+                light.inFrustum = dotProduct > 0;
+                
+                // Calculate distance (used for sorting)
                 light.distance = BABYLON.Vector3.Distance(camera.position, light.position);
             });
             
@@ -123,8 +136,15 @@ export class ClusterManager {
                 return light.distance < (light.range || WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE) * 1.5;
             });
             
-            // Sort by distance (closest first)
-            visibleLights.sort((a, b) => a.distance - b.distance);
+            // First prioritize lights in the camera frustum, then by distance
+            visibleLights.sort((a, b) => {
+                // First sort by whether they're in the frustum
+                if (a.inFrustum && !b.inFrustum) return -1;
+                if (!a.inFrustum && b.inFrustum) return 1;
+                
+                // Then sort by distance
+                return a.distance - b.distance;
+            });
             
             // Use only the top N lights (our pool size)
             const topLights = visibleLights.slice(0, this.MAX_ACTIVE_LIGHTS);
@@ -132,7 +152,7 @@ export class ClusterManager {
             if (this.debug || true) { // Always log for now to help debug
                 console.log(`Active lights: ${topLights.length}/${allLights.length} (visible: ${visibleLights.length})`);
                 topLights.forEach((light, index) => {
-                    console.log(`Light ${index}: ID=${light.id}, Distance=${light.distance.toFixed(2)}, Position=${light.position.toString()}`);
+                    console.log(`Light ${index}: ID=${light.id}, Distance=${light.distance.toFixed(2)}, InFrustum=${light.inFrustum}, Position=${light.position.toString()}`);
                 });
             }
             
@@ -146,7 +166,8 @@ export class ClusterManager {
                     
                     // Copy position and properties
                     poolLight.position.copyFrom(sourceLight.position);
-                    poolLight.intensity = sourceLight.intensity;
+                    // Reduce intensity by 40% for a more subtle effect
+                    poolLight.intensity = sourceLight.intensity * 0.6;
                     poolLight.diffuse.copyFrom(sourceLight.diffuse);
                     poolLight.specular.copyFrom(sourceLight.specular);
                     poolLight.range = sourceLight.range;

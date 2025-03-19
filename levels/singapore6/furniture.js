@@ -56,25 +56,25 @@ export class Streetlight extends BaseComponent {
     }
 
     createLightProperties(scene, lightHeight) {
-        // Create spotlight properties
+        // Create spotlight properties with reduced intensity
         this.lightProperties = {
             position: new BABYLON.Vector3(0, lightHeight, this.LIGHT_FORWARD_OFFSET),
             direction: new BABYLON.Vector3(0, -Math.cos(this.LIGHT_ANGLE), Math.sin(this.LIGHT_ANGLE)),
             type: 'spot',
             angle: this.LIGHT_ANGLE,
-            intensity: 5.0,
+            intensity: 3.0, // Reduced from 5.0 to 3.0
             range: WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 1.5,
             diffuse: new BABYLON.Color3(1, 0.98, 0.92),
             specular: new BABYLON.Color3(0.5, 0.5, 0.5)
         };
         
-        // Create projector properties
+        // Create projector properties with reduced intensity
         this.projectorProperties = {
             position: this.lightProperties.position.clone(),
             direction: this.lightProperties.direction.clone(),
             type: 'spot',
             angle: this.lightProperties.angle,
-            intensity: this.lightProperties.intensity * 0.8,
+            intensity: this.lightProperties.intensity * 0.6, // Reduced multiplier from 0.8 to 0.6
             range: this.lightProperties.range,
             diffuse: this.lightProperties.diffuse.clone(),
             specular: BABYLON.Color3.Black()
@@ -149,10 +149,10 @@ export class Streetlight extends BaseComponent {
             depth: 0.6,     // Depth (longest dimension)
         }, scene);
         
-        // Create an emissive material for the light bulb
+        // Create an emissive material for the light bulb with reduced brightness
         const lightMaterial = new BABYLON.StandardMaterial("lightMaterial", scene);
-        // Make it much brighter with higher emissive values
-        lightMaterial.emissiveColor = new BABYLON.Color3(5.0, 5.0, 4.5); // Much brighter than pure white
+        // Make it less bright with lower emissive values
+        lightMaterial.emissiveColor = new BABYLON.Color3(3.0, 3.0, 2.7); // Reduced from 5.0, 5.0, 4.5
         lightMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
         lightMaterial.specularColor = new BABYLON.Color3(1, 1, 1);
         lightMaterial.disableLighting = true;
@@ -280,8 +280,15 @@ export class Streetlight extends BaseComponent {
         if (!this.scene || !this.scene.activeCamera || !this.particleSystem) return;
         
         const camera = this.scene.activeCamera;
-        const lightPos = this.lightProperties.position;
-        const distance = BABYLON.Vector3.Distance(camera.position, lightPos);
+        
+        // Get the world position of the light
+        const worldMatrix = this.mesh.getWorldMatrix();
+        const worldPos = BABYLON.Vector3.TransformCoordinates(
+            this.lightProperties.position, 
+            worldMatrix
+        );
+        
+        const distance = BABYLON.Vector3.Distance(camera.position, worldPos);
         
         // Calculate visibility based on distance
         const visibilityRange = WORLD_CONFIG.LIGHTING.PARTICLE_VISIBILITY_RANGE || 
