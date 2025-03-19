@@ -169,7 +169,47 @@ export class Streetlight extends BaseComponent {
         // Parent to the mesh so it follows all transformations
         this.lightMesh.parent = this.mesh;
         
+        // Add glow effect to the light bulb
+        this.addGlowEffect(scene);
+        
         // NO ACTUAL LIGHT CREATION - rely only on emissive material
+    }
+
+    addGlowEffect(scene) {
+        // Create a glow layer if it doesn't exist in the scene
+        if (!this.scene.glowLayer) {
+            this.scene.glowLayer = new BABYLON.GlowLayer("glow", scene);
+            this.scene.glowLayer.intensity = 0.7; // Adjust intensity to control glow strength
+        }
+        
+        // Add the light mesh to the glow layer
+        this.scene.glowLayer.addIncludedOnlyMesh(this.lightMesh);
+        
+        // Create a slightly larger mesh for additional glow effect
+        const glowMesh = BABYLON.MeshBuilder.CreateBox("lightGlow", {
+            width: 0.05,   // Slightly wider than the light
+            height: 0.1,   // Slightly taller than the light
+            depth: 0.65,   // Slightly longer than the light
+        }, scene);
+        
+        // Create a semi-transparent material for the glow mesh
+        const glowMaterial = new BABYLON.StandardMaterial("glowMaterial", scene);
+        glowMaterial.emissiveColor = new BABYLON.Color3(1.0, 0.98, 0.9); // Warm white glow
+        glowMaterial.alpha = 0.3; // Make it semi-transparent
+        glowMaterial.disableLighting = true;
+        
+        // Apply the material to the glow mesh
+        glowMesh.material = glowMaterial;
+        
+        // Position and rotate the glow mesh to match the light bulb
+        glowMesh.position = this.lightMesh.position.clone();
+        glowMesh.rotation = this.lightMesh.rotation.clone();
+        
+        // Parent to the mesh so it follows all transformations
+        glowMesh.parent = this.mesh;
+        
+        // Store reference for disposal
+        this.glowMesh = glowMesh;
     }
 
     createDustParticles(scene, lightHeight) {
@@ -346,6 +386,12 @@ export class Streetlight extends BaseComponent {
                 this.lightMesh.material.dispose();
             }
             this.lightMesh.dispose();
+        }
+        if (this.glowMesh) {
+            if (this.glowMesh.material) {
+                this.glowMesh.material.dispose();
+            }
+            this.glowMesh.dispose();
         }
         if (this.particleSystem) {
             // Also dispose the dynamic texture if it exists
