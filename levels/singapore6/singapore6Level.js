@@ -6,6 +6,7 @@ import { Singapore6Skybox } from './skybox.js';
 import { Streetlight } from './furniture.js';
 import { WaterArea } from './water.js';
 import { Singapore6Lighting } from './lighting.js';
+import { Singapore6Effects } from './singapore6Effects.js';
 
 export class Singapore6Level extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -25,6 +26,7 @@ export class Singapore6Level extends LevelGenerator {
         };
         super(scene, customConfig);
         this.lighting = null;
+        this.effects = null;
         
         // Ensure scene has no ambient light
         scene.ambientColor = BABYLON.Color3.Black();
@@ -76,6 +78,10 @@ export class Singapore6Level extends LevelGenerator {
         
         // Initialize our custom lighting system
         this.lighting = new Singapore6Lighting(this.scene);
+        
+        // Initialize our effects system
+        this.effects = new Singapore6Effects(this.scene, this.lighting.clusterManager);
+        this.effects.initialize();
         
         // Define building positions based on the ASCII map layout
         const BUILDING_POSITIONS = {
@@ -196,7 +202,20 @@ export class Singapore6Level extends LevelGenerator {
         return walls;
     }
 
+    // Override the update method to update our effects
+    update() {
+        super.update();
+        
+        // Update our effects
+        if (this.effects) {
+            this.effects.update();
+        }
+    }
+
     dispose() {
+        if (this.effects) {
+            this.effects.dispose();
+        }
         if (this.lighting) {
             this.lighting.dispose();
         }
