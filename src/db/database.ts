@@ -46,9 +46,11 @@ export class Database {
 
   async createNPC(npc: NPCData): Promise<void> {
     return new Promise((resolve, reject) => {
-      const { id, name, persona, position, model_path } = npc;
+      const { id, name, persona, position, animations, defaultAnimation } = npc;
       const query = `INSERT OR REPLACE INTO npcs (id, name, persona, position, model_path) 
                     VALUES (?, ?, ?, ?, ?)`;
+      
+      const model_path = animations[defaultAnimation] || '';
       
       this.db.run(
         query, 
@@ -70,10 +72,22 @@ export class Database {
           if (err) reject(err);
           if (!row) resolve(null);
           else {
-            resolve({
-              ...row,
-              position: JSON.parse(row.position)
-            } as NPCData);
+            const npcData: NPCData = {
+              id: row.id,
+              name: row.name,
+              persona: row.persona,
+              position: JSON.parse(row.position),
+              animations: { 
+                idle: row.model_path
+              },
+              defaultAnimation: 'idle',
+              scene: '',
+              rotation: 0,
+              scale: 1,
+              interactionRadius: 2,
+              initialMemories: []
+            };
+            resolve(npcData);
           }
         }
       );

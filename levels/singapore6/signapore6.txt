@@ -1,14 +1,15 @@
-################
-#.1S.S.........#
-#.4S.S...W..2..#
-#.8S.S.........#
-#.6S.S.........#
-#.5S.S.........#
-#.3S.S.........#
-#..............#
-#.7............#
-################
-
+WWWWWWWWWWWWWWWWWW
+B################W
+B#.1S.S..WW.....#W
+B#.4S.S..WW..2..#W
+B#.8S.S..WW.....#W
+B#.6S.S..WW.....#W
+B#.5S.S..WW.....#W
+B#.3S.S..WW.....#W
+B#..............#W
+B#.7............#W
+B################W
+BBBBBBBBBBBB
 
 # = map border
 1 = sg_ful_high02
@@ -21,3 +22,4 @@
 8 = sg_uob_high02
 S = streetlight
 . = empty space
+B = cityscape border

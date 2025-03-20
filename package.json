@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "node dist/server/server.js"
+    "start": "node dist/server/server.js",
+    "live": "live-server --port=8080 --no-browser"
   },
   "dependencies": {
     "@babylonjs/core": "^7.52.2",
