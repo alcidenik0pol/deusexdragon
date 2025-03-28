@@ -34,7 +34,7 @@ export const SINGAPORE6_OBJECT_MAPPING = {
     ],
     
     // Water position
-    WATER: { x: 0, z: 50 },
+    WATER: { x: 0, z: 30, x_length: 40, z_length: 100 },
     
     // Border segments
     CITY_BORDERS: [

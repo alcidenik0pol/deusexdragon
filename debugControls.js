@@ -13,6 +13,7 @@ import { TestNewMeshes } from './levels/TestNewMeshes.js';
 import { Singapore5Level } from './levels/singapore5/singapore5Level.js';
 import { Singapore6Level } from './levels/singapore6/singapore6Level.js';
 import { GridLevel } from './levels/grid/GridLevel.js';
+import { FPSDisplay } from './fpsDisplay.js';
 
 export class DebugControls {
     static instance = null;
@@ -24,6 +25,7 @@ export class DebugControls {
         }
         
         this.switchLevelCallback = switchLevelCallback;
+        this.fpsDisplay = null;
         this.setupDebugControls();
         DebugControls.instance = this;
     }
@@ -39,7 +41,7 @@ export class DebugControls {
 
     setupDebugControls() {
         window.addEventListener("keydown", (e) => {
-            if ((e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'm') && ChatUI.isActive) return; // Disable 'L' and 'M' keys when chat is active
+            if ((e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'm' || e.key.toLowerCase() === 'f') && ChatUI.isActive) return; // Disable keys when chat is active
 
             switch (e.key.toLowerCase()) {
                 case 'l':
@@ -49,9 +51,24 @@ export class DebugControls {
                     console.log("M key pressed");
                     this.handleMinimapToggle();
                     break;
+                case 'f':
+                    this.handleFPSToggle();
+                    break;
                 // Add more debug keys here as needed
             }
         });
+    }
+
+    initializeFPSDisplay(engine) {
+        if (!this.fpsDisplay && engine) {
+            this.fpsDisplay = new FPSDisplay(engine);
+        }
+    }
+
+    handleFPSToggle() {
+        if (this.fpsDisplay) {
+            this.fpsDisplay.toggle();
+        }
     }
 
     getLevelGenerator(levelType, scene) {

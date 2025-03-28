@@ -9,6 +9,7 @@ import { Singapore6Lighting } from './lighting.js';
 import { Singapore6Effects } from './singapore6Effects.js';
 import { CityscapeBorder } from './cityscapeBorder.js';
 import { SINGAPORE6_OBJECT_MAPPING } from './objectMapping.js';
+import { SeaBorder } from './seaBorder.js';
 
 export class Singapore6Level extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -152,12 +153,20 @@ export class Singapore6Level extends LevelGenerator {
         // Adjust water position to align with grid
         const WATER_POSITION = SINGAPORE6_OBJECT_MAPPING.WATER;
         const waterArea = new WaterArea();
-        await waterArea.initialize(this.scene);
-        
+
+        // Pass the dimensions from the object mapping to the water initialization
+        await waterArea.initialize(this.scene, {
+            x_length: WATER_POSITION.x_length,
+            z_length: WATER_POSITION.z_length
+        });
+
         // Use the grid position directly
         const waterWorldPos = this.getWorldPosition(WATER_POSITION.x, WATER_POSITION.z);
         waterArea.setWorldPosition(waterWorldPos.x, waterWorldPos.z);
         this.components.push(waterArea);
+
+        // Create sea borders
+        await this.createSeaBorders();
 
         return result;
     }
@@ -183,6 +192,71 @@ export class Singapore6Level extends LevelGenerator {
             );
             
             this.components.push(border);
+        }
+    }
+
+    async createSeaBorders() {
+        // Get sea border segments from the mapping
+        const seaBorderSegments = SINGAPORE6_OBJECT_MAPPING.SEA_BORDERS;
+        
+        // Create each sea border segment
+        for (let i = 0; i < seaBorderSegments.length; i++) {
+            const { start, end, type } = seaBorderSegments[i];
+            
+            // Create the sea border component
+            const seaBorder = new SeaBorder(`sea-border-${i}`);
+            
+            // For the north border, create a large water patch
+            if (type === 'north') {
+                // Initialize with a large water area
+                await seaBorder.initialize(this.scene, {
+                    x_length: 160,  // Same width as the level
+                    z_length: 160   // Extend far into the distance
+                });
+                
+                // Position the sea border completely outside the north edge
+                // For a 160x160 water patch, we need to position it at z = 160 + 80 = 240
+                // This places the southern edge of the water at z = 160, which is 80 units
+                // beyond the northern edge of the level (z = 80)
+                const seaWorldPos = this.getWorldPosition(0, 240);
+                seaBorder.setWorldPosition(seaWorldPos.x, seaWorldPos.z);
+                
+                this.components.push(seaBorder);
+            }
+            // For other border types (east, northeast corner)
+            else {
+                await seaBorder.initialize(this.scene);
+                seaBorder.createSeaBorder(type);
+                
+                // Convert grid positions to world positions
+                const startPos = this.getWorldPosition(start.x, start.z);
+                const endPos = this.getWorldPosition(end.x, end.z);
+                
+                // For the east border, create another large water patch
+                if (type === 'east') {
+                    await seaBorder.initialize(this.scene, {
+                        x_length: 160,  // Extend far to the east
+                        z_length: 160   // Same height as the level
+                    });
+                    
+                    // Position the sea border completely outside the east edge
+                    const seaWorldPos = this.getWorldPosition(240, 0);
+                    seaBorder.setWorldPosition(seaWorldPos.x, seaWorldPos.z);
+                }
+                // For the northeast corner, create a smaller water patch
+                else if (type === 'northeast') {
+                    await seaBorder.initialize(this.scene, {
+                        x_length: 160,  // Extend to match the east border
+                        z_length: 160   // Extend to match the north border
+                    });
+                    
+                    // Position the sea border at the northeast corner, completely outside
+                    const seaWorldPos = this.getWorldPosition(240, 240);
+                    seaBorder.setWorldPosition(seaWorldPos.x, seaWorldPos.z);
+                }
+                
+                this.components.push(seaBorder);
+            }
         }
     }
 

@@ -10,13 +10,15 @@ export class WaterArea extends BaseComponent {
     async initialize(scene, options = {}) {
         await super.initialize(scene, options);
 
-        // Create water mesh - make it square and aligned with grid
-        const waterSize = WORLD_CONFIG.GRID_CELL_SIZE * 40; // Size to match grid
+        // Create water mesh - allow for rectangular shapes with clearer naming
+        const x_length = WORLD_CONFIG.GRID_CELL_SIZE * (options.x_length || options.width || 40); // Width in grid cells (x-axis)
+        const z_length = WORLD_CONFIG.GRID_CELL_SIZE * (options.z_length || options.height || 40); // Depth in grid cells (z-axis)
+        
         this.mesh = BABYLON.MeshBuilder.CreateGround(
             "waterMesh",
             { 
-                width: waterSize, 
-                height: waterSize, 
+                width: x_length, 
+                height: z_length, 
                 subdivisions: 32 
             },
             scene
@@ -26,12 +28,21 @@ export class WaterArea extends BaseComponent {
         const waterMaterial = new BABYLON.WaterMaterial("water", scene);
         waterMaterial.bumpTexture = new BABYLON.Texture("textures/waterbump.png", scene);
 
-        // Adjusted water properties for better appearance
-        // For visually flat but textured water
+        // Scale water properties based on a reference size to maintain consistent appearance
+        const referenceSize = 40; // Base size for water effect calibration
+        const scaleFactor = Math.min(x_length, z_length) / (WORLD_CONFIG.GRID_CELL_SIZE * referenceSize);
+        
+        // Adjusted water properties with consistent scaling
         waterMaterial.windForce = 0.5;
         waterMaterial.waveHeight = 0;
         waterMaterial.bumpHeight = 0.05;
-        waterMaterial.waveLength = 0.3;
+        
+        // Scale wavelength to maintain consistent wave density regardless of water size
+        waterMaterial.waveLength = 0.3 * scaleFactor;
+        
+        // Ensure consistent tiling of the bump texture
+        waterMaterial.bumpTexture.uScale = x_length / 10;
+        waterMaterial.bumpTexture.vScale = z_length / 10;
 
         waterMaterial.windDirection = new BABYLON.Vector2(0, 1);
         waterMaterial.waterColor = new BABYLON.Color3(0.1, 0.1, 0.6);

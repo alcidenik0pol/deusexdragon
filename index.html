@@ -55,6 +55,9 @@
         currentScene = await createScene(currentLevelType);
     });
 
+    // Initialize FPS display
+    debugControls.initializeFPSDisplay(engine);
+
     const createScene = async (levelType = 'default') => {
         const scene = new BABYLON.Scene(engine);
         
