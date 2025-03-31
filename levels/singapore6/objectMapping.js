@@ -1,4 +1,7 @@
 export const SINGAPORE6_OBJECT_MAPPING = {
+    // Define default spawn position as a constant
+    DEFAULT_SPAWN: { x: 0, z: -20 },
+    
     // Building positions
     BUILDINGS: {
         // Left column (x = -70)
@@ -12,6 +15,9 @@ export const SINGAPORE6_OBJECT_MAPPING = {
         
         // Right side (x = 50)
         MBS: { x: 50, z: 50 },          // 2
+        
+        // Northwest corner position for Merlion (between top lamp post and water)
+        Merlion: { x: -40, z: 70 }      // Northwest corner position
     },
     
     // Streetlight positions
@@ -35,6 +41,26 @@ export const SINGAPORE6_OBJECT_MAPPING = {
     
     // Water position
     WATER: { x: 0, z: 30, x_length: 40, z_length: 100 },
+    
+    // Container ship positions
+    CONTAINER_SHIPS: {
+        // North border ships (facing east) - placed further north with varied positions
+        NORTH: [
+            { x: -65, z: 140 },
+            { x: -25, z: 150 },
+            { x: 15, z: 145 },
+            { x: 55, z: 155 },
+            { x: -5, z: 160 }
+        ],
+        // East border ships (facing south) - placed further east with varied positions
+        EAST: [
+            { x: 140, z: 65 },
+            { x: 150, z: 25 },
+            { x: 145, z: -15 },
+            { x: 155, z: -55 },
+            { x: 160, z: 5 }
+        ]
+    },
     
     // Border segments
     CITY_BORDERS: [

@@ -1,6 +1,6 @@
 import { LevelGenerator } from '../../levelGenerator.js';
 import { MBSBuilding, CapitasBuilding, FultonBuilding, ParkviewBuilding, 
-         OUCBuilding, RepublicBuilding, ShopsBuilding, UOBHighBuilding } from './buildings.js';
+         OUCBuilding, RepublicBuilding, ShopsBuilding, UOBHighBuilding, MerlionBuilding, ContainerShip } from './buildings.js';
 import { WORLD_CONFIG } from '../../config.js';
 import { Singapore6Skybox } from './skybox.js';
 import { Streetlight } from './furniture.js';
@@ -98,7 +98,8 @@ export class Singapore6Level extends LevelGenerator {
             { Class: OUCBuilding, pos: SINGAPORE6_OBJECT_MAPPING.BUILDINGS.OUC },           // 5
             { Class: RepublicBuilding, pos: SINGAPORE6_OBJECT_MAPPING.BUILDINGS.Republic }, // 6
             { Class: ShopsBuilding, pos: SINGAPORE6_OBJECT_MAPPING.BUILDINGS.Shops },       // 7
-            { Class: UOBHighBuilding, pos: SINGAPORE6_OBJECT_MAPPING.BUILDINGS.UOBHigh }    // 8
+            { Class: UOBHighBuilding, pos: SINGAPORE6_OBJECT_MAPPING.BUILDINGS.UOBHigh },   // 8
+            { Class: MerlionBuilding, pos: SINGAPORE6_OBJECT_MAPPING.BUILDINGS.Merlion }    // Merlion at its defined position
         ];
 
         for (const { Class, pos } of buildings) {
@@ -110,6 +111,18 @@ export class Singapore6Level extends LevelGenerator {
             
             this.components.push(building);
         }
+
+        // Create container ships in the north sea border (facing east)
+        await this.createContainerShips(
+            SINGAPORE6_OBJECT_MAPPING.CONTAINER_SHIPS.NORTH, 
+            Math.PI / 2  // 90 degrees (east)
+        );
+        
+        // Create container ships in the east sea border (facing south)
+        await this.createContainerShips(
+            SINGAPORE6_OBJECT_MAPPING.CONTAINER_SHIPS.EAST, 
+            Math.PI      // 180 degrees (south)
+        );
 
         // Place streetlights according to the map (S positions)
         const STREETLIGHT_POSITIONS = SINGAPORE6_OBJECT_MAPPING.STREETLIGHTS;
@@ -206,57 +219,80 @@ export class Singapore6Level extends LevelGenerator {
             // Create the sea border component
             const seaBorder = new SeaBorder(`sea-border-${i}`);
             
-            // For the north border, create a large water patch
+            // For the north border (extends beyond the north edge)
             if (type === 'north') {
-                // Initialize with a large water area
+                // Initialize with appropriate water dimensions
                 await seaBorder.initialize(this.scene, {
                     x_length: 160,  // Same width as the level
-                    z_length: 160   // Extend far into the distance
+                    z_length: 80    // Extend 80 units beyond the north edge
                 });
                 
-                // Position the sea border completely outside the north edge
-                // For a 160x160 water patch, we need to position it at z = 160 + 80 = 240
-                // This places the southern edge of the water at z = 160, which is 80 units
-                // beyond the northern edge of the level (z = 80)
-                const seaWorldPos = this.getWorldPosition(0, 240);
+                // Position the sea border at the north edge
+                // The water mesh is centered on its position, so we need to offset by half its z_length
+                // North edge is at z = 80, so position at z = 80 + 40 = 120
+                const seaWorldPos = this.getWorldPosition(0, 120);
                 seaBorder.setWorldPosition(seaWorldPos.x, seaWorldPos.z);
                 
                 this.components.push(seaBorder);
             }
-            // For other border types (east, northeast corner)
-            else {
-                await seaBorder.initialize(this.scene);
-                seaBorder.createSeaBorder(type);
+            // For the east border (extends beyond the east edge)
+            else if (type === 'east') {
+                await seaBorder.initialize(this.scene, {
+                    x_length: 80,   // Extend 80 units beyond the east edge
+                    z_length: 160   // Same height as the level
+                });
                 
-                // Convert grid positions to world positions
-                const startPos = this.getWorldPosition(start.x, start.z);
-                const endPos = this.getWorldPosition(end.x, end.z);
-                
-                // For the east border, create another large water patch
-                if (type === 'east') {
-                    await seaBorder.initialize(this.scene, {
-                        x_length: 160,  // Extend far to the east
-                        z_length: 160   // Same height as the level
-                    });
-                    
-                    // Position the sea border completely outside the east edge
-                    const seaWorldPos = this.getWorldPosition(240, 0);
-                    seaBorder.setWorldPosition(seaWorldPos.x, seaWorldPos.z);
-                }
-                // For the northeast corner, create a smaller water patch
-                else if (type === 'northeast') {
-                    await seaBorder.initialize(this.scene, {
-                        x_length: 160,  // Extend to match the east border
-                        z_length: 160   // Extend to match the north border
-                    });
-                    
-                    // Position the sea border at the northeast corner, completely outside
-                    const seaWorldPos = this.getWorldPosition(240, 240);
-                    seaBorder.setWorldPosition(seaWorldPos.x, seaWorldPos.z);
-                }
+                // Position the sea border at the east edge
+                // East edge is at x = 80, so position at x = 80 + 40 = 120
+                const seaWorldPos = this.getWorldPosition(120, 0);
+                seaBorder.setWorldPosition(seaWorldPos.x, seaWorldPos.z);
                 
                 this.components.push(seaBorder);
             }
+            // For the northeast corner (extends beyond both north and east edges)
+            else if (type === 'northeast') {
+                await seaBorder.initialize(this.scene, {
+                    x_length: 80,   // Extend 80 units beyond the east edge
+                    z_length: 80    // Extend 80 units beyond the north edge
+                });
+                
+                // Position the sea border at the northeast corner
+                // Northeast corner is at (80, 80), so position at (80 + 40, 80 + 40) = (120, 120)
+                const seaWorldPos = this.getWorldPosition(120, 120);
+                seaBorder.setWorldPosition(seaWorldPos.x, seaWorldPos.z);
+                
+                this.components.push(seaBorder);
+            }
+        }
+    }
+
+    // Helper method to create container ships with the specified positions and rotation
+    async createContainerShips(positions, baseRotationAngle) {
+        for (const pos of positions) {
+            const ship = new ContainerShip();
+            await ship.initialize(this.scene);
+            
+            const worldPos = this.getWorldPosition(pos.x, pos.z);
+            ship.setWorldPosition(worldPos.x, worldPos.z);
+            
+            // Add ±10% variation to the rotation angle
+            const variationPercent = (Math.random() * 0.2) - 0.1; // -0.1 to 0.1 (±10%)
+            const variationAmount = baseRotationAngle * variationPercent;
+            const finalRotation = baseRotationAngle + variationAmount;
+            
+            // Apply rotation with variation
+            const rotation = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, finalRotation);
+            if (ship.mesh) {
+                ship.mesh.rotationQuaternion = rotation;
+            }
+            
+            // If there's a collision mesh, rotate it too
+            if (ship.collisionMesh) {
+                ship.collisionMesh.rotationQuaternion = rotation;
+            }
+            
+            this.components.push(ship);
+            console.log(`Container ship positioned at (${pos.x}, ${pos.z}) with rotation ${finalRotation * 180 / Math.PI} degrees (base: ${baseRotationAngle * 180 / Math.PI}°, variation: ${variationAmount * 180 / Math.PI}°)`);
         }
     }
 

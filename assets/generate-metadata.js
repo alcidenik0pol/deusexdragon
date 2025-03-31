@@ -380,7 +380,8 @@ async function processCharacterFolder(folderPath) {
     scaleFactor: baseModelData.scaleFactor,
     gridFootprint: baseModelData.gridFootprint,
     collisionType: 'capsule',
-    sizeMultiplier: 1 // Default size multiplier
+    sizeMultiplier: 1, // Default size multiplier
+    facing: 'unknown' // Default facing direction
   };
   
   // Add utility for recalculation
@@ -426,7 +427,8 @@ async function processStandardAsset(filePath, category) {
     scaleFactor: assetData.scaleFactor,
     gridFootprint: assetData.gridFootprint,
     collisionType: category === 'characters' ? 'capsule' : 'box',
-    sizeMultiplier: 1 // Default size multiplier
+    sizeMultiplier: 1, // Default size multiplier
+    facing: 'unknown' // Default facing direction
   };
   
   // Add utility for recalculation

@@ -165,9 +165,72 @@ export class UOBHighBuilding extends BaseComponent {
     }
 }
 
+export class MerlionBuilding extends BaseComponent {
+    constructor() {
+        super('merlion01');
+    }
+
+    async initialize(scene, options = {}) {
+        super.initialize(scene, options);
+        await this.loadAsset('buildings', 'merlion01');
+        
+        // Read the facing direction from the metadata
+        const facing = this.metadata?.facing || 'unknown';
+        
+        // Calculate rotation based on facing direction
+        // If facing is "north" and we want it to face "east", we need to rotate 90 degrees clockwise
+        let rotationAngle = 0;
+        
+        if (facing === 'north') {
+            // Rotate 90 degrees to face east (from north)
+            rotationAngle = Math.PI / 2;
+        } else if (facing === 'east') {
+            // Already facing east, no rotation needed
+            rotationAngle = 0;
+        } else if (facing === 'south') {
+            // Rotate 270 degrees to face east (from south)
+            rotationAngle = 3 * Math.PI / 2;
+        } else if (facing === 'west') {
+            // Rotate 180 degrees to face east (from west)
+            rotationAngle = Math.PI;
+        }
+        
+        // Apply rotation
+        const rotation = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, rotationAngle);
+        this.mesh.rotationQuaternion = rotation;
+        
+        // Create collision box with the same rotation
+        this.createCollisionBox(scene);
+        if (this.collisionMesh) {
+            this.collisionMesh.rotationQuaternion = rotation;
+        }
+        
+        console.log(`Merlion facing: ${facing}, applied rotation: ${rotationAngle} radians`);
+    }
+}
+
+export class ContainerShip extends BaseComponent {
+    constructor() {
+        super('containership');
+    }
+
+    async initialize(scene, options = {}) {
+        super.initialize(scene, options);
+        await this.loadAsset('buildings', 'containership');
+        
+        // Create collision box without applying any automatic rotation
+        this.createCollisionBox(scene);
+        
+        // Log the facing direction from metadata but don't apply rotation
+        const facing = this.metadata?.facing || 'unknown';
+        console.log(`ContainerShip facing direction from JSON: ${facing}`);
+        console.log(`ContainerShip loaded without automatic rotation`);
+    }
+}
+
 // Add this helper method to all classes through the prototype
 [CapitasBuilding, FultonBuilding, ParkviewBuilding, OUCBuilding, 
- RepublicBuilding, ShopsBuilding, UOBHighBuilding, MBSBuilding].forEach(cls => {
+ RepublicBuilding, ShopsBuilding, UOBHighBuilding, MBSBuilding, MerlionBuilding, ContainerShip].forEach(cls => {
     cls.prototype.createCollisionBox = function(scene) {
         this.collisionMesh = BABYLON.MeshBuilder.CreateBox(`${this.id}_collision`, {
             width: 1,

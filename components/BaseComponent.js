@@ -55,12 +55,32 @@ export class BaseComponent {
         const jsonPath = `/assets/${assetType}/${assetId}.json`;
         const assetData = await fetch(jsonPath).then(r => r.json());
         this.dimensions = assetData.standardDimensions;
+        
+        // Store the entire metadata for later use
+        this.metadata = assetData;
+        
+        // Validate facing direction if it exists
+        if (this.metadata.facing) {
+            const validDirections = ['north', 'east', 'south', 'west'];
+            if (!validDirections.includes(this.metadata.facing.toLowerCase())) {
+                console.warn(`Invalid facing direction "${this.metadata.facing}" for ${assetId}. Using "unknown" instead.`);
+                this.metadata.facing = 'unknown';
+            } else {
+                // Normalize to lowercase
+                this.metadata.facing = this.metadata.facing.toLowerCase();
+            }
+        } else {
+            // Set default facing if not specified
+            this.metadata.facing = 'unknown';
+            console.log(`No facing direction specified for ${assetId}. Using "unknown".`);
+        }
 
         // Add improved debug logging with clear asset identification
         console.log(`----- LOADING ASSET: ${assetId} (${assetType}) -----`);
         console.log(`${assetId} standard dimensions:`, this.dimensions);
         console.log(`${assetId} raw dimensions:`, assetData.rawDimensions);
         console.log(`${assetId} scale factor:`, assetData.scaleFactor);
+        console.log(`${assetId} facing direction:`, this.metadata.facing);
 
         // Load the mesh
         const result = await BABYLON.SceneLoader.ImportMeshAsync(

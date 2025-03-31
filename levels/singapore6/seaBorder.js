@@ -30,7 +30,7 @@ export class SeaBorder extends BaseComponent {
         this.position = new BABYLON.Vector3(x, 0, z);
     }
 
-    // Create a sea border between two points
+    // Create a sea border of a specific type
     createSeaBorder(type) {
         // Different types of sea borders can have different appearances
         // For now, we're just using the water component
