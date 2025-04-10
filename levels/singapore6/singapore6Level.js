@@ -10,6 +10,8 @@ import { Singapore6Effects } from './singapore6Effects.js';
 import { CityscapeBorder } from './cityscapeBorder.js';
 import { SINGAPORE6_OBJECT_MAPPING } from './objectMapping.js';
 import { SeaBorder } from './seaBorder.js';
+import { Singapore6NPCManager } from './npc.js';
+import { Car03 } from './vehicles.js';
 
 export class Singapore6Level extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -30,9 +32,15 @@ export class Singapore6Level extends LevelGenerator {
         super(scene, customConfig);
         this.lighting = null;
         this.effects = null;
+        this.npcManager = null;
+        this.flyingCar = null;
+        this.vehicles = [];
         
         // Ensure scene has no ambient light
         scene.ambientColor = BABYLON.Color3.Black();
+
+        // Register for updates
+        this.scene.registerBeforeRender(() => this.onUpdate());
     }
 
     // Override the createGround method to use a dark grey flat color
@@ -85,6 +93,10 @@ export class Singapore6Level extends LevelGenerator {
         // Initialize our effects system
         this.effects = new Singapore6Effects(this.scene, this.lighting.clusterManager);
         this.effects.initialize();
+        
+        // Initialize NPC manager without object mapping
+        this.npcManager = new Singapore6NPCManager(this.scene);
+        await this.npcManager.initialize();
         
         // Create cityscape borders based on the 'B' positions in the map
         await this.createCityBorders();
@@ -180,6 +192,10 @@ export class Singapore6Level extends LevelGenerator {
 
         // Create sea borders
         await this.createSeaBorders();
+
+        await this.createFlyingCar();
+
+        console.log('Level update chain initialized');
 
         return result;
     }
@@ -310,12 +326,69 @@ export class Singapore6Level extends LevelGenerator {
     }
 
     // Override the update method to update our effects
-    update() {
-        super.update();
-        
-        // Update our effects
-        if (this.effects) {
-            this.effects.update();
+    onUpdate() {
+        if (this.npcManager) {
+            this.npcManager.onUpdate();
+        }
+        this.updateFlyingCar();
+    }
+
+    async createFlyingCar() {
+        // Car configurations - each object defines a car's properties
+        const carConfigs = [
+            // East-bound cars (original direction)
+            { startX: -80, z: 0, rotation: Math.PI / 2, height: 55 },    // Center lane, lower than original 67.5
+            { startX: -80, z: 20, rotation: Math.PI / 2, height: 45 },   // North lane, even lower
+            
+            // North-bound cars (perpendicular to original)
+            { startX: -20, z: -80, rotation: 0, height: 50 },            // West lane
+            { startX: 0, z: -80, rotation: 0, height: 60 },              // Center lane
+            { startX: 20, z: -80, rotation: 0, height: 40 }              // East lane
+        ];
+
+        for (const config of carConfigs) {
+            const car = new Car03();
+            await car.initialize(this.scene, {
+                rotation: config.rotation,
+                height: config.height  // Now these are proper flying heights
+            });
+            
+            // Set initial position
+            car.setWorldPosition(config.startX, config.z);
+            
+            // Store movement properties based on direction
+            const isEastBound = Math.abs(config.rotation - Math.PI / 2) < 0.1;
+            this.flyingCar = {
+                mesh: car.mesh,
+                speed: 1.0,
+                startX: isEastBound ? config.startX : config.startX,
+                startZ: isEastBound ? config.z : config.z,
+                endX: isEastBound ? 80 : config.startX,
+                endZ: isEastBound ? config.z : 80,
+                movingX: isEastBound,
+                movingZ: !isEastBound
+            };
+            
+            this.components.push(car);
+            this.vehicles.push(this.flyingCar);
+        }
+    }
+
+    updateFlyingCar() {
+        for (const vehicle of this.vehicles) {
+            if (vehicle.movingX) {
+                // Update X position for east-bound cars
+                vehicle.mesh.position.x += vehicle.speed;
+                if (vehicle.mesh.position.x > vehicle.endX) {
+                    vehicle.mesh.position.x = vehicle.startX;
+                }
+            } else {
+                // Update Z position for north-bound cars
+                vehicle.mesh.position.z += vehicle.speed;
+                if (vehicle.mesh.position.z > vehicle.endZ) {
+                    vehicle.mesh.position.z = vehicle.startZ;
+                }
+            }
         }
     }
 
@@ -326,6 +399,17 @@ export class Singapore6Level extends LevelGenerator {
         if (this.lighting) {
             this.lighting.dispose();
         }
+        if (this.npcManager) {
+            this.npcManager.dispose();
+        }
+        
+        // Clean up vehicles
+        this.vehicles.forEach(vehicle => {
+            vehicle.dispose();
+        });
+        this.vehicles = [];
+        this.flyingCar = null;
+        
         super.dispose();
     }
 }

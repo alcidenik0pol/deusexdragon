@@ -1,7 +1,7 @@
 import { NPCBase } from './NPCBase.js';
-import npcData from '../npcs/data/purple02f.js';
+import npcData from '../npcs/data/bluef01.js';
 
-export class Purple02F extends NPCBase {
+export class BlueF01 extends NPCBase {
     constructor(scene) {
         super(npcData, scene);
         this.name = npcData.name;

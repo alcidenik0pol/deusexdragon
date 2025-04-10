@@ -10,16 +10,15 @@ export class WaterArea extends BaseComponent {
     async initialize(scene, options = {}) {
         await super.initialize(scene, options);
 
-        // Create water mesh - allow for rectangular shapes with clearer naming
-        const x_length = WORLD_CONFIG.GRID_CELL_SIZE * (options.x_length || options.width || 40); // Width in grid cells (x-axis)
-        const z_length = WORLD_CONFIG.GRID_CELL_SIZE * (options.z_length || options.height || 40); // Depth in grid cells (z-axis)
+        const x_length = WORLD_CONFIG.GRID_CELL_SIZE * (options.x_length || options.width || 40);
+        const z_length = WORLD_CONFIG.GRID_CELL_SIZE * (options.z_length || options.height || 40);
         
         this.mesh = BABYLON.MeshBuilder.CreateGround(
             "waterMesh",
             { 
                 width: x_length, 
-                height: z_length, 
-                subdivisions: 32 
+                height: z_length,
+                subdivisions: 32
             },
             scene
         );
@@ -28,55 +27,68 @@ export class WaterArea extends BaseComponent {
         const waterMaterial = new BABYLON.WaterMaterial("water", scene);
         waterMaterial.bumpTexture = new BABYLON.Texture("textures/waterbump.png", scene);
 
-        // Scale water properties based on a reference size to maintain consistent appearance
-        const referenceSize = 40; // Base size for water effect calibration
+        const referenceSize = 40;
         const scaleFactor = Math.min(x_length, z_length) / (WORLD_CONFIG.GRID_CELL_SIZE * referenceSize);
         
-        // Adjusted water properties with consistent scaling
-        waterMaterial.windForce = 0.5;
-        waterMaterial.waveHeight = 0;
-        waterMaterial.bumpHeight = 0.05;
+        // Adjusted water properties for more natural look
+        waterMaterial.windForce = 0.3;        // Reduced slightly
+        waterMaterial.waveHeight = 0.1;       // Added small waves
+        waterMaterial.bumpHeight = 0.1;       // Increased from 0.05
+        waterMaterial.waveLength = 0.5;       // Increased from 0.3
         
-        // Scale wavelength to maintain consistent wave density regardless of water size
-        waterMaterial.waveLength = 0.3 * scaleFactor;
-        
-        // Ensure consistent tiling of the bump texture
-        waterMaterial.bumpTexture.uScale = x_length / 10;
-        waterMaterial.bumpTexture.vScale = z_length / 10;
+        // Increased texture tiling for finer detail
+        waterMaterial.bumpTexture.uScale = x_length / 5;  // Changed from /10 to /5
+        waterMaterial.bumpTexture.vScale = z_length / 5;  // Changed from /10 to /5
 
-        waterMaterial.windDirection = new BABYLON.Vector2(0, 1);
+        waterMaterial.windDirection = new BABYLON.Vector2(1, 1);  // Diagonal waves look more natural
         waterMaterial.waterColor = new BABYLON.Color3(0.1, 0.1, 0.6);
-        waterMaterial.colorBlendFactor = 0.3;
+        waterMaterial.colorBlendFactor = 0.2;  // Slightly more transparent
 
-        // Find the skybox in the scene
+        waterMaterial.renderTargetSize = 256;  // Default is 512
+
+        // Add skybox first
         const skybox = scene.getMeshByName("skyBox");
-        
-        // Add skybox to the water material's reflection list if it exists
         if (skybox) {
             waterMaterial.addToRenderList(skybox);
         }
-        
-        // Add all other meshes in the scene to the reflection list 
-        // (excluding our water mesh and the skybox which we've already added)
+
+        // Add meshes with distance-based filtering
+        const MAX_REFLECTION_DISTANCE = 100; // Adjust based on your needs
         scene.meshes.forEach(mesh => {
-            if (mesh !== this.mesh && mesh !== skybox) {
-                waterMaterial.addToRenderList(mesh);
+            try {
+                if (mesh && mesh !== this.mesh && mesh !== skybox) {
+                    if (!mesh.getBoundingInfo()?.boundingSphere) return;
+                    if (mesh.getBoundingInfo().boundingSphere.radius < 0.5) return;
+                    
+                    // Only reflect objects within certain distance
+                    const distance = BABYLON.Vector3.Distance(
+                        mesh.position,
+                        this.mesh.position
+                    );
+                    if (distance > MAX_REFLECTION_DISTANCE) return;
+                    
+                    waterMaterial.addToRenderList(mesh);
+                }
+            } catch (e) {
+                console.warn("Skipping mesh for water reflection:", mesh.name);
             }
         });
 
-        // Assign material to mesh
         this.mesh.material = waterMaterial;
-
-        // Position slightly above ground level
         this.mesh.position.y = LevelGenerator.LEVEL_BOUNDS.floor.y + 0.1;
-
-        // Ensure mesh is perfectly flat and aligned with world grid
+        
         this.mesh.rotation.x = 0;
         this.mesh.rotation.y = 0;
         this.mesh.rotation.z = 0;
-        
-        // Prevent any automatic rotations
         this.mesh.rotationQuaternion = null;
+
+        scene.onBeforeRenderObservable.add(() => {
+            const camDistance = BABYLON.Vector3.Distance(
+                scene.activeCamera.position,
+                this.mesh.position
+            );
+            waterMaterial.renderTargetSize = camDistance > 50 ? 256 : 512;
+        });
     }
 
     // Override parent method to keep water slightly above ground level

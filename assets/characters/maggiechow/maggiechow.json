@@ -1,0 +1,30 @@
+{
+  "id": "maggiechow",
+  "type": "characters",
+  "baseModel": "dance01.glb",
+  "animations": {
+    "dance01": "dance01.glb",
+    "dance02": "dance02.glb",
+    "idle": "idle.glb",
+    "walking": "walking.glb"
+  },
+  "rawDimensions": {
+    "width": 0.887644350528717,
+    "height": 0.9997099936008453,
+    "depth": 0.26374009251594543
+  },
+  "standardDimensions": {
+    "width": 1.5982233259434926,
+    "height": 1.8,
+    "depth": 0.4748698818331992
+  },
+  "scaleFactor": 1.800522162949075,
+  "gridFootprint": {
+    "width": 2,
+    "depth": 1
+  },
+  "collisionType": "capsule",
+  "sizeMultiplier": 1,
+  "facing": "unknown",
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
+}

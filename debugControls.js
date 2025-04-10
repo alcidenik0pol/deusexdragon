@@ -8,7 +8,7 @@ import { Singapore4Level } from './levels/singapore4Level.js';
 import { NightTestLevel } from './levels/nightTestLevel.js';
 import { ModernOfficeLevel } from './levels/ModernOfficeLevel.js';
 import { TestCameraCollision } from './levels/testCameraCollision.js';
-import { NightClub } from './levels/NightClub.js';
+// import { NightClub } from './levels/NightClub.js';
 import { TestNewMeshes } from './levels/TestNewMeshes.js';
 import { Singapore5Level } from './levels/singapore5/singapore5Level.js';
 import { Singapore6Level } from './levels/singapore6/singapore6Level.js';

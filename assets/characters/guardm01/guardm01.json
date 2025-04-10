@@ -1,0 +1,30 @@
+{
+  "id": "guardm01",
+  "type": "characters",
+  "baseModel": "dance01.glb",
+  "animations": {
+    "dance01": "dance01.glb",
+    "dance02": "dance02.glb",
+    "idle": "idle.glb",
+    "walking": "walking.glb"
+  },
+  "rawDimensions": {
+    "width": 0.9248082935810089,
+    "height": 0.9971321523189545,
+    "depth": 0.22338251024484634
+  },
+  "standardDimensions": {
+    "width": 1.6694426356370664,
+    "height": 1.8,
+    "depth": 0.4032449635744036
+  },
+  "scaleFactor": 1.8051769725947326,
+  "gridFootprint": {
+    "width": 2,
+    "depth": 1
+  },
+  "collisionType": "capsule",
+  "sizeMultiplier": 1,
+  "facing": "unknown",
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
+}

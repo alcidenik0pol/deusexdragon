@@ -96,5 +96,5 @@ export const SINGAPORE6_OBJECT_MAPPING = {
             end: { x: 80, z: 80 }, // Same point for corner piece
             type: 'northeast'
         }
-    ]
+    ],
 }; 
