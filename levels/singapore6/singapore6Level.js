@@ -12,6 +12,7 @@ import { SINGAPORE6_OBJECT_MAPPING } from './objectMapping.js';
 import { SeaBorder } from './seaBorder.js';
 import { Singapore6NPCManager } from './npc.js';
 import { Car03 } from './vehicles.js';
+import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
 
 export class Singapore6Level extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -35,6 +36,7 @@ export class Singapore6Level extends LevelGenerator {
         this.npcManager = null;
         this.flyingCar = null;
         this.vehicles = [];
+        this.dialogueManager = new DialogueManager(scene);
         
         // Ensure scene has no ambient light
         scene.ambientColor = BABYLON.Color3.Black();
@@ -94,9 +96,13 @@ export class Singapore6Level extends LevelGenerator {
         this.effects = new Singapore6Effects(this.scene, this.lighting.clusterManager);
         this.effects.initialize();
         
-        // Initialize NPC manager without object mapping
+        // Initialize NPC manager with chat interaction
         this.npcManager = new Singapore6NPCManager(this.scene);
         await this.npcManager.initialize();
+        
+        // Register NPCs with the dialogue manager instead of adding click handlers
+        this.dialogueManager.registerNPCs(Array.from(this.npcManager.npcs.values()));
+        this.dialogueManager.initialize();
         
         // Create cityscape borders based on the 'B' positions in the map
         await this.createCityBorders();
@@ -410,6 +416,9 @@ export class Singapore6Level extends LevelGenerator {
         this.vehicles = [];
         this.flyingCar = null;
         
+        if (this.dialogueManager) {
+            this.dialogueManager.dispose();
+        }
         super.dispose();
     }
 }

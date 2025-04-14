@@ -102,9 +102,9 @@ export class ClusterManager {
             }));
             
             if (this.debug) {
-                console.log(`Total registered lights: ${allLights.length}`);
+                // console.log(`Total registered lights: ${allLights.length}`);
                 allLights.forEach((light, i) => {
-                    console.log(`Light ${i}: pos=${light.position.toString()}, type=${light.type}`);
+                    // console.log(`Light ${i}: pos=${light.position.toString()}, type=${light.type}`);
                 });
             }
             
@@ -150,7 +150,7 @@ export class ClusterManager {
             const topLights = visibleLights.slice(0, this.MAX_ACTIVE_LIGHTS);
             
             if (this.debug || true) { // Always log for now to help debug
-                console.log(`Active lights: ${topLights.length}/${allLights.length} (visible: ${visibleLights.length})`);
+                // console.log(`Active lights: ${topLights.length}/${allLights.length} (visible: ${visibleLights.length})`);
                 topLights.forEach((light, index) => {
                     console.log(`Light ${index}: ID=${light.id}, Distance=${light.distance.toFixed(2)}, InFrustum=${light.inFrustum}, Position=${light.position.toString()}`);
                 });

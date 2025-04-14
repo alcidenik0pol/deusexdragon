@@ -125,7 +125,8 @@ export class ChatUI {
             overflow-y: auto;
             padding: 0.5rem;
             color: #fbbf24;
-            font-size: 14px;  // Increased font size
+            font-size: 14px;
+            line-height: 1.2;
             background-color: #111827;
             border-top: 1px solid rgba(217, 119, 6, 0.5);
             white-space: pre-wrap;
@@ -237,7 +238,7 @@ export class ChatUI {
             byeButton.style.borderBottomColor = '#1f2937';
         };
         byeButton.onclick = () => {
-            this.chatService.addGoodbye();
+            // this.chatService.addGoodbye();
             this.hide();
         };
 
@@ -400,9 +401,30 @@ export class ChatUI {
 
     async streamResponse(question) {
         this.outputBlock.textContent = '';
-        await this.chatService.streamChat(question, (content) => {
-            this.outputBlock.textContent += content;
-        }, this.currentNPC);
+        
+        try {
+            await this.chatService.streamChat(
+                question,
+                this.currentNPC,
+                // Chunk handler
+                (chunk) => {
+                    this.outputBlock.textContent += chunk;
+                    // Auto-scroll as content streams in
+                    this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
+                },
+                // Complete handler
+                (fullResponse) => {
+                    // Ensure we're scrolled to bottom when complete
+                    this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
+                },
+                // Error handler
+                (error) => {
+                    this.outputBlock.textContent += `\nError: ${error.message}`;
+                }
+            );
+        } catch (error) {
+            this.outputBlock.textContent = `Error: ${error.message}`;
+        }
     }
 
     async handleChat(question) {
