@@ -398,6 +398,7 @@ export class Singapore6Level extends LevelGenerator {
         }
     }
 
+
     dispose() {
         if (this.effects) {
             this.effects.dispose();

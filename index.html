@@ -37,6 +37,7 @@
     import { GameCamera } from './camera.js';
     import { Controls } from './controls.js';
     import { DebugControls } from './debugControls.js';
+    import { getSpawnPosition } from './spawnPositions.js';
     
     const canvas = document.getElementById("renderCanvas");
     const engine = new BABYLON.Engine(canvas, true);
@@ -102,6 +103,28 @@
 
         // Load characters ONCE
         const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter } = await loadCharacters(scene);
+        
+        // Get the spawn position for this level
+        const spawnPosition = getSpawnPosition(levelType);
+        
+        // Set the character position to the spawn position
+        idleCharacter.position.x = spawnPosition.x;
+        idleCharacter.position.z = spawnPosition.z;
+        
+        forwardCharacter.position.x = spawnPosition.x;
+        forwardCharacter.position.z = spawnPosition.z;
+        
+        backwardCharacter.position.x = spawnPosition.x;
+        backwardCharacter.position.z = spawnPosition.z;
+        
+        leftCharacter.position.x = spawnPosition.x;
+        leftCharacter.position.z = spawnPosition.z;
+        
+        rightCharacter.position.x = spawnPosition.x;
+        rightCharacter.position.z = spawnPosition.z;
+        
+        runCharacter.position.x = spawnPosition.x;
+        runCharacter.position.z = spawnPosition.z;
         
         // Initialize controls with all character models
         const controls = new Controls(
