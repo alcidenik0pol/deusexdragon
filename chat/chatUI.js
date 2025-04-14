@@ -10,6 +10,9 @@ export class ChatUI {
         this.isVisible = false;
         this.chatService = new ChatService();
         this.currentNPC = null;
+        
+        // Make the chatUI instance globally accessible
+        window.chatUI = this;
     }
 
     create() {
@@ -238,8 +241,8 @@ export class ChatUI {
             byeButton.style.borderBottomColor = '#1f2937';
         };
         byeButton.onclick = () => {
-            // this.chatService.addGoodbye();
-            this.hide();
+            // Say goodbye and clear conversation history
+            this.handleGoodbye();
         };
 
         // Add keydown handler for Escape key
@@ -300,22 +303,8 @@ export class ChatUI {
     }
 
     show() {
-        if (!this.container) {
-            this.create();
-        }
-        if (!this.currentNPC) {
-            console.log("No NPC selected for conversation");
-            return;
-        }
-
-        // Stop character movement and reset keys before showing UI
-        const stopMovementEvent = new CustomEvent('stopCharacterMovement');
-        window.dispatchEvent(stopMovementEvent);
-
-        // Lock player controls
-        const lockControlsEvent = new CustomEvent('lockPlayerControls', { detail: true });
-        window.dispatchEvent(lockControlsEvent);
-
+        // Previous code...
+        
         this.container.style.display = 'block';
         this.isVisible = true;
         ChatUI.isActive = true;
@@ -325,13 +314,27 @@ export class ChatUI {
             window.gameCamera.focusOnNPC(this.currentNPC);
         }
         
+        // Create a bound function with proper 'this' context
+        this.boundPreventHandler = (e) => {
+            if (e.key.toLowerCase() === 'e') {
+                e.stopPropagation();
+                e.preventDefault();
+                // Remove the listener immediately after handling the first 'e'
+                document.removeEventListener('keydown', this.boundPreventHandler, true);
+            }
+        };
+        
+        // Add the event listener with the bound function
+        document.addEventListener('keydown', this.boundPreventHandler, true);
+        
         // Focus on the text area
         setTimeout(() => {
             this.textArea.focus();
+            // Also remove the handler after a short delay as a backup
+            setTimeout(() => {
+                document.removeEventListener('keydown', this.boundPreventHandler, true);
+            }, 100);
         }, 0);
-
-        // Prevent 'E' from being added to the text area only during activation
-        document.addEventListener('keydown', this.preventEKeyDuringActivation, true);
     }
 
     hide() {
@@ -344,14 +347,35 @@ export class ChatUI {
             if (window.gameCamera) {
                 window.gameCamera.clearNPCFocus();
             }
-
+    
             // Unlock player controls
             const event = new CustomEvent('lockPlayerControls', { detail: false });
             window.dispatchEvent(event);
-
+    
             // Remove 'E' key prevention
-            document.removeEventListener('keydown', this.preventEKeyDuringActivation, true);
+            if (this.boundPreventHandler) {
+                document.removeEventListener('keydown', this.boundPreventHandler, true);
+            }
         }
+    }
+
+    // New method to handle goodbye button click
+    async handleGoodbye() {
+        if (!this.currentNPC) {
+            this.hide();
+            return;
+        }
+        
+        // Display a goodbye message
+        this.outputBlock.textContent = "Goodbye!";
+        
+        // Clear the conversation history for this NPC
+        this.chatService.clearHistory(this.currentNPC);
+        
+        // Wait a moment before hiding the UI
+        setTimeout(() => {
+            this.hide();
+        }, 800);
     }
 
     preventEKeyDuringActivation(e) {

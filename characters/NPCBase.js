@@ -1,3 +1,4 @@
+import { ChatUI } from '../chat/chatUI.js';
 import { npcService } from '../services/npcService.js';
 
 export class NPCBase {
@@ -214,7 +215,40 @@ export class NPCBase {
     updateMovement() {
         if (!this.mesh || this.currentState === NPCBase.States.LOCKED) return;
 
-        // Update pattern timer
+        // Check if this specific NPC is being talked to
+        if (ChatUI.isActive && window.chatUI?.currentNPC?.id === this.data.id) {
+            // Force idle state only for the NPC being talked to
+            if (this.currentState !== NPCBase.States.IDLE) {
+                this.setState(NPCBase.States.IDLE);
+            }
+            
+            // Make NPC face the player when chatting
+            if (window.player && window.player.mesh) {
+                // Calculate direction from NPC to player
+                const playerDirection = new BABYLON.Vector3(
+                    window.player.mesh.position.x - this.mesh.position.x,
+                    0,
+                    window.player.mesh.position.z - this.mesh.position.z
+                ).normalize();
+                
+                // Calculate rotation angle to face player
+                this.targetRotation = Math.atan2(playerDirection.x, playerDirection.z);
+                
+                // Apply smooth rotation
+                const currentRotation = this.mesh.rotationQuaternion.toEulerAngles().y;
+                const rotationDiff = this.targetRotation - currentRotation;
+                const smoothRotation = currentRotation + rotationDiff * NPCBase.ROTATION_SPEED;
+                
+                this.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+                    BABYLON.Vector3.Up(),
+                    smoothRotation
+                );
+            }
+            
+            return;
+        }
+
+        // Rest of the movement update logic continues as normal for other NPCs
         this.patternTimer -= NPCBase.MOVEMENT_SPEED;
         if (this.patternTimer <= 0) {
             this.currentPattern = this.getRandomPattern();

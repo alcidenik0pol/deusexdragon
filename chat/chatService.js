@@ -6,6 +6,52 @@ export class ChatService {
     this.apiKey = config.OPENROUTER_API_KEY;
     this.baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
     this.model = 'google/gemini-2.5-pro-exp-03-25:free';
+    // Add conversation history storage - a Map with NPC IDs as keys
+    this.conversationHistories = new Map();
+  }
+
+  /**
+   * Get or create a conversation history for an NPC
+   * @param {object} npc - The NPC object
+   * @returns {Array} - The conversation history array
+   */
+  getConversationHistory(npc) {
+    // Use NPC ID or name as the key
+    const npcId = npc?.id || npc?.name || 'unknown-npc';
+    
+    if (!this.conversationHistories.has(npcId)) {
+      console.log(`Creating new conversation history for NPC: ${npcId}`);
+      this.conversationHistories.set(npcId, []);
+    }
+    
+    return this.conversationHistories.get(npcId);
+  }
+
+  /**
+   * Add a message to the conversation history
+   * @param {object} npc - The NPC object
+   * @param {string} role - The role of the message sender ('user' or 'assistant')
+   * @param {string} content - The message content
+   */
+  addToHistory(npc, role, content) {
+    const history = this.getConversationHistory(npc);
+    history.push({ role, content });
+    
+    // Optional: Limit history length to prevent token overflow
+    const MAX_HISTORY_LENGTH = 10; // Adjust as needed
+    if (history.length > MAX_HISTORY_LENGTH) {
+      history.shift(); // Remove oldest message
+    }
+  }
+
+  /**
+   * Clear conversation history for an NPC
+   * @param {object} npc - The NPC object
+   */
+  clearHistory(npc) {
+    const npcId = npc?.id || npc?.name || 'unknown-npc';
+    this.conversationHistories.delete(npcId);
+    console.log(`Cleared conversation history for NPC: ${npcId}`);
   }
 
   /**
@@ -46,19 +92,35 @@ export class ChatService {
       const npcContext = `You are ${npcName}, ${npcPersona}. Always respond concisely in 2-3 sentences maximum.`;
       console.log(`Using NPC context: ${npcContext.substring(0, 100)}...`);
 
-      // Prepare request payload
+      // Get conversation history for this NPC
+      const conversationHistory = this.getConversationHistory(npc);
+      
+      // Add the user's message to history before sending
+      this.addToHistory(npc, 'user', content);
+
+      // Prepare request payload with history
+      const messages = [
+        { role: 'system', content: npcContext },
+        ...conversationHistory // Include previous conversation history
+      ];
+      
+      // Don't add the user message again if it's already the last one in history
+      if (conversationHistory.length === 0 || 
+          conversationHistory[conversationHistory.length - 1].role !== 'user' ||
+          conversationHistory[conversationHistory.length - 1].content !== content) {
+        messages.push({ role: 'user', content });
+      }
+      
       const payload = {
         model: this.model,
-        messages: [
-          { role: 'system', content: npcContext },
-          { role: 'user', content }
-        ],
+        messages: messages,
         stream: true,
         temperature: 0.7,
         max_tokens: 1000
       };
       
       console.log(`Sending request to ${this.baseUrl} with model: ${this.model}`);
+      console.log(`Including ${conversationHistory.length} previous messages in context`);
       
       const response = await fetch(this.baseUrl, {
         method: 'POST',
@@ -141,6 +203,9 @@ export class ChatService {
         // Display the complete response
         console.log('Complete response from NPC:');
         console.log(accumulatedResponse);
+        
+        // Add the assistant's response to history
+        this.addToHistory(npc, 'assistant', accumulatedResponse);
         
         handleComplete(fullResponse);
       }

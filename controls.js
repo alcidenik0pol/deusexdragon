@@ -69,34 +69,9 @@ export class Controls {
             
             if (e.key.toLowerCase() in this.keys) {
                 this.keys[e.key.toLowerCase()] = true;
-                this.setAllCharactersInvisible();
                 
-                // Only set character animations for WASD keys
-                if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
-                    switch(e.key.toLowerCase()) {
-                        case 'w':
-                            if (this.keys.shift) {
-                                this.runCharacter.setEnabled(true);
-                                this.currentCharacter = this.runCharacter;
-                            } else {
-                                this.forwardCharacter.setEnabled(true);
-                                this.currentCharacter = this.forwardCharacter;
-                            }
-                            break;
-                        case 's':
-                            this.backwardCharacter.setEnabled(true);
-                            this.currentCharacter = this.backwardCharacter;
-                            break;
-                        case 'a':
-                            this.rightCharacter.setEnabled(true);  // Swapped from leftCharacter
-                            this.currentCharacter = this.rightCharacter;  // Swapped
-                            break;
-                        case 'd':
-                            this.leftCharacter.setEnabled(true);   // Swapped from rightCharacter
-                            this.currentCharacter = this.leftCharacter;   // Swapped
-                            break;
-                    }
-                }
+                // Update character animation based on current key state
+                this.updateCharacterAnimation();
             }
         });
 
@@ -109,24 +84,43 @@ export class Controls {
             if (e.key.toLowerCase() in this.keys) {
                 this.keys[e.key.toLowerCase()] = false;
                 
-                // Only handle character state for WASD keys
-                if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
-                    // If no movement keys are pressed, return to idle
-                    if (!Object.values(this.keys).some(key => key)) {
-                        this.setAllCharactersInvisible();
-                        this.idleCharacter.setEnabled(true);
-                        this.currentCharacter = this.idleCharacter;
-                    }
-                }
-            }
-
-            if (e.key.toLowerCase() === 'shift' && this.keys.w) {
-                // Switch from run to walk animation when releasing shift
-                this.setAllCharactersInvisible();
-                this.forwardCharacter.setEnabled(true);
-                this.currentCharacter = this.forwardCharacter;
+                // Update character animation based on current key state
+                this.updateCharacterAnimation();
             }
         });
+    }
+
+    updateCharacterAnimation() {
+        this.setAllCharactersInvisible();
+        
+        // If no movement keys are pressed, return to idle
+        if (!this.keys.w && !this.keys.a && !this.keys.s && !this.keys.d) {
+            this.idleCharacter.setEnabled(true);
+            this.currentCharacter = this.idleCharacter;
+            return;
+        }
+        
+        // Handle running animation (shift + w)
+        if (this.keys.shift && this.keys.w) {
+            this.runCharacter.setEnabled(true);
+            this.currentCharacter = this.runCharacter;
+            return;
+        }
+        
+        // Handle other movement animations
+        if (this.keys.w) {
+            this.forwardCharacter.setEnabled(true);
+            this.currentCharacter = this.forwardCharacter;
+        } else if (this.keys.s) {
+            this.backwardCharacter.setEnabled(true);
+            this.currentCharacter = this.backwardCharacter;
+        } else if (this.keys.a) {
+            this.rightCharacter.setEnabled(true);  // Swapped from leftCharacter
+            this.currentCharacter = this.rightCharacter;  // Swapped
+        } else if (this.keys.d) {
+            this.leftCharacter.setEnabled(true);   // Swapped from rightCharacter
+            this.currentCharacter = this.leftCharacter;   // Swapped
+        }
     }
 
     setupMovementLoop() {
