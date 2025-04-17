@@ -149,7 +149,7 @@ export class NPCBase {
                 )
             );
             
-            console.log(`Chat interaction setup complete for NPC: ${this.name}`);
+            // console.log(`Chat interaction setup complete for NPC: ${this.name}`);
         }
     }
     

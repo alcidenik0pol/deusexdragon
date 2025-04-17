@@ -64,45 +64,55 @@ export class Singapore6Level extends LevelGenerator {
             {
                 id: "discovered_tai_yong_recruitment",
                 points: 2,
-                condition: "Did the player learn about Tai Yong recruitment drive for 'genetically compatible' subjects?",
-                npcIds: ["ANY"], // Any NPC can provide this information
+                condition: "Did the player learn about or discuss Tai Yong Medical's recruitment activities?",
+                npcIds: ["linmeihua", "zaratan", "khaichen", "maggiechow", "victorialim", "nikazhang"], // List all NPCs explicitly
                 required: true
             },
             
             // Path 1: Blackmail Leverage
             {
                 id: "obtained_blackmail_leverage",
-                points: 5,
-                condition: "Did the player obtain incriminating footage of Guard Khai Chen's brother?",
-                npcIds: ["LIN_MEI_HUA"],
+                points: 3,
+                condition: "Did the player learn about Guard Khai Chen's brother receiving illegal black market augmentations, or was offered footage proving this?",
+                npcIds: ["linmeihua"],
                 required: false,
                 pathId: "blackmail"
             },
             {
                 id: "blackmailed_guard_khai",
-                points: 5,
-                condition: "Did the player successfully blackmail Khai Chen with the information about his brother?",
-                npcIds: ["KHAI_CHEN"],
+                points: 7,
+                condition: "Did the player confront or blackmail Khai Chen with information about his brother's illegal augmentations, convincing him to let them pass?",
+                npcIds: ["khaichen"], // Khai Chen (guardm01.js)
                 required: false,
-                pathId: "blackmail"
+                pathId: "blackmail",
+                resolvesLevel: true
             },
             
             // Path 2: Corporate Identity Theft
             {
                 id: "obtained_executive_credentials",
-                points: 5,
+                points: 3,
                 condition: "Did the player obtain information about the Tai Yong executive's credentials?",
-                npcIds: ["VICTORIA_LIM"],
+                npcIds: ["victorialim"], // Victoria Lim (orangef01.js)
                 required: false,
                 pathId: "identity_theft"
             },
             {
                 id: "gathered_dirt_on_lin",
-                points: 5,
+                points: 3,
                 condition: "Did the player get dirt on Lin Mei Hua's corporate espionage activities?",
-                npcIds: ["ANY"],
+                npcIds: ["victorialim", "khaichen", "maggiechow", "nikazhang"], // List all NPCs that might provide this info
                 required: false,
                 pathId: "identity_theft"
+            },
+            {
+                id: "used_executive_credentials",
+                points: 4,
+                condition: "Did the player convince Khai Chen to let them pass using the executive credentials?",
+                npcIds: ["khaichen"],
+                required: false,
+                pathId: "identity_theft",
+                resolvesLevel: true
             },
             
             // Path 3: Medical Emergency Diversion
@@ -110,7 +120,7 @@ export class Singapore6Level extends LevelGenerator {
                 id: "convinced_nika_for_distraction",
                 points: 3,
                 condition: "Did the player convince Nika Zhang to stage a medical emergency distraction?",
-                npcIds: ["NIKA_ZHANG"],
+                npcIds: ["nikazhang"], // Nika Zhang (purple02f.js)
                 required: false,
                 pathId: "diversion"
             },
@@ -118,17 +128,18 @@ export class Singapore6Level extends LevelGenerator {
                 id: "positioned_sergeant_tan",
                 points: 3,
                 condition: "Did the player convince Sergeant Tan to be in position for the 'emergency'?",
-                npcIds: ["SERGEANT_TAN"],
+                npcIds: ["zaratan"], // Sergeant Tan (copf01.js)
                 required: false,
                 pathId: "diversion"
             },
             {
                 id: "executed_diversion_plan",
                 points: 4,
-                condition: "Did the player successfully execute the diversion plan at 14:00?",
-                npcIds: ["NIKA_ZHANG", "SERGEANT_TAN", "KHAI_CHEN"],
+                condition: "Did the player successfully execute the diversion plan, causing Khai Chen to leave his post?",
+                npcIds: ["nikazhang", "zaratan", "khaichen"],
                 required: false,
-                pathId: "diversion"
+                pathId: "diversion",
+                resolvesLevel: true
             },
             
             // Path 4: Become a Test Subject Referral
@@ -136,7 +147,7 @@ export class Singapore6Level extends LevelGenerator {
                 id: "learned_about_tans_sister",
                 points: 3,
                 condition: "Did the player learn that Sergeant Tan's sister works in recruitment?",
-                npcIds: ["SERGEANT_TAN"],
+                npcIds: ["zaratan"], // Sergeant Tan (copf01.js)
                 required: false,
                 pathId: "referral"
             },
@@ -144,17 +155,18 @@ export class Singapore6Level extends LevelGenerator {
                 id: "obtained_genetic_markers_info",
                 points: 3,
                 condition: "Did the player learn about Nika's unique genetic markers that made her valuable?",
-                npcIds: ["NIKA_ZHANG"],
+                npcIds: ["nikazhang"], // Nika Zhang (purple02f.js)
                 required: false,
                 pathId: "referral"
             },
             {
                 id: "secured_recruitment_referral",
                 points: 4,
-                condition: "Did the player convince Tan to call her sister about a 'perfect candidate'?",
-                npcIds: ["SERGEANT_TAN"],
+                condition: "Did the player convince Khai Chen to let them pass based on Sergeant Tan's referral?",
+                npcIds: ["khaichen"], // Khai Chen (guardm01.js)
                 required: false,
-                pathId: "referral"
+                pathId: "referral",
+                resolvesLevel: true
             },
             
             // Path 5: Corporate Espionage Contract
@@ -162,7 +174,7 @@ export class Singapore6Level extends LevelGenerator {
                 id: "accepted_espionage_contract",
                 points: 3,
                 condition: "Did the player agree to plant a data tap for Lin Mei Hua?",
-                npcIds: ["LIN_MEI_HUA"],
+                npcIds: ["linmeihua"], // Lin Mei Hua (bluef01.js)
                 required: false,
                 pathId: "espionage"
             },
@@ -170,23 +182,85 @@ export class Singapore6Level extends LevelGenerator {
                 id: "obtained_victoria_vouching",
                 points: 3,
                 condition: "Did the player convince Victoria to vouch for their reliability?",
-                npcIds: ["VICTORIA_LIM"],
+                npcIds: ["victorialim"], // Victoria Lim (orangef01.js)
                 required: false,
                 pathId: "espionage"
             },
             {
-                id: "received_contractor_badge",
+                id: "used_contractor_credentials",
                 points: 4,
-                condition: "Did the player receive a contractor badge and data tap from Lin?",
-                npcIds: ["LIN_MEI_HUA"],
+                condition: "Did the player convince Khai Chen to let them pass using the contractor badge from Lin?",
+                npcIds: ["khaichen"], // Khai Chen (guardm01.js)
                 required: false,
-                pathId: "espionage"
+                pathId: "espionage",
+                resolvesLevel: true
             }
         ];
         
         // Register the level with conditions and point threshold
         // Player needs to complete one full path (approximately 10 points) to succeed
         this.resolutionManager.registerLevel('singapore6', singapore6Conditions, 10);
+        
+        // Add a listener to the levelExitUnlocked event instead of using onLevelResolved
+        window.addEventListener('levelExitUnlocked', (event) => {
+            if (event.detail.levelId === 'singapore6') {
+                console.log(`Level completed via path: ${this.getCompletedPath()}`);
+                this.showLevelCompletionNotification();
+            }
+        });
+    }
+
+    // Helper method to determine which path was completed
+    getCompletedPath() {
+        // Check which path's final condition is completed
+        const pathIds = ['blackmail', 'identity_theft', 'diversion', 'referral', 'espionage'];
+        const finalConditions = {
+            'blackmail': 'blackmailed_guard_khai',
+            'identity_theft': 'used_executive_credentials',
+            'diversion': 'executed_diversion_plan',
+            'referral': 'secured_recruitment_referral',
+            'espionage': 'used_contractor_credentials'
+        };
+        
+        for (const pathId of pathIds) {
+            if (this.resolutionManager.completedConditions[finalConditions[pathId]]) {
+                return pathId;
+            }
+        }
+        
+        return 'unknown';
+    }
+
+    // Method to show a notification when the level is completed
+    showLevelCompletionNotification() {
+        const pathId = this.getCompletedPath();
+        let message = "You've successfully gained access to the Tai Yong Medical facility!";
+        
+        // Add path-specific message
+        switch(pathId) {
+            case 'blackmail':
+                message += " Your blackmail leverage against Khai Chen worked.";
+                break;
+            case 'identity_theft':
+                message += " The executive credentials got you through security.";
+                break;
+            case 'diversion':
+                message += " The medical emergency diversion was successful.";
+                break;
+            case 'referral':
+                message += " Sergeant Tan's referral opened the door for you.";
+                break;
+            case 'espionage':
+                message += " Lin's contractor badge gave you the access you needed.";
+                break;
+        }
+        
+        // Show a prominent notification
+        if (this.resolutionManager) {
+            this.resolutionManager.showNotification(message, 10000, true);
+        } else {
+            console.log(message);
+        }
     }
 
     // Override the createGround method to use a dark grey flat color

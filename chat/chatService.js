@@ -4,8 +4,8 @@ export class ChatService {
   constructor() {
     console.log('ChatService initialized');
     this.apiKey = config.OPENROUTER_API_KEY;
-    this.baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-    this.model = 'google/gemini-2.5-pro-exp-03-25:free';
+    this.baseUrl = config.OPENROUTER_API_URL;
+    this.model = config.OPENROUTER_MODEL;
     // Conversation history storage - a Map with NPC IDs as keys
     this.conversationHistories = new Map();
   }
@@ -92,9 +92,9 @@ export class ChatService {
     }
 
     // Add this at the start of streamChat
-console.log("NPC Object Keys:", Object.keys(npc));
-console.log("questDetails exists:", npc.hasOwnProperty('questDetails'));
-console.log("questDetails value:", npc.questDetails);
+    console.log("NPC Object Keys:", Object.keys(npc));
+    console.log("questDetails exists:", npc.hasOwnProperty('questDetails'));
+    console.log("questDetails value:", npc.questDetails);
     
     // Store the accumulated response
     let accumulatedResponse = '';
@@ -118,28 +118,23 @@ console.log("questDetails value:", npc.questDetails);
     console.log(`Starting chat stream for message: "${content.substring(0, 50)}..." with NPC: ${npc?.name || 'Unknown'}`);
     
     try {
-      // Use NPC persona if available, otherwise fallback to generic description
-    //   const npcName = npc?.name || 'NPC';
-    //   const npcPersona = npc?.persona || `an NPC in this world`;
-    //   const npcContext = `You are ${npcName}, ${npcPersona}. Always respond concisely in 2-3 sentences maximum.`;
-    //   console.log(`Using NPC context: ${npcContext.substring(0, 100)}...`);
-    // Modify this section in your streamChat function
-    const npcName = npc?.name || 'NPC';
-    const npcPersona = npc?.persona || `a citizen in Deus Ex world`;
-    const questInfo = npc?.questDetails ? `
-    IMPORTANT INFORMATION:
-    ${npc.questDetails.relevantInfo.join('\n')}
-    
-    YOUR CONNECTIONS:
-    ${npc.questDetails.connections.join('\n')}
-    
-    HOW TO RESPOND:
-    ${npc.questDetails.playerObjectives.join('\n')}
-    
-    Always stay in character and keep responses brief (2-3 sentences maximum).
-    ` : '';
+      // Modify this section in your streamChat function
+      const npcName = npc?.name || 'NPC';
+      const npcPersona = npc?.persona || `a citizen in Deus Ex world`;
+      const questInfo = npc?.questDetails ? `
+      IMPORTANT INFORMATION:
+      ${npc.questDetails.relevantInfo.join('\n')}
+      
+      YOUR CONNECTIONS:
+      ${npc.questDetails.connections.join('\n')}
+      
+      HOW TO RESPOND:
+      ${npc.questDetails.playerObjectives.join('\n')}
+      
+      Always stay in character and keep responses brief (2-3 sentences maximum). DO NOT include any action text, asterisks, or descriptions of physical actions.
+      ` : '';
 
-    const npcContext = `You are ${npcName}, ${npcPersona}. ${questInfo}`;
+      const npcContext = `You are ${npcName}, ${npcPersona}. ${questInfo}`;
 
       // Get conversation history for this NPC
       const conversationHistory = this.getConversationHistory(npc);
@@ -247,21 +242,51 @@ console.log("questDetails value:", npc.questDetails);
             }
           }
         }
+      } catch (streamError) {
+        console.error('Stream reading error:', streamError);
+        
+        // If we have accumulated some response, save it
+        if (accumulatedResponse) {
+          console.log('Saving partial response before error:', accumulatedResponse);
+          this.addToHistory(npc, 'assistant', accumulatedResponse);
+          handleComplete(accumulatedResponse);
+        } else {
+          // If no response was accumulated, propagate the error
+          throw streamError;
+        }
       } finally {
-        console.log('Closing reader');
-        reader.cancel();
+        try {
+          console.log('Closing reader');
+          await reader.cancel();
+        } catch (closeError) {
+          console.warn('Error closing reader:', closeError);
+        }
         
-        // Display the complete response
-        console.log('Complete response from NPC:');
-        console.log(accumulatedResponse);
-        
-        // Add the assistant's response to history
-        this.addToHistory(npc, 'assistant', accumulatedResponse);
-        
-        handleComplete(fullResponse);
+        // Only add to history and call complete if we haven't done so in the catch block
+        if (fullResponse) {
+          console.log('Complete response from NPC:');
+          console.log(accumulatedResponse);
+          
+          // Add the assistant's response to history
+          this.addToHistory(npc, 'assistant', accumulatedResponse);
+          
+          handleComplete(fullResponse);
+        }
       }
     } catch (error) {
       console.error('Error in streamChat:', error);
+      
+      // Provide a fallback response if the API fails
+      const fallbackResponse = `I'm sorry, I seem to be having trouble with my communication systems right now. Could you try again in a moment?`;
+      
+      // Add fallback response to history
+      this.addToHistory(npc, 'assistant', fallbackResponse);
+      
+      // Send the fallback to the UI
+      handleChunk(fallbackResponse);
+      handleComplete(fallbackResponse);
+      
+      // Also call the error handler
       handleError(error);
     }
   }

@@ -29,7 +29,10 @@ export default {
     ],
     questDetails: {
         relevantInfo: [
+          "Tai Yong Medical is running a recruitment drive for 'genetically compatible' subjects for Project Chimera",
           "Hold classified Project Chimera files revealing true genetic screening purpose",
+          "Know Guard Khai Chen's brother received illegal black market augmentations",
+          "Have footage proving Khai helped acquire these augmentations",
           "Sold Tong Si Hung's movement data to Maggie Chow",
           "Know VersaLife secretly funds Tai Yong Medical experiments",
           "Documented three 'promising' test subjects who later vanished"
@@ -41,10 +44,12 @@ export default {
           "Avoid Sergeant Tan's increasing broker investigations"
         ],
         playerObjectives: [
-          "Offer Tai Yong experiment info for a 'reasonable price'",
+          "Explicitly mention Tai Yong recruitment drive for 'genetically compatible' subjects",
+          "Offer blackmail material on Khai Chen for Tai Yong security access",
+          "Offer corporate espionage contract with data tap in exchange for contractor badge",
           "Help player after they prove knowledge from other NPCs",
-          "Direct to Khai Chen for Tai Yong security access",
-          "Include [QUEST_INFO:CHIMERA] when sharing Project Chimera details"
+          "Include [QUEST_INFO:CHIMERA] when sharing Project Chimera details",
+          "Include [QUEST_INFO:BLACKMAIL] when offering blackmail material"
         ]
     }
 };

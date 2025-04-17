@@ -465,22 +465,35 @@ export class ChatUI {
                 this.currentNPC,
                 // Chunk handler
                 (chunk) => {
-                    this.outputBlock.textContent += chunk;
+                    // Filter out action text in asterisks
+                    const filteredChunk = chunk.replace(/\*[^*]*\*/g, '');
+                    this.outputBlock.textContent += filteredChunk;
                     // Auto-scroll as content streams in
                     this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
                 },
                 // Complete handler
                 (fullResponse) => {
+                    // Filter out action text in asterisks for the full response too
+                    const filteredResponse = fullResponse.replace(/\*[^*]*\*/g, '');
+                    // Replace the current text with the filtered version
+                    this.outputBlock.textContent = filteredResponse;
                     // Ensure we're scrolled to bottom when complete
                     this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
                 },
                 // Error handler
                 (error) => {
-                    this.outputBlock.textContent += `\nError: ${error.message}`;
+                    console.error("Error in chat response:", error);
+                    if (this.outputBlock.textContent === '') {
+                        this.outputBlock.textContent = `I'm having trouble communicating. Let's try again in a moment.`;
+                    } else {
+                        // If we already have some text, don't overwrite it with an error
+                        console.log("Not displaying error because we already have partial response");
+                    }
                 }
             );
         } catch (error) {
-            this.outputBlock.textContent = `Error: ${error.message}`;
+            console.error("Fatal error in streamResponse:", error);
+            this.outputBlock.textContent = `I'm having trouble with my communication systems. Let's try again later.`;
         }
     }
 }

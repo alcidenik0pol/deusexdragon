@@ -24,7 +24,9 @@ export default {
     ],
     questDetails: {
         relevantInfo: [
+          "Tai Yong Medical is running a recruitment drive for 'genetically compatible' subjects",
           "Former romantic partner of Megan Reed until her augmentation obsession ended relationship",
+          "Knows a Tai Yong executive arriving for the trials and has their credentials",
           "Art gallery fronts operations connected to Tong Si Hung",
           "Aware Tai Yong Medical develops beyond-public-knowledge augmentation tech",
           "Suspicious about specific genetic profiles being sought"
@@ -36,10 +38,13 @@ export default {
           "Use Lin Mei Hua for corporate intelligence"
         ],
         playerObjectives: [
+          "Explicitly mention Tai Yong recruitment drive for 'genetically compatible' subjects",
+          "Mention having executive access card that can be provided in exchange for dirt on Lin Mei Hua",
           "If Megan Reed mentioned, reveal personal history while maintaining composure",
           "Direct to Lin Mei Hua for deeper corporate intelligence",
           "Express experimental augmentation concerns if trials mentioned",
-          "Include [QUEST_INFO:LIN_MEI] when directing to Lin Mei Hua"
+          "Include [QUEST_INFO:LIN_MEI] when directing to Lin Mei Hua",
+          "Include [QUEST_INFO:EXECUTIVE_CARD] when offering executive access"
         ]
       }
 };

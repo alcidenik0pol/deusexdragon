@@ -7,8 +7,8 @@ export class ResolutionManager {
     this.levelPoints = {};
     this.levelThresholds = {};
     this.apiKey = config.OPENROUTER_API_KEY;
-    this.evaluationEndpoint = 'https://openrouter.ai/api/v1/chat/completions';
-    this.evaluationModel = 'google/gemini-2.5-pro-exp-03-25:free';
+    this.evaluationEndpoint = config.OPENROUTER_API_URL;
+    this.evaluationModel = config.OPENROUTER_MODEL;
     
     // Initialize from localStorage if available
     this.loadProgressState();
@@ -27,12 +27,9 @@ export class ResolutionManager {
     const currentLevel = this.getCurrentLevel();
     const conditions = this.levelConditions[currentLevel] || [];
     
-    // Standardize the NPC ID for comparison
-    const standardizedNpcId = this.standardizeNpcId(npcId);
-    
     // Filter conditions that apply to this NPC and aren't already completed
     const applicableConditions = conditions.filter(condition => 
-      (condition.npcIds.includes(standardizedNpcId) || 
+      (condition.npcIds.includes(npcId) || 
        condition.npcIds.includes("ANY")) && 
       !this.completedConditions[condition.id]
     );
@@ -81,6 +78,8 @@ export class ResolutionManager {
       
       Based on this conversation, answer the following question with ONLY "yes" or "no":
       ${condition.condition}
+      
+      Be generous in your interpretation - if the conversation contains information that's reasonably close to what's being asked, answer "yes".
       
       Answer:`;
       
@@ -280,19 +279,5 @@ export class ResolutionManager {
     this.levelPoints = {};
     this.saveProgressState();
     console.log('Progress reset');
-  }
-  
-  standardizeNpcId(npcId) {
-    if (!npcId) return '';
-    
-    // Convert to uppercase and replace spaces/hyphens with underscores
-    const standardId = npcId.toUpperCase().replace(/[\s-]/g, '_');
-    
-    // Log if there's a significant transformation
-    if (standardId !== npcId.toUpperCase()) {
-      console.log(`[ResolutionManager] Standardized NPC ID: ${npcId} → ${standardId}`);
-    }
-    
-    return standardId;
   }
 } 
