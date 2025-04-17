@@ -13,6 +13,7 @@ import { SeaBorder } from './seaBorder.js';
 import { Singapore6NPCManager } from './npc.js';
 import { Car03 } from './vehicles.js';
 import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
+import { ResolutionManager } from '../../chat/ResolutionManager.js';
 
 export class Singapore6Level extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -43,6 +44,149 @@ export class Singapore6Level extends LevelGenerator {
 
         // Register for updates
         this.scene.registerBeforeRender(() => this.onUpdate());
+
+        // Initialize the resolution manager if not already created
+        if (!window.resolutionManager) {
+            this.resolutionManager = new ResolutionManager();
+            window.resolutionManager = this.resolutionManager;
+            
+            // Register Singapore6 level conditions
+            this.registerLevelConditions();
+        } else {
+            this.resolutionManager = window.resolutionManager;
+        }
+    }
+
+    registerLevelConditions() {
+        // Define the conditions for Singapore6 level based on the questline
+        const singapore6Conditions = [
+            // Initial discovery phase
+            {
+                id: "discovered_tai_yong_recruitment",
+                points: 2,
+                condition: "Did the player learn about Tai Yong recruitment drive for 'genetically compatible' subjects?",
+                npcIds: ["ANY"], // Any NPC can provide this information
+                required: true
+            },
+            
+            // Path 1: Blackmail Leverage
+            {
+                id: "obtained_blackmail_leverage",
+                points: 5,
+                condition: "Did the player obtain incriminating footage of Guard Khai Chen's brother?",
+                npcIds: ["LIN_MEI_HUA"],
+                required: false,
+                pathId: "blackmail"
+            },
+            {
+                id: "blackmailed_guard_khai",
+                points: 5,
+                condition: "Did the player successfully blackmail Khai Chen with the information about his brother?",
+                npcIds: ["KHAI_CHEN"],
+                required: false,
+                pathId: "blackmail"
+            },
+            
+            // Path 2: Corporate Identity Theft
+            {
+                id: "obtained_executive_credentials",
+                points: 5,
+                condition: "Did the player obtain information about the Tai Yong executive's credentials?",
+                npcIds: ["VICTORIA_LIM"],
+                required: false,
+                pathId: "identity_theft"
+            },
+            {
+                id: "gathered_dirt_on_lin",
+                points: 5,
+                condition: "Did the player get dirt on Lin Mei Hua's corporate espionage activities?",
+                npcIds: ["ANY"],
+                required: false,
+                pathId: "identity_theft"
+            },
+            
+            // Path 3: Medical Emergency Diversion
+            {
+                id: "convinced_nika_for_distraction",
+                points: 3,
+                condition: "Did the player convince Nika Zhang to stage a medical emergency distraction?",
+                npcIds: ["NIKA_ZHANG"],
+                required: false,
+                pathId: "diversion"
+            },
+            {
+                id: "positioned_sergeant_tan",
+                points: 3,
+                condition: "Did the player convince Sergeant Tan to be in position for the 'emergency'?",
+                npcIds: ["SERGEANT_TAN"],
+                required: false,
+                pathId: "diversion"
+            },
+            {
+                id: "executed_diversion_plan",
+                points: 4,
+                condition: "Did the player successfully execute the diversion plan at 14:00?",
+                npcIds: ["NIKA_ZHANG", "SERGEANT_TAN", "KHAI_CHEN"],
+                required: false,
+                pathId: "diversion"
+            },
+            
+            // Path 4: Become a Test Subject Referral
+            {
+                id: "learned_about_tans_sister",
+                points: 3,
+                condition: "Did the player learn that Sergeant Tan's sister works in recruitment?",
+                npcIds: ["SERGEANT_TAN"],
+                required: false,
+                pathId: "referral"
+            },
+            {
+                id: "obtained_genetic_markers_info",
+                points: 3,
+                condition: "Did the player learn about Nika's unique genetic markers that made her valuable?",
+                npcIds: ["NIKA_ZHANG"],
+                required: false,
+                pathId: "referral"
+            },
+            {
+                id: "secured_recruitment_referral",
+                points: 4,
+                condition: "Did the player convince Tan to call her sister about a 'perfect candidate'?",
+                npcIds: ["SERGEANT_TAN"],
+                required: false,
+                pathId: "referral"
+            },
+            
+            // Path 5: Corporate Espionage Contract
+            {
+                id: "accepted_espionage_contract",
+                points: 3,
+                condition: "Did the player agree to plant a data tap for Lin Mei Hua?",
+                npcIds: ["LIN_MEI_HUA"],
+                required: false,
+                pathId: "espionage"
+            },
+            {
+                id: "obtained_victoria_vouching",
+                points: 3,
+                condition: "Did the player convince Victoria to vouch for their reliability?",
+                npcIds: ["VICTORIA_LIM"],
+                required: false,
+                pathId: "espionage"
+            },
+            {
+                id: "received_contractor_badge",
+                points: 4,
+                condition: "Did the player receive a contractor badge and data tap from Lin?",
+                npcIds: ["LIN_MEI_HUA"],
+                required: false,
+                pathId: "espionage"
+            }
+        ];
+        
+        // Register the level with conditions and point threshold
+        // Player needs to complete one full path (approximately 10 points) to succeed
+        this.resolutionManager.registerLevel('singapore6', singapore6Conditions, 10);
     }
 
     // Override the createGround method to use a dark grey flat color
@@ -343,13 +487,13 @@ export class Singapore6Level extends LevelGenerator {
         // Car configurations - each object defines a car's properties
         const carConfigs = [
             // East-bound cars (original direction)
-            { startX: -80, z: 0, rotation: Math.PI / 2, height: 55 },    // Center lane, lower than original 67.5
-            { startX: -80, z: 20, rotation: Math.PI / 2, height: 45 },   // North lane, even lower
+            { startX: -80, z: 0, rotation: Math.PI / 2, height: 35 },    // Center lane, lower than original 67.5
+            { startX: -80, z: 20, rotation: Math.PI / 2, height: 30 },   // North lane, even lower
             
             // North-bound cars (perpendicular to original)
-            { startX: -20, z: -80, rotation: 0, height: 50 },            // West lane
-            { startX: 0, z: -80, rotation: 0, height: 60 },              // Center lane
-            { startX: 20, z: -80, rotation: 0, height: 40 }              // East lane
+            { startX: -20, z: -80, rotation: 0, height: 32 },            // West lane
+            { startX: 0, z: -80, rotation: 0, height: 38 },              // Center lane
+            { startX: 20, z: -80, rotation: 0, height: 28 }              // East lane
         ];
 
         for (const config of carConfigs) {
@@ -420,6 +564,11 @@ export class Singapore6Level extends LevelGenerator {
         if (this.dialogueManager) {
             this.dialogueManager.dispose();
         }
+        
+        // Don't dispose the resolution manager as it should persist between level loads
+        // Just remove the reference
+        this.resolutionManager = null;
+        
         super.dispose();
     }
 }

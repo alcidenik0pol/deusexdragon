@@ -152,7 +152,7 @@ export class ClusterManager {
             if (this.debug || true) { // Always log for now to help debug
                 // console.log(`Active lights: ${topLights.length}/${allLights.length} (visible: ${visibleLights.length})`);
                 topLights.forEach((light, index) => {
-                    console.log(`Light ${index}: ID=${light.id}, Distance=${light.distance.toFixed(2)}, InFrustum=${light.inFrustum}, Position=${light.position.toString()}`);
+                    // console.log(`Light ${index}: ID=${light.id}, Distance=${light.distance.toFixed(2)}, InFrustum=${light.inFrustum}, Position=${light.position.toString()}`);
                 });
             }
             

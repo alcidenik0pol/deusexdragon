@@ -1,7 +1,7 @@
 import { ChatService } from './chatService.js';
 
 export class ChatUI {
-    static isActive = false;  // Static property to track chat state
+    static isActive = false;  // Add static property to track chat state
 
     constructor() {
         this.container = null;
@@ -300,36 +300,11 @@ export class ChatUI {
         } else {
             this.npcNameDisplay.textContent = '';
         }
-        
-        // Display any previous conversation history
-        this.displayConversationHistory();
-    }
-    
-    // Display conversation history for the current NPC
-    displayConversationHistory() {
-        if (!this.currentNPC) return;
-        
-        // Clear the output block
-        this.outputBlock.textContent = '';
-        
-        // Get conversation history for the current NPC
-        const history = this.chatService.getConversationHistory(this.currentNPC);
-        
-        // Display each message
-        if (history && history.length > 0) {
-            // Only show assistant messages in history
-            for (const message of history) {
-                if (message.role === 'assistant') {
-                    this.outputBlock.textContent += message.content + '\n';
-                }
-            }
-        }
-        
-        // Scroll to the bottom
-        this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
     }
 
     show() {
+        // Previous code...
+        
         this.container.style.display = 'block';
         this.isVisible = true;
         ChatUI.isActive = true;
@@ -338,14 +313,6 @@ export class ChatUI {
         if (window.gameCamera) {
             window.gameCamera.focusOnNPC(this.currentNPC);
         }
-        
-        // Lock player controls when chat UI is shown
-        const lockEvent = new CustomEvent('lockPlayerControls', { detail: true });
-        window.dispatchEvent(lockEvent);
-        
-        // Stop character movement
-        const stopEvent = new CustomEvent('stopCharacterMovement');
-        window.dispatchEvent(stopEvent);
         
         // Create a bound function with proper 'this' context
         this.boundPreventHandler = (e) => {
@@ -482,5 +449,34 @@ export class ChatUI {
         } catch (error) {
             this.outputBlock.textContent = `Error: ${error.message}`;
         }
+    }
+
+    async handleChat(question) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+        
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user-message';
+        userDiv.textContent = question;
+        messageDiv.appendChild(userDiv);
+        
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'ai-message';
+        messageDiv.appendChild(aiDiv);
+        
+        this.outputBlock.appendChild(messageDiv);
+        
+        // Auto-scroll to bottom when adding new message
+        this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
+
+        await this.chatService.streamChat(
+            question,
+            (content) => {
+                aiDiv.textContent += content;
+                // Auto-scroll as content streams in
+                this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
+            },
+            this.currentNPC
+        );
     }
 }

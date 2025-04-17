@@ -65,6 +65,7 @@ export class Controls {
             // Allow 'E' key to be typed in the text area when chat UI is active
             if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
 
+            // Skip movement if controls are locked
             if (this.movementLocked) return;
             
             if (e.key.toLowerCase() in this.keys) {
@@ -79,6 +80,7 @@ export class Controls {
             // Allow 'E' key to be typed in the text area when chat UI is active
             if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
 
+            // Skip movement if controls are locked
             if (this.movementLocked) return;
             
             if (e.key.toLowerCase() in this.keys) {
@@ -125,6 +127,9 @@ export class Controls {
 
     setupMovementLoop() {
         this.scene.registerBeforeRender(() => {
+            // Skip movement if controls are locked
+            if (this.movementLocked) return;
+            
             // Get camera's forward direction (ignoring vertical component for movement)
             const forward = new BABYLON.Vector3(
                 Math.sin(this.gameCamera.getCameraYaw()),

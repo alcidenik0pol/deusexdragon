@@ -6,7 +6,7 @@ export class ChatService {
     this.apiKey = config.OPENROUTER_API_KEY;
     this.baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
     this.model = 'google/gemini-2.5-pro-exp-03-25:free';
-    // Conversation history storage - a Map with NPC IDs as keys
+    // Add conversation history storage - a Map with NPC IDs as keys
     this.conversationHistories = new Map();
   }
 
@@ -16,11 +16,6 @@ export class ChatService {
    * @returns {Array} - The conversation history array
    */
   getConversationHistory(npc) {
-    if (!npc) {
-      console.warn('No NPC provided to getConversationHistory');
-      return [];
-    }
-    
     // Use NPC ID or name as the key
     const npcId = npc?.id || npc?.name || 'unknown-npc';
     
@@ -42,20 +37,10 @@ export class ChatService {
     const history = this.getConversationHistory(npc);
     history.push({ role, content });
     
-    // Strictly limit history length
-    const MAX_HISTORY_LENGTH = 5; // Reduced from 10
+    // Optional: Limit history length to prevent token overflow
+    const MAX_HISTORY_LENGTH = 10; // Adjust as needed
     if (history.length > MAX_HISTORY_LENGTH) {
-      history.shift();
-    }
-    
-    // Evaluate conversation for objectives after NPC responses
-    // and only after a meaningful exchange (at least 2 messages)
-    if (role === 'assistant' && history.length >= 2 && window.resolutionManager) {
-      // Use a slight delay to avoid blocking the UI
-      setTimeout(() => {
-        const npcId = npc?.id || npc?.name || 'unknown-npc';
-        window.resolutionManager.evaluateConversation(npcId, history);
-      }, 1000);
+      history.shift(); // Remove oldest message
     }
   }
 
@@ -64,11 +49,6 @@ export class ChatService {
    * @param {object} npc - The NPC object
    */
   clearHistory(npc) {
-    if (!npc) {
-      console.warn('No NPC provided to clearHistory');
-      return;
-    }
-    
     const npcId = npc?.id || npc?.name || 'unknown-npc';
     this.conversationHistories.delete(npcId);
     console.log(`Cleared conversation history for NPC: ${npcId}`);
@@ -84,18 +64,6 @@ export class ChatService {
    * @returns {Promise<void>}
    */
   async streamChat(content, npc, onChunk = null, onComplete = null, onError = null) {
-    if (!npc) {
-      const error = new Error('No NPC provided to streamChat');
-      console.error(error);
-      if (onError) onError(error);
-      return;
-    }
-
-    // Add this at the start of streamChat
-console.log("NPC Object Keys:", Object.keys(npc));
-console.log("questDetails exists:", npc.hasOwnProperty('questDetails'));
-console.log("questDetails value:", npc.questDetails);
-    
     // Store the accumulated response
     let accumulatedResponse = '';
     
@@ -119,27 +87,10 @@ console.log("questDetails value:", npc.questDetails);
     
     try {
       // Use NPC persona if available, otherwise fallback to generic description
-    //   const npcName = npc?.name || 'NPC';
-    //   const npcPersona = npc?.persona || `an NPC in this world`;
-    //   const npcContext = `You are ${npcName}, ${npcPersona}. Always respond concisely in 2-3 sentences maximum.`;
-    //   console.log(`Using NPC context: ${npcContext.substring(0, 100)}...`);
-    // Modify this section in your streamChat function
-    const npcName = npc?.name || 'NPC';
-    const npcPersona = npc?.persona || `a citizen in Deus Ex world`;
-    const questInfo = npc?.questDetails ? `
-    IMPORTANT INFORMATION:
-    ${npc.questDetails.relevantInfo.join('\n')}
-    
-    YOUR CONNECTIONS:
-    ${npc.questDetails.connections.join('\n')}
-    
-    HOW TO RESPOND:
-    ${npc.questDetails.playerObjectives.join('\n')}
-    
-    Always stay in character and keep responses brief (2-3 sentences maximum).
-    ` : '';
-
-    const npcContext = `You are ${npcName}, ${npcPersona}. ${questInfo}`;
+      const npcName = npc?.name || 'NPC';
+      const npcPersona = npc?.persona || `an NPC in this world`;
+      const npcContext = `You are ${npcName}, ${npcPersona}. Always respond concisely in 2-3 sentences maximum.`;
+      console.log(`Using NPC context: ${npcContext.substring(0, 100)}...`);
 
       // Get conversation history for this NPC
       const conversationHistory = this.getConversationHistory(npc);
@@ -154,10 +105,9 @@ console.log("questDetails value:", npc.questDetails);
       ];
       
       // Don't add the user message again if it's already the last one in history
-      const lastMessage = conversationHistory.length > 0 ? 
-                           conversationHistory[conversationHistory.length - 1] : null;
-                           
-      if (!lastMessage || lastMessage.role !== 'user' || lastMessage.content !== content) {
+      if (conversationHistory.length === 0 || 
+          conversationHistory[conversationHistory.length - 1].role !== 'user' ||
+          conversationHistory[conversationHistory.length - 1].content !== content) {
         messages.push({ role: 'user', content });
       }
       
@@ -171,8 +121,7 @@ console.log("questDetails value:", npc.questDetails);
       
       console.log(`Sending request to ${this.baseUrl} with model: ${this.model}`);
       console.log(`Including ${conversationHistory.length} previous messages in context`);
-      console.log("Full NPC Context being sent:", npcContext);
-
+      
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
@@ -264,5 +213,61 @@ console.log("questDetails value:", npc.questDetails);
       console.error('Error in streamChat:', error);
       handleError(error);
     }
+  }
+
+  /**
+   * Utility method to handle stream with Promise
+   * @param {string} content - The user's message content
+   * @param {object} npc - The NPC the player is talking to
+   * @returns {Promise<{fullResponse: string, stream: ReadableStream}>}
+   */
+  streamChatAsPromise(content, npc) {
+    return new Promise((resolve, reject) => {
+      let fullResponse = '';
+      
+      try {
+        // Create a TransformStream to handle the text chunks
+        const { readable, writable } = new TransformStream();
+        const writer = writable.getWriter();
+        
+        const handleChunk = (chunk) => {
+          try {
+            fullResponse += chunk;
+            writer.write(new TextEncoder().encode(chunk))
+              .catch(err => {
+                console.error('Error writing to stream:', err);
+              });
+          } catch (error) {
+            console.error('Error in chunk handler:', error);
+          }
+        };
+        
+        const handleComplete = () => {
+          try {
+            writer.close();
+            console.log('Stream completed successfully, resolving promise');
+            resolve({ fullResponse, stream: readable });
+          } catch (error) {
+            console.error('Error completing stream:', error);
+            reject(error);
+          }
+        };
+        
+        const handleError = (error) => {
+          console.error('Error in stream:', error);
+          try {
+            writer.abort(error);
+          } catch (abortError) {
+            console.error('Error aborting writer:', abortError);
+          }
+          reject(error);
+        };
+        
+        this.streamChat(content, npc, handleChunk, handleComplete, handleError);
+      } catch (error) {
+        console.error('Error setting up stream promise:', error);
+        reject(error);
+      }
+    });
   }
 }

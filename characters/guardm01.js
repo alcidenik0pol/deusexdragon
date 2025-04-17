@@ -8,6 +8,8 @@ export class GuardM01 extends NPCBase {
         this.id = npcData.id;
         this.interactionRadius = npcData.interactionRadius || 5;
         this.persona = npcData.persona;
+        this.initialMemories = npcData.initialMemories;
+        this.questDetails = npcData.questDetails;
         this.currentAnimation = 'idle';
     }
 

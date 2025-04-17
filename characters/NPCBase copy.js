@@ -19,7 +19,7 @@ export class NPCBase {
         LOCKED: 'locked'  // For when movement needs to be prevented
     };
 
-    // Movement patterns
+    // Add these new static properties at the top of the class
     static MOVEMENT_PATTERNS = {
         CIRCLE: 'circle',
         FIGURE_8: 'figure8',
@@ -50,11 +50,6 @@ export class NPCBase {
         // Add pattern state
         this.currentPattern = this.getRandomPattern();
         this.patternTimer = this.getRandomTime(15, 30); // Switch patterns every 15-30 seconds
-        
-        // Set properties used for chat identification
-        this.id = npcData.id;
-        this.name = npcData.name || npcData.id;
-        this.persona = npcData.persona || `an NPC in this world`;
     }
 
     getRandomTime(min, max) {
@@ -91,9 +86,6 @@ export class NPCBase {
                     mesh.material.needDepthPrePass = true;
                 }
             });
-            
-            // Setup interaction with chat UI
-            this.setupChatInteraction();
 
             return this;
         } catch (error) {
@@ -130,54 +122,6 @@ export class NPCBase {
         }
     }
 
-    // Set up interaction with the ChatUI system
-    setupChatInteraction() {
-        // Make sure the mesh has a property to store the NPC reference
-        if (this.mesh) {
-            this.mesh.npc = this;
-            
-            // Check if the mesh has an actionManager, if not create one
-            if (!this.mesh.actionManager) {
-                this.mesh.actionManager = new BABYLON.ActionManager(this.scene);
-            }
-            
-            // Add action for when the player clicks on the NPC
-            this.mesh.actionManager.registerAction(
-                new BABYLON.ExecuteCodeAction(
-                    BABYLON.ActionManager.OnPickTrigger,
-                    () => this.interact()
-                )
-            );
-            
-            console.log(`Chat interaction setup complete for NPC: ${this.name}`);
-        }
-    }
-    
-    // Handle player interaction with this NPC
-    interact() {
-        console.log(`Player interacting with NPC: ${this.name}`);
-        
-        // Lock NPC movement
-        this.lockMovement();
-        
-        // Get or create ChatUI
-        if (!window.chatUI) {
-            console.log("Creating new ChatUI");
-            window.chatUI = new ChatUI();
-        }
-        
-        // Set this NPC as the current NPC
-        window.chatUI.setNPC(this);
-        
-        // Show the chat UI
-        window.chatUI.show();
-        
-        // Lock player controls by dispatching custom event
-        const event = new CustomEvent('lockPlayerControls', { detail: true });
-        window.dispatchEvent(event);
-    }
-
-    // Keep the original async API methods for backward compatibility
     async startConversation() {
         try {
             const { id } = await npcService.startConversation(this.data.id);
@@ -272,7 +216,7 @@ export class NPCBase {
         if (!this.mesh || this.currentState === NPCBase.States.LOCKED) return;
 
         // Check if this specific NPC is being talked to
-        if (ChatUI.isActive && window.chatUI?.currentNPC?.id === this.id) {
+        if (ChatUI.isActive && window.chatUI?.currentNPC?.id === this.data.id) {
             // Force idle state only for the NPC being talked to
             if (this.currentState !== NPCBase.States.IDLE) {
                 this.setState(NPCBase.States.IDLE);
@@ -358,4 +302,4 @@ export class NPCBase {
             this.mesh = null;
         }
     }
-}
+} 
