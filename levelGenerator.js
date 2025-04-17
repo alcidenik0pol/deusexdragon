@@ -48,7 +48,14 @@ export class LevelGenerator {
         this.components = [];
         this.minimap = new Minimap(scene);
         this.skyboxComponent = new SkyboxComponent(scene);
+        
+        // Set the level ID based on class name by default
+        this.levelId = this.constructor.name.replace(/Level$/, '').toLowerCase();
+        
+        // Set as current level
         window.currentLevel = this;
+        
+        console.log(`[LevelGenerator] Initialized level: ${this.levelId}`);
     }
 
     createGround(bounds = this.constructor.LEVEL_BOUNDS.floor) {

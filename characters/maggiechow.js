@@ -20,7 +20,7 @@ export class MaggieChow extends NPCBase {
         const desiredAnimation = this.currentState === NPCBase.States.WALKING ? 'walking' : 'idle';
         
         if (this.currentAnimation !== desiredAnimation) {
-            console.log(`Changing animation from ${this.currentAnimation} to ${desiredAnimation}`);
+            // console.log(`Changing animation from ${this.currentAnimation} to ${desiredAnimation}`);
             this.setAnimation(desiredAnimation);
             this.currentAnimation = desiredAnimation;
         }

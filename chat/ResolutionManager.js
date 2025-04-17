@@ -27,27 +27,36 @@ export class ResolutionManager {
     const currentLevel = this.getCurrentLevel();
     const conditions = this.levelConditions[currentLevel] || [];
     
+    // Standardize the NPC ID for comparison
+    const standardizedNpcId = this.standardizeNpcId(npcId);
+    
     // Filter conditions that apply to this NPC and aren't already completed
     const applicableConditions = conditions.filter(condition => 
-      (condition.npcIds.includes(npcId) || condition.npcIds.includes("ANY")) && 
+      (condition.npcIds.includes(standardizedNpcId) || 
+       condition.npcIds.includes("ANY")) && 
       !this.completedConditions[condition.id]
     );
     
-    if (applicableConditions.length === 0) return;
+    if (applicableConditions.length === 0) {
+      console.log(`[ResolutionManager] No applicable conditions for NPC ${npcId}`);
+      return;
+    }
     
-    console.log(`Evaluating ${applicableConditions.length} conditions for NPC ${npcId}`);
+    console.log(`[ResolutionManager] Evaluating ${applicableConditions.length} conditions for NPC ${npcId}`);
     
     // Create a context string from the history to pass to LLM
     const context = this.formatConversationForLLM(npcId, conversationHistory);
     
     // For each applicable condition, check if it's met
     for (const condition of applicableConditions) {
-      console.log(`Checking condition: ${condition.id}`);
+      console.log(`[ResolutionManager] Checking condition: ${condition.id}`);
       const isConditionMet = await this.checkConditionWithLLM(condition, context);
       
       if (isConditionMet) {
-        console.log(`Condition met: ${condition.id}`);
+        console.log(`[ResolutionManager] ✅ CONDITION MET: ${condition.id}`);
         this.completeCondition(currentLevel, condition);
+      } else {
+        console.log(`[ResolutionManager] ❌ CONDITION NOT MET: ${condition.id}`);
       }
     }
   }
@@ -75,7 +84,7 @@ export class ResolutionManager {
       
       Answer:`;
       
-      console.log(`Sending evaluation request for condition: ${condition.id}`);
+      console.log(`[ResolutionManager] Sending evaluation request for condition: ${condition.id}`);
       
       const response = await fetch(this.evaluationEndpoint, {
         method: 'POST',
@@ -93,17 +102,30 @@ export class ResolutionManager {
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`API error: ${response.status} - ${errorText}`);
+        console.error(`[ResolutionManager] API error: ${response.status} - ${errorText}`);
         return false;
       }
       
       const data = await response.json();
+      
+      // Check if the response contains an error
+      if (data.error) {
+        console.error('[ResolutionManager] API returned an error:', data.error);
+        return false;
+      }
+      
+      // Add error checking for the response structure
+      if (!data || !data.choices || !data.choices.length || !data.choices[0].message) {
+        console.error('[ResolutionManager] Unexpected API response format:', data);
+        return false;
+      }
+      
       const answer = data.choices[0].message.content.trim().toLowerCase();
       
-      console.log(`Condition evaluation result: ${answer}`);
+      console.log(`[ResolutionManager] Condition evaluation result: "${answer}" for condition: ${condition.id}`);
       return answer.includes('yes');
     } catch (error) {
-      console.error('Error evaluating condition with LLM:', error);
+      console.error('[ResolutionManager] Error evaluating condition with LLM:', error);
       return false; // Default to not met on error
     }
   }
@@ -115,7 +137,7 @@ export class ResolutionManager {
     // Add points
     this.levelPoints[levelId] = (this.levelPoints[levelId] || 0) + condition.points;
     
-    console.log(`Completed condition: ${condition.id}, awarded ${condition.points} points. Total: ${this.levelPoints[levelId]}`);
+    console.log(`[ResolutionManager] ✅ COMPLETED: ${condition.id}, awarded ${condition.points} points. Total: ${this.levelPoints[levelId]}/${this.levelThresholds[levelId]}`);
     
     // Show notification
     this.showNotification(`Objective completed: ${condition.id.replace(/_/g, ' ')}`);
@@ -136,10 +158,11 @@ export class ResolutionManager {
       .filter(c => c.required)
       .every(c => this.completedConditions[c.id]);
     
-    console.log(`Level completion check: ${points}/${threshold} points, all required: ${allRequiredMet}`);
+    console.log(`[ResolutionManager] Level completion check: ${points}/${threshold} points, all required: ${allRequiredMet}`);
     
     // Level is complete if points threshold met and all required conditions met
     if (points >= threshold && allRequiredMet) {
+      console.log(`[ResolutionManager] 🎉 LEVEL COMPLETE: ${levelId}`);
       this.unlockLevelExit(levelId);
     }
   }
@@ -223,8 +246,33 @@ export class ResolutionManager {
   }
   
   getCurrentLevel() {
-    // Get current level from game state or use default
-    return window.currentLevel || 'singapore6';
+    // Get level ID using a consistent approach
+    let levelId;
+    
+    if (window.currentLevel) {
+      // If the level has an explicit ID property, use it
+      if (window.currentLevel.levelId) {
+        levelId = window.currentLevel.levelId;
+      }
+      // Otherwise, derive from class name
+      else if (window.currentLevel.constructor && window.currentLevel.constructor.name) {
+        // Convert class name to ID format (e.g., "Singapore6Level" -> "singapore6")
+        levelId = window.currentLevel.constructor.name
+          .replace(/Level$/, '')  // Remove "Level" suffix
+          .toLowerCase();         // Convert to lowercase
+      }
+      // Last resort: use object's toString representation
+      else {
+        levelId = window.currentLevel.toString();
+        console.warn('[ResolutionManager] Using fallback level ID method:', levelId);
+      }
+    } else {
+      console.warn('[ResolutionManager] No current level found');
+      levelId = 'unknown';
+    }
+    
+    console.log(`[ResolutionManager] Current level: ${levelId}`);
+    return levelId;
   }
   
   resetProgress() {
@@ -232,5 +280,19 @@ export class ResolutionManager {
     this.levelPoints = {};
     this.saveProgressState();
     console.log('Progress reset');
+  }
+  
+  standardizeNpcId(npcId) {
+    if (!npcId) return '';
+    
+    // Convert to uppercase and replace spaces/hyphens with underscores
+    const standardId = npcId.toUpperCase().replace(/[\s-]/g, '_');
+    
+    // Log if there's a significant transformation
+    if (standardId !== npcId.toUpperCase()) {
+      console.log(`[ResolutionManager] Standardized NPC ID: ${npcId} → ${standardId}`);
+    }
+    
+    return standardId;
   }
 } 

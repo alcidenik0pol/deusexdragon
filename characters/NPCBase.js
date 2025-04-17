@@ -218,7 +218,7 @@ export class NPCBase {
         
         const oldState = this.currentState;
         this.currentState = newState;
-        console.log(`NPC state changed: ${oldState} -> ${newState}`);
+        // console.log(`NPC state changed: ${oldState} -> ${newState}`);
 
         // Reset timer on state change
         this.stateTimer = this.getRandomTime(
@@ -309,7 +309,7 @@ export class NPCBase {
         if (this.patternTimer <= 0) {
             this.currentPattern = this.getRandomPattern();
             this.patternTimer = this.getRandomTime(15, 30);
-            console.log(`NPC switching to ${this.currentPattern} pattern`);
+            // console.log(`NPC switching to ${this.currentPattern} pattern`);
         }
 
         // Rest of the movement update logic

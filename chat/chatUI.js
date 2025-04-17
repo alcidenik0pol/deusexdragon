@@ -436,7 +436,7 @@ export class ChatUI {
         try {
             // Switch to player focus
             if (window.gameCamera) {
-                console.log("Switching to player focus while waiting for response");
+                // console.log("Switching to player focus while waiting for response");
                 window.gameCamera.focusOnPlayer();
             }
 

@@ -4,16 +4,16 @@ import { MaggieChow } from '../../characters/maggiechow.js';
 import { OrangeF01 } from '../../characters/orangef01.js';
 import { Purple02F } from '../../characters/purple02f.js';
 import { BlueF01 } from '../../characters/bluef01.js';
+import { NPCBase } from '../../characters/NPCBase.js';
 
 export class Singapore6NPCManager {
     constructor(scene) {
         this.scene = scene;
         this.npcs = new Map();
+        this.stationaryNPCs = ['GUARD_M01'];
     }
 
     async initialize() {
-        // Define NPC spawn positions relative to Merlion
-        // Merlion is at { x: -40, z: 70 } according to object mapping
         const merlionPos = { x: -40, z: 70 };
         
         const npcConfigs = [
@@ -26,8 +26,8 @@ export class Singapore6NPCManager {
             { 
                 Class: GuardM01, 
                 id: 'GUARD_M01',
-                position: new BABYLON.Vector3(merlionPos.x - 10, 0.1, merlionPos.z - 20),
-                rotation: Math.PI * 1.5 
+                position: new BABYLON.Vector3(-65, 0.1, 10),
+                rotation: Math.PI * 0.5 
             },
             { 
                 Class: MaggieChow, 
@@ -55,11 +55,14 @@ export class Singapore6NPCManager {
             }
         ];
 
-        // Initialize all NPCs
         for (const config of npcConfigs) {
             const npc = new config.Class(this.scene);
             npc.position = config.position;
             npc.rotation = config.rotation;
+            
+            if (this.stationaryNPCs.includes(config.id)) {
+                npc.currentState = NPCBase.States.IDLE;
+            }
             
             await npc.initialize();
             this.npcs.set(config.id, npc);
@@ -70,9 +73,8 @@ export class Singapore6NPCManager {
     }
 
     onUpdate() {
-        // Update all NPCs
-        for (const npc of this.npcs.values()) {
-            if (npc && npc.mesh) {
+        for (const [id, npc] of this.npcs.entries()) {
+            if (npc && npc.mesh && !this.stationaryNPCs.includes(id)) {
                 npc.updateMovement();
             }
         }
