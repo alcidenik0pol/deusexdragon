@@ -6,7 +6,6 @@ import { CeilingComponent } from '../../components/NEWCeilingComponent.js';
 import { TaiyongSkybox } from './skybox.js';
 import { TaiyongLighting } from './lighting.js';
 import { TaiyongTriggerArea } from './taiyongTriggerArea.js';
-import { BlinderComponent } from '../../components/BlinderComponent.js';
 
 export class TaiyongLevel extends CustomLevel {
     static LEVEL_BOUNDS = {
@@ -214,41 +213,52 @@ export class TaiyongLevel extends CustomLevel {
                     wall.mesh.visibility = 1;
                 });
 
-                /* Original blinder implementation commented out */
-
-                // === NEW BLINDER IMPLEMENTATION ===
-                // Create blinder walls using new BlinderComponent
-                const northBlinder = new BlinderComponent("taiyong-blinder-north");
-                const eastBlinder = new BlinderComponent("taiyong-blinder-east");
-                const southBlinder = new BlinderComponent("taiyong-blinder-south");
+                /* Commenting out blinder walls section for now
+                // Create blinder walls that exactly match glass walls dimensions
+                const northBlinder = new WallComponent("taiyong-blinder-north");
+                const eastBlinder = new WallComponent("taiyong-blinder-east");
+                const southBlinder = new WallComponent("taiyong-blinder-south");
 
                 // Configure blinders to exactly match glass walls
                 [northBlinder, eastBlinder, southBlinder].forEach(blinder => {
                     blinder.height = wallHeight;
-                    blinder.width = blinder === eastBlinder ? 80 : 40; // Match glass wall dimensions
+                    blinder.width = blinder === eastBlinder ? 80 : 40; // Exact same as glass walls
                     blinder.thickness = 0.4;
                     blinder.initialize(this.scene);
+
+                    // Create absolutely black material that blocks ALL light
+                    const blinderMaterial = new BABYLON.StandardMaterial(`${blinder.mesh.name}-material`, this.scene);
+                    blinderMaterial.diffuseColor = BABYLON.Color3.Black();
+                    blinderMaterial.specularColor = BABYLON.Color3.Black();
+                    blinderMaterial.emissiveColor = BABYLON.Color3.Black();
+                    blinderMaterial.ambientColor = BABYLON.Color3.Black();
+                    blinderMaterial.alpha = 1.0;
+                    
+                    // Enhanced light blocking properties
+                    blinder.mesh.material = blinderMaterial;
+                    blinder.mesh.isBlocker = true;
+                    blinder.mesh.blockAllLight = true;
+                    blinder.mesh.visibility = 1.0;
+                    blinder.mesh.receiveShadows = false;
+                    blinder.mesh.castShadows = true;
+                    
+                    // Add specific tags for light blocking
+                    blinder.mesh.tagList = ["wall", "blinder", "lightBlocker"];
                 });
 
                 // Position blinders exactly at glass wall positions + tiny offset
-                const offset = 0.2;
+                const offset = 0.2; // Smaller offset to stay closer to glass
                 northBlinder.mesh.position = new BABYLON.Vector3(20, wallHeight/2, 40 + offset);
                 eastBlinder.mesh.position = new BABYLON.Vector3(40 + offset, wallHeight/2, 0);
                 southBlinder.mesh.position = new BABYLON.Vector3(20, wallHeight/2, -40 - offset);
                 
                 // Rotate the east blinder to match glass wall
-                eastBlinder.mesh.rotation = new BABYLON.Vector3(0, Math.PI/2, 0);
-
-                // Store the component reference directly on the mesh
-                northBlinder.mesh.blinderComponent = northBlinder;
-                eastBlinder.mesh.blinderComponent = eastBlinder;
-                southBlinder.mesh.blinderComponent = southBlinder;
+                eastBlinder.setRotation(0, Math.PI/2, 0);
+                */
 
                 return [
                     northWall.mesh, eastWall.mesh, southWall.mesh,
-                    ...northBlinder.getMeshes(),
-                    ...eastBlinder.getMeshes(),
-                    ...southBlinder.getMeshes()
+                    // northBlinder.mesh, eastBlinder.mesh, southBlinder.mesh // Commented out blinder meshes
                 ];
             }
         };
