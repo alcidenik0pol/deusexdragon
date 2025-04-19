@@ -93,6 +93,9 @@ class NeonFixture extends BaseComponent {
 export class TaiyongLighting {
     constructor(scene) {
         this.scene = scene;
+        // Store lighting reference in scene metadata for easy access
+        this.scene.metadata = this.scene.metadata || {};
+        this.scene.metadata.lighting = this;
         this.clusterManager = new ClusterManager(scene, {
             maxActiveLights: 2,
             debug: false
@@ -313,25 +316,36 @@ export class TaiyongLighting {
         panel.addControl(slider);
     }
 
-    updateShadowCasters(isInTriggerArea) {
-        if (!this.sunsetShadowGenerator) return;
+    updateShadowCasters() {
+        if (!this.sunsetLight) return;
         
-        // Clear existing shadow casters
-        this.sunsetShadowGenerator.getShadowMap().renderList = [];
+        const shadowGenerator = this.sunsetLight.getShadowGenerator();
+        if (!shadowGenerator) return;
         
-        const walls = this.scene.getMeshesByTags("wall");
-        walls.forEach(wall => {
-            // Always include blinders and solid walls
-            if (wall.tagList.includes("blinder") || wall.name.includes("solid")) {
-                this.sunsetShadowGenerator.addShadowCaster(wall, true);
-                // Ensure blinders block all light
-                if (wall.tagList.includes("blinder")) {
-                    wall.visibility = 1.0;
-                    wall.isBlocker = true;
-                    wall.blockAllLight = true;
-                }
-            }
-        });
+        // Get all meshes that should receive the sunset light
+        const receiversList = this.scene.meshes.filter(mesh => 
+            !mesh.excludedMeshesFromSunsetLight &&  // Not explicitly excluded
+            !mesh.name.includes("blinder") &&       // Not a blinder
+            !mesh.isBlocker &&                      // Not a light blocker
+            (mesh.name.includes("floor") ||         // Is floor
+             mesh.name.includes("ceiling") ||       // Is ceiling
+             mesh.name.includes("wall"))            // Is wall
+        );
+
+        // Set these meshes to receive light from the sunset light
+        this.sunsetLight.includedOnlyMeshes = receiversList;
+        
+        // Update shadow casters (only visible blinder slats should cast shadows)
+        const shadowCasters = this.scene.meshes.filter(mesh => 
+            mesh.name.includes("-slat-") && 
+            mesh.visibility === 1 && 
+            mesh.isBlocker
+        );
+        
+        shadowGenerator.getShadowMap().renderList = shadowCasters;
+        
+        // Force the shadow generator to update
+        shadowGenerator.getShadowMap().refreshRate = 1;
     }
 
     getSunsetLighting() {

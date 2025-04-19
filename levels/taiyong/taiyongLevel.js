@@ -51,16 +51,20 @@ export class TaiyongLevel extends CustomLevel {
         floor.length = bounds.length;
         floor.initialize(this.scene);
         
-        // Create base material that only responds to clustered lights by default
+        // Create base material that matches the working divider wall material
         const baseMaterial = new BABYLON.StandardMaterial("baseGroundMaterial", this.scene);
         baseMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         baseMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
         baseMaterial.specularPower = 64;
+        baseMaterial.backFaceCulling = false;  // Match wall material property
 
-        // Create an exclusion mask for the sunset light
-        floor.mesh.excludedMeshesFromSunsetLight = true; // Custom property to mark for exclusion
+        // Set the same properties as the working divider wall
+        floor.mesh.material = baseMaterial;
+        floor.mesh.receiveShadows = true;
+        floor.mesh.castShadows = true;
+        floor.mesh.excludedMeshesFromSunsetLight = true;
 
-        // Keep your grid material but make it also exclude sunset by default
+        // Keep your grid material but make it match the same properties
         const gridMaterial = new BABYLON.GridMaterial("gridMaterial", this.scene);
         gridMaterial.majorUnitFrequency = 25;
         gridMaterial.minorUnitVisibility = 0;
@@ -68,31 +72,17 @@ export class TaiyongLevel extends CustomLevel {
         gridMaterial.opacity = 0.5;
         gridMaterial.lineColor = new BABYLON.Color3(0.2, 0.2, 0.2);
         gridMaterial.mainColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        gridMaterial.backFaceCulling = false;  // Match wall material property
 
-        // Create two overlapping ground meshes
-        floor.mesh.material = baseMaterial;
         const gridMesh = floor.mesh.clone("gridMesh");
         gridMesh.material = gridMaterial;
         gridMesh.position.y += 0.01;
-        gridMesh.excludedMeshesFromSunsetLight = true; // Also exclude grid from sunset
+        // Set the same properties for grid overlay
+        gridMesh.receiveShadows = true;
+        gridMesh.castShadows = true;
+        gridMesh.excludedMeshesFromSunsetLight = true;
 
-        // Create a custom glow effect using an emissive material
-        const glowMaterial = new BABYLON.StandardMaterial("floorGlowMaterial", this.scene);
-        glowMaterial.emissiveColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-        glowMaterial.disableLighting = true;
-        glowMaterial.alpha = 0.3;
-
-        // Create a separate plane for the glow effect
-        const glowPlane = BABYLON.MeshBuilder.CreateGround("floor-glow", {
-            width: bounds.width,
-            height: bounds.length
-        }, this.scene);
-        
-        glowPlane.material = glowMaterial;
-        glowPlane.position.y = -0.01; // Slightly below the main floor
-        glowPlane.parent = floor.mesh; // Parent to floor for easy management
-        
-        return floor.mesh;
+        return [floor.mesh, gridMesh];  // Return both meshes
     }
 
     createWalls(bounds = this.constructor.LEVEL_BOUNDS.room) {
@@ -297,22 +287,25 @@ export class TaiyongLevel extends CustomLevel {
         const ceiling = new CeilingComponent("taiyong-ceiling");
         ceiling.width = bounds.width;
         ceiling.length = bounds.length;
-        
-        // Calculate actual height in world units
-        const ceilingHeight = WORLD_CONFIG.GRID_CELL_SIZE * 8;
-        ceiling.position = new BABYLON.Vector3(0, ceilingHeight, 0);
+        ceiling.position = new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 8, 0);
         
         ceiling.initialize(this.scene, {
             width: bounds.width,
             length: bounds.length
         });
 
-        // Override the default red material with black
+        // Create material that matches the working divider wall material
         const material = new BABYLON.StandardMaterial("ceiling-material", this.scene);
-        material.diffuseColor = new BABYLON.Color3(0, 0, 0);
-        material.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-        material.backFaceCulling = false;
+        material.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);  // Match wall color
+        material.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2); // Match wall specular
+        material.specularPower = 64;
+        material.backFaceCulling = false;  // Match wall material property
+
+        // Set the same properties as the working divider wall
         ceiling.mesh.material = material;
+        ceiling.mesh.receiveShadows = true;
+        ceiling.mesh.castShadows = true;
+        ceiling.mesh.excludedMeshesFromSunsetLight = true;
         
         return ceiling.mesh;
     }

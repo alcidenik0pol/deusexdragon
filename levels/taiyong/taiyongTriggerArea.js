@@ -34,12 +34,8 @@ export class TaiyongTriggerArea {
     }
 
     async animateBlinders(show = false) {
-        if (this.animationInProgress) {
-            console.log("Animation already in progress, skipping");
-            return;
-        }
+        if (this.animationInProgress) return;
         this.animationInProgress = true;
-        console.log(`Starting blinder animation: ${show ? 'showing' : 'hiding'}`);
 
         // Get all slats from all blinders
         const allSlats = this.scene.meshes
@@ -47,15 +43,39 @@ export class TaiyongTriggerArea {
         
         // Get slats based on the animation direction
         const relevantSlats = show 
-            ? allSlats.filter(slat => slat.visibility === 0)  // Get hidden slats when showing
-            : allSlats.filter(slat => slat.visibility === 1); // Get visible slats when hiding
+            ? allSlats.filter(slat => slat.visibility === 0)
+            : allSlats.filter(slat => slat.visibility === 1);
         
         // Shuffle the slats array for random animation
         const shuffledSlats = relevantSlats.sort(() => Math.random() - 0.5);
 
-        // Calculate delay between each slat toggle
-        const totalDuration = 3000; // 3 seconds
+        const totalDuration = 3000;
         const delayBetweenSlats = totalDuration / shuffledSlats.length;
+
+        // Get all surfaces that should receive sunset light
+        const surfaces = [];
+        
+        // Add ceiling
+        const ceiling = this.scene.getMeshByName("taiyong-ceiling");
+        if (ceiling) surfaces.push(ceiling);
+        
+        // Add floor and grid overlay (but only east side)
+        const floor = this.scene.getMeshByName("taiyong-floor");
+        const gridMesh = this.scene.getMeshByName("gridMesh");
+        if (floor && floor.position.x > 0) surfaces.push(floor);
+        if (gridMesh && gridMesh.position.x > 0) surfaces.push(gridMesh);
+        
+        // Add walls (except west walls)
+        const walls = this.scene.meshes.filter(mesh => 
+            mesh.name.includes("wall") && 
+            !mesh.name.includes("outer-wall-west")
+        );
+        surfaces.push(...walls);
+
+        // Toggle excludedMeshesFromSunsetLight for all surfaces
+        surfaces.forEach(surface => {
+            surface.excludedMeshesFromSunsetLight = show;  // Exclude when showing slats
+        });
 
         // Animate each slat
         for (const slat of shuffledSlats) {
@@ -64,7 +84,6 @@ export class TaiyongTriggerArea {
             slat.isBlocker = show;
         }
 
-        console.log("Animation complete");
         this.animationInProgress = false;
     }
 
