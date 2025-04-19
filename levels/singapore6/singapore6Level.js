@@ -345,39 +345,47 @@ export class Singapore6Level extends LevelGenerator {
     }
 
     async createFlyingCar() {
-        // Car configurations - each object defines a car's properties
+        // Car configurations - each object defines a car's properties and spacing
         const carConfigs = [
-            // East-bound cars (original direction)
-            { startX: -80, z: 0, rotation: Math.PI / 2, height: 35 },    // Center lane, lower than original 67.5
-            { startX: -80, z: 20, rotation: Math.PI / 2, height: 30 },   // North lane, even lower
+            // East-bound cars (original direction) - spaced out along the path
+            { startX: -80, z: 0, rotation: Math.PI / 2, height: 35, offset: 0 },     
+            { startX: -40, z: 0, rotation: Math.PI / 2, height: 35, offset: 80 },    // Offset by half the path
+            { startX: -80, z: 20, rotation: Math.PI / 2, height: 30, offset: 40 },   
+            { startX: -20, z: 20, rotation: Math.PI / 2, height: 30, offset: 120 },  // Offset to create spacing
             
-            // North-bound cars (perpendicular to original)
-            { startX: -20, z: -80, rotation: 0, height: 32 },            // West lane
-            { startX: 0, z: -80, rotation: 0, height: 38 },              // Center lane
-            { startX: 20, z: -80, rotation: 0, height: 28 }              // East lane
+            // North-bound cars (perpendicular to original) - spaced out along the path
+            { startX: -20, z: -80, rotation: 0, height: 32, offset: 0 },    
+            { startX: -20, z: -20, rotation: 0, height: 32, offset: 100 },  // Offset by more than half
+            { startX: 0, z: -80, rotation: 0, height: 38, offset: 50 },     
+            { startX: 0, z: -40, rotation: 0, height: 38, offset: 130 },    // Different offset for variety
+            { startX: 20, z: -80, rotation: 0, height: 28, offset: 25 },    
+            { startX: 20, z: -30, rotation: 0, height: 28, offset: 110 }    
         ];
 
         for (const config of carConfigs) {
             const car = new Car03();
             await car.initialize(this.scene, {
                 rotation: config.rotation,
-                height: config.height  // Now these are proper flying heights
+                height: config.height
             });
             
-            // Set initial position
-            car.setWorldPosition(config.startX, config.z);
-            
-            // Store movement properties based on direction
+            // Set initial position with offset
             const isEastBound = Math.abs(config.rotation - Math.PI / 2) < 0.1;
+            const startX = isEastBound ? config.startX + config.offset : config.startX;
+            const startZ = isEastBound ? config.z : config.z + config.offset;
+            car.setWorldPosition(startX, startZ);
+            
+            // Store movement properties
             this.flyingCar = {
                 mesh: car.mesh,
-                speed: 1.0,
-                startX: isEastBound ? config.startX : config.startX,
-                startZ: isEastBound ? config.z : config.z,
-                endX: isEastBound ? 80 : config.startX,
+                speed: 0.5, // Half the original speed
+                startX: isEastBound ? -80 : startX,
+                startZ: isEastBound ? config.z : -80,
+                endX: isEastBound ? 80 : startX,
                 endZ: isEastBound ? config.z : 80,
                 movingX: isEastBound,
-                movingZ: !isEastBound
+                movingZ: !isEastBound,
+                offset: config.offset
             };
             
             this.components.push(car);

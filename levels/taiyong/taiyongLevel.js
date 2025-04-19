@@ -9,6 +9,7 @@ import { TaiyongTriggerArea } from './taiyongTriggerArea.js';
 import { BlinderComponent } from '../../components/BlinderComponent.js';
 import { DoorComponent } from '../../components/DoorComponent.js';
 import { TaiyongBillboard } from './furniture.js';
+import { TaiyongVehicleSystem } from './vehicles.js';
 
 export class TaiyongLevel extends CustomLevel {
     static LEVEL_BOUNDS = {
@@ -41,6 +42,9 @@ export class TaiyongLevel extends CustomLevel {
         
         // Initialize trigger area system
         this.triggerArea = new TaiyongTriggerArea(scene);
+        
+        // Initialize vehicle system
+        this.vehicleSystem = new TaiyongVehicleSystem(scene);
         
         // Register for updates
         this.scene.registerBeforeRender(() => this.onUpdate());
@@ -377,6 +381,9 @@ export class TaiyongLevel extends CustomLevel {
         // Initialize trigger area system
         this.triggerArea.initialize();
 
+        // Initialize vehicles
+        await this.vehicleSystem.initialize();
+        
         // Create billboards
         await this.createBillboards();
         
@@ -399,6 +406,9 @@ export class TaiyongLevel extends CustomLevel {
         }
         if (this.doorComponent) {
             this.doorComponent.dispose();
+        }
+        if (this.vehicleSystem) {
+            this.vehicleSystem.dispose();
         }
         super.dispose();
     }
