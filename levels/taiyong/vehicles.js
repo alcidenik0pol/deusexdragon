@@ -10,6 +10,12 @@ export class TaiyongCar extends BaseComponent {
         super.initialize(scene, options);
         await this.loadAsset('furniture', 'car03');
         
+        // Enable transparency on the car's material
+        if (this.mesh.material) {
+            this.mesh.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+            this.mesh.material.backFaceCulling = false;
+        }
+
         // Handle rotation properly using Quaternion
         if (options.rotation) {
             this.rotation = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, options.rotation);
@@ -31,22 +37,30 @@ export class TaiyongCar extends BaseComponent {
         const redCoreMaterial = new BABYLON.StandardMaterial("redCoreMat", scene);
         redCoreMaterial.emissiveColor = new BABYLON.Color3(1, 0, 0);
         redCoreMaterial.disableLighting = true;
+        redCoreMaterial.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+        redCoreMaterial.backFaceCulling = false;
         redCoreMaterial.alpha = 0.9;
 
         const whiteCoreMaterial = new BABYLON.StandardMaterial("whiteCoreMat", scene);
         whiteCoreMaterial.emissiveColor = new BABYLON.Color3(1, 1, 1);
         whiteCoreMaterial.disableLighting = true;
+        whiteCoreMaterial.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+        whiteCoreMaterial.backFaceCulling = false;
         whiteCoreMaterial.alpha = 0.9;
 
         // Create outer glow materials with more diffuse colors
         const redGlowMaterial = new BABYLON.StandardMaterial("redGlowMat", scene);
         redGlowMaterial.emissiveColor = new BABYLON.Color3(0.8, 0.2, 0.1);
         redGlowMaterial.disableLighting = true;
+        redGlowMaterial.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+        redGlowMaterial.backFaceCulling = false;
         redGlowMaterial.alpha = 0.4;
 
         const whiteGlowMaterial = new BABYLON.StandardMaterial("whiteGlowMat", scene);
         whiteGlowMaterial.emissiveColor = new BABYLON.Color3(0.9, 0.9, 1.0);
         whiteGlowMaterial.disableLighting = true;
+        whiteGlowMaterial.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
+        whiteGlowMaterial.backFaceCulling = false;
         whiteGlowMaterial.alpha = 0.4;
 
         // Create much smaller, properly sized planes for the glow effect
@@ -229,7 +243,7 @@ export class TaiyongVehicleSystem {
     updateVehicles() {
         for (const vehicle of this.vehicles) {
             const currentPos = vehicle.car.mesh.position;
-            const targetPoint = vehicle.pathPoints[1]; // Always moving to end point
+            const targetPoint = vehicle.pathPoints[1];
             
             // Calculate direction to target
             const direction = new BABYLON.Vector3(
@@ -238,8 +252,43 @@ export class TaiyongVehicleSystem {
                 targetPoint.z - currentPos.z
             );
             
+            // Calculate distance to end point
+            const distanceToEnd = direction.length();
+            
+            // Start fading out when within 60 meters of the end point
+            const fadeStartDistance = 60;
+            if (distanceToEnd < fadeStartDistance) {
+                // Use a smoother fade curve with Math.pow
+                const fadeAlpha = Math.pow(distanceToEnd / fadeStartDistance, 0.5);
+                
+                // Apply fade to car
+                if (vehicle.car.mesh.material) {
+                    vehicle.car.mesh.material.alpha = fadeAlpha;
+                }
+                
+                // Apply fade to lights
+                vehicle.car.lights.forEach(light => {
+                    if (light.material) {
+                        const originalAlpha = light.material.name.includes("CoreMat") ? 0.9 : 0.4;
+                        light.material.alpha = originalAlpha * fadeAlpha;
+                    }
+                });
+            } else {
+                // Reset alpha when not fading
+                if (vehicle.car.mesh.material) {
+                    vehicle.car.mesh.material.alpha = 1;
+                }
+                vehicle.car.lights.forEach(light => {
+                    if (light.material && light.material.name.includes("CoreMat")) {
+                        light.material.alpha = 0.9;
+                    } else if (light.material && light.material.name.includes("GlowMat")) {
+                        light.material.alpha = 0.4;
+                    }
+                });
+            }
+
             // If we've reached the end, reset to start
-            if (direction.length() < 0.5) {
+            if (distanceToEnd < 0.5) {
                 const startPoint = vehicle.pathPoints[0];
                 vehicle.car.setWorldPosition(startPoint.x, startPoint.z);
                 continue;
@@ -253,7 +302,7 @@ export class TaiyongVehicleSystem {
             const newPos = currentPos.add(direction);
             vehicle.car.mesh.position = new BABYLON.Vector3(
                 newPos.x,
-                vehicle.height, // Maintain constant height
+                vehicle.height,
                 newPos.z
             );
         }
