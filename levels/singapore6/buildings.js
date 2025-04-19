@@ -149,7 +149,7 @@ export class RepublicBuilding extends BaseComponent {
         
         // Load the texture
         const billboardMaterial = new BABYLON.StandardMaterial("taiYongMaterial", scene);
-        billboardMaterial.diffuseTexture = new BABYLON.Texture("assets/taiyong.png", scene);
+        billboardMaterial.diffuseTexture = new BABYLON.Texture("assets/static/taiyong.png", scene);
         
         // Optimize texture for performance
         billboardMaterial.diffuseTexture.hasAlpha = true;

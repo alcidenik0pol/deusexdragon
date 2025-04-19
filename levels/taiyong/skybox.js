@@ -5,7 +5,7 @@ export class TaiyongSkybox extends SkyboxComponent {
         // Use the same skybox textures as Singapore6
         this.setupSkybox({
             size: 1000,
-            rootUrl: "assets/_generation/skybox/02/",
+            rootUrl: "assets/static/skybox/02/",
             fileNames: [
                 "px.png", // positive X (right)
                 "py.png", // positive Y (up)
