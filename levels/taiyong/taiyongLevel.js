@@ -200,19 +200,22 @@ export class TaiyongLevel extends CustomLevel {
                 const eastBlinder = new BlinderComponent("taiyong-blinder-east");
                 const southBlinder = new BlinderComponent("taiyong-blinder-south");
 
-                // Configure blinders to exactly match glass walls
+                // Configure blinders to be slightly taller than glass walls
+                const heightExtension = 0.5; // Add 0.5 units to height for overlap
                 [northBlinder, eastBlinder, southBlinder].forEach(blinder => {
-                    blinder.height = wallHeight;
+                    blinder.height = wallHeight + heightExtension;
                     blinder.width = blinder === eastBlinder ? 80 : 40; // Match glass wall dimensions
                     blinder.thickness = 0.4;
                     blinder.initialize(this.scene);
                 });
 
-                // Position blinders exactly at glass wall positions + tiny offset
+                // Position blinders at glass wall positions + tiny offset
+                // Adjust Y position to account for increased height
                 const offset = 0.2;
-                northBlinder.mesh.position = new BABYLON.Vector3(20, wallHeight/2, 40 + offset);
-                eastBlinder.mesh.position = new BABYLON.Vector3(40 + offset, wallHeight/2, 0);
-                southBlinder.mesh.position = new BABYLON.Vector3(20, wallHeight/2, -40 - offset);
+                const heightOffset = heightExtension / 2; // Move up by half the extension
+                northBlinder.mesh.position = new BABYLON.Vector3(20, wallHeight/2 + heightOffset, 40 + offset);
+                eastBlinder.mesh.position = new BABYLON.Vector3(40 + offset, wallHeight/2 + heightOffset, 0);
+                southBlinder.mesh.position = new BABYLON.Vector3(20, wallHeight/2 + heightOffset, -40 - offset);
                 
                 // Rotate the east blinder to match glass wall
                 eastBlinder.mesh.rotation = new BABYLON.Vector3(0, Math.PI/2, 0);
