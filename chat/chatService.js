@@ -70,8 +70,14 @@ export class ChatService {
     }
     
     const npcId = npc?.id || npc?.name || 'unknown-npc';
-    this.conversationHistories.delete(npcId);
-    console.log(`Cleared conversation history for NPC: ${npcId}`);
+    
+    // Instead of deleting the history, just log that we're keeping it
+    // this.conversationHistories.delete(npcId);
+    console.log(`Keeping conversation history for NPC: ${npcId}`);
+    
+    // Optionally, if you want to see what's in the history:
+    const history = this.getConversationHistory(npc);
+    console.log(`Current history has ${history.length} messages`);
   }
 
   /**

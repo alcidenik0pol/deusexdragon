@@ -13,6 +13,7 @@ import { TestNewMeshes } from './levels/TestNewMeshes.js';
 import { Singapore5Level } from './levels/singapore5/singapore5Level.js';
 import { Singapore6Level } from './levels/singapore6/singapore6Level.js';
 import { GridLevel } from './levels/grid/GridLevel.js';
+import { TaiyongLevel } from './levels/taiyong/taiyongLevel.js';
 import { FPSDisplay } from './fpsDisplay.js';
 
 export class DebugControls {
@@ -99,13 +100,15 @@ export class DebugControls {
                 return new TestNewMeshes(scene);
             case 'grid':
                 return new GridLevel(scene);
+            case 'taiyong':
+                return new TaiyongLevel(scene);
             default:
                 return new LevelGenerator(scene);
         }
     }
 
     handleLevelSelection() {
-        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'singapore5', 'singapore6', 'ladiesroom', 'nighttest', 'modernoffice', 'testcamera', 'nightclub', 'testnewmeshes', 'grid'];
+        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'singapore5', 'singapore6', 'ladiesroom', 'nighttest', 'modernoffice', 'testcamera', 'nightclub', 'testnewmeshes', 'grid', 'taiyong'];
         const currentLevelType = prompt(`Enter level name (${availableLevels.join(', ')}):`);
         
         if (currentLevelType && availableLevels.includes(currentLevelType.toLowerCase())) {

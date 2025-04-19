@@ -71,19 +71,31 @@ export class ResolutionManager {
   
   async checkConditionWithLLM(condition, conversationContext) {
     try {
+      // Extremely explicit prompt demanding a one-word response
       const prompt = `
       You are evaluating a conversation in a video game to determine if a specific objective has been completed.
       
       ${conversationContext}
       
-      Based on this conversation, answer the following question with ONLY "yes" or "no":
-      ${condition.condition}
+      CRITICAL INSTRUCTION:
+      Reply with EXACTLY ONE WORD, either "yes" or "no".
+      Do not include any other text, explanation, punctuation, or whitespace.
       
-      Be generous in your interpretation - if the conversation contains information that's reasonably close to what's being asked, answer "yes".
+      QUESTION: ${condition.condition}
       
-      Answer:`;
+      ONE-WORD ANSWER:`;
       
       console.log(`[ResolutionManager] Sending evaluation request for condition: ${condition.id}`);
+      console.log(`[ResolutionManager] Full prompt being sent:`, prompt);
+      
+      const requestBody = {
+        model: this.evaluationModel,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        max_tokens: 300  // Keep higher to ensure we get a complete response
+      };
+      
+      console.log(`[ResolutionManager] Request body:`, JSON.stringify(requestBody));
       
       const response = await fetch(this.evaluationEndpoint, {
         method: 'POST',
@@ -91,13 +103,10 @@ export class ResolutionManager {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: this.evaluationModel,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.1, // Low temperature for more deterministic responses
-          max_tokens: 5     // We only need a yes/no answer
-        }),
+        body: JSON.stringify(requestBody),
       });
+      
+      console.log(`[ResolutionManager] Response status:`, response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -105,7 +114,19 @@ export class ResolutionManager {
         return false;
       }
       
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log(`[ResolutionManager] Raw API response:`, responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error(`[ResolutionManager] Failed to parse JSON response:`, e);
+        console.log(`[ResolutionManager] Non-JSON response:`, responseText);
+        return false;
+      }
+      
+      console.log(`[ResolutionManager] Parsed API response:`, data);
       
       // Check if the response contains an error
       if (data.error) {
@@ -120,12 +141,27 @@ export class ResolutionManager {
       }
       
       const answer = data.choices[0].message.content.trim().toLowerCase();
+      console.log(`[ResolutionManager] Final extracted answer: "${answer}"`);
+      
+      // Check if we hit the token limit
+      if (data.choices[0].finish_reason === "length" || 
+          data.choices[0].native_finish_reason === "MAX_TOKENS") {
+        console.error(`[ResolutionManager] ⚠️ TOKEN LIMIT REACHED: The model response was cut off due to token limits. Consider increasing max_tokens.`);
+        console.error(`[ResolutionManager] Attempted to use ${data.usage?.completion_tokens || 'unknown'} tokens but limited to ${requestBody.max_tokens}.`);
+      }
+      
+      // Check if the answer is empty after trimming
+      if (!answer) {
+        console.error(`[ResolutionManager] ⚠️ EMPTY RESPONSE: The model returned an empty response.`);
+        return false;
+      }
       
       console.log(`[ResolutionManager] Condition evaluation result: "${answer}" for condition: ${condition.id}`);
       return answer.includes('yes');
     } catch (error) {
       console.error('[ResolutionManager] Error evaluating condition with LLM:', error);
-      return false; // Default to not met on error
+      console.error('[ResolutionManager] Error stack:', error.stack);
+      return false;
     }
   }
   
@@ -219,13 +255,13 @@ export class ResolutionManager {
   }
   
   saveProgressState() {
-    // Save to localStorage for persistence
+    // Save to sessionStorage instead of localStorage
     try {
-      localStorage.setItem('gameProgress', JSON.stringify({
+      sessionStorage.setItem('gameProgress', JSON.stringify({
         completedConditions: this.completedConditions,
         levelPoints: this.levelPoints
       }));
-      console.log('Progress saved to localStorage');
+      console.log('Progress saved to sessionStorage');
     } catch (error) {
       console.error('Error saving progress:', error);
     }
@@ -233,11 +269,12 @@ export class ResolutionManager {
   
   loadProgressState() {
     try {
-      const savedState = JSON.parse(localStorage.getItem('gameProgress'));
+      // Load from sessionStorage instead of localStorage
+      const savedState = JSON.parse(sessionStorage.getItem('gameProgress'));
       if (savedState) {
         this.completedConditions = savedState.completedConditions || {};
         this.levelPoints = savedState.levelPoints || {};
-        console.log('Progress loaded from localStorage');
+        console.log('Progress loaded from sessionStorage');
       }
     } catch (error) {
       console.error('Error loading saved progress:', error);
