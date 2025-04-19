@@ -44,7 +44,9 @@ export class TaiyongTriggerArea {
         if (this.animationInProgress) return;
         this.animationInProgress = true;
 
-        const allSlats = this.scene.meshes.filter(mesh => mesh.name.includes("-slat-"));
+        const allSlats = this.scene.meshes
+            .filter(mesh => mesh.name.includes("-slat-"));
+        
         const relevantSlats = show 
             ? allSlats.filter(slat => slat.visibility === 0)
             : allSlats.filter(slat => slat.visibility === 1);
@@ -52,20 +54,39 @@ export class TaiyongTriggerArea {
         const shuffledSlats = relevantSlats.sort(() => Math.random() - 0.5);
         const totalDuration = 3000;
         const delayBetweenSlats = totalDuration / shuffledSlats.length;
-        const lighting = this.scene.metadata?.lighting;
-        let completedSlats = 0;
 
+        // Get lighting system reference DIRECTLY from scene metadata
+        const lighting = this.scene.metadata?.lighting;
+        console.log("Lighting system:", lighting); // Debug log
+        let completedSlats = 0;
+        
+        // Animate each slat and gradually update lighting
         for (const slat of shuffledSlats) {
             await new Promise(resolve => setTimeout(resolve, delayBetweenSlats));
             slat.visibility = show ? 1 : 0;
             slat.isBlocker = show;
             
+            // Calculate progress (0 to 1)
             completedSlats++;
             const progress = completedSlats / shuffledSlats.length;
-            const blinderState = show ? progress : (1 - progress);
+            this.currentBlinderState = show ? progress : (1 - progress);
+
+            // Debug log the update
+            // console.log("Updating sunset receivers:", this.currentBlinderState);
             
+            // Update lighting with current progress
             if (lighting?.updateSunsetReceivers) {
-                lighting.updateSunsetReceivers(blinderState);
+                // Only update the sunset materials, leave neon materials alone
+                lighting.updateSunsetReceivers(this.currentBlinderState);
+                
+                // Force update submeshes to ensure both materials render
+                this.scene.meshes.forEach(mesh => {
+                    if (mesh.material && mesh.material.subMaterials) {
+                        mesh.material.subMaterials[1].markAsDirty(BABYLON.Material.TextureDirtyFlag);
+                    }
+                });
+            } else {
+                console.warn("Lighting system or updateSunsetReceivers not found!");
             }
         }
 

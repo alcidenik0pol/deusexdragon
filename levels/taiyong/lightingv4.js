@@ -113,10 +113,6 @@ export class TaiyongLighting {
             blurKernelSize: 64
         });
         this.glowLayer.intensity = 0.7;
-
-        // Define base material colors
-        this.baseDiffuse = new BABYLON.Color3(0.1, 0.1, 0.1);
-        this.baseSpecular = new BABYLON.Color3(0.2, 0.2, 0.2);
     }
 
     async initialize() {
@@ -151,40 +147,96 @@ export class TaiyongLighting {
         this.sunsetLight.diffuse = sunsetColor;
         this.sunsetLight.specular = new BABYLON.Color3(1, 0.6, 0.3);
 
+        // Create inclusion/exclusion lists
+        this.sunsetLight.includedOnlyMeshes = []; // Only these meshes will receive light
+        
+        // Get all glass walls to include
+        const glassWalls = this.scene.meshes.filter(mesh => 
+            mesh.name.includes("glass-outer-wall") && 
+            !mesh.name.includes("blinder")
+        );
+        
+        // Add glass walls to inclusion list
+        this.sunsetLight.includedOnlyMeshes.push(...glassWalls);
+
         // Create shadow generator with PCF
         const shadowGenerator = new BABYLON.ShadowGenerator(2048, this.sunsetLight);
         shadowGenerator.usePercentageCloserFiltering = true;
         shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
-        shadowGenerator.darkness = 0.0; // Start fully lit
+        shadowGenerator.darkness = 1.0;
         
         // Enhanced shadow settings
         shadowGenerator.contactHardeningLightSizeUVRatio = 0.1;
         shadowGenerator.bias = 0.0001;
         shadowGenerator.normalBias = 0.0;
-        shadowGenerator.transparencyShadow = true;
+        shadowGenerator.transparencyShadow = true; // Enable for glass walls
         
         shadowGenerator.useExponentialShadowMap = true;
         shadowGenerator.blurScale = 1;
         shadowGenerator.blurBoxOffset = 1;
 
-        // Add all receivers
-        const receivers = this.scene.meshes.filter(mesh => 
-            mesh.name.includes("taiyong-floor") ||
-            mesh.name.includes("taiyong-ceiling") ||
-            mesh.isDividerWall ||
-            mesh.name.includes("glass-outer-wall")
-        );
-        
-        receivers.forEach(mesh => {
-            mesh.receiveShadows = true;
+        // Add shadow casters
+        const walls = this.scene.getMeshesByTags("wall");
+        walls.forEach(wall => {
+            if (wall.isBlocker || wall.tagList.includes("blinder")) {
+                shadowGenerator.addShadowCaster(wall, true);
+            }
         });
 
-        // Function to update sunset intensity through shadow darkness
-        this.updateSunsetReceivers = (blinderState) => {
-            if (!shadowGenerator) return;
-            shadowGenerator.darkness = blinderState; // 1 = dark (closed), 0 = bright (open)
-            this.sunsetLight.intensity = 2.0 * (1 - blinderState); // Fade light with blinders
+        // Function to update which meshes receive sunset light
+        this.updateSunsetReceivers = () => {
+            // Clear current receivers
+            this.sunsetLight.includedOnlyMeshes = [...glassWalls];
+            
+            // Get all blinders and calculate average visibility (0 = open, 1 = closed)
+            const blinders = this.scene.meshes.filter(mesh => mesh.name.includes("blinder"));
+            const avgBlinderClosure = blinders.reduce((sum, blinder) => 
+                sum + (blinder.visibility || 0), 0) / blinders.length;
+            
+            // Get all meshes in the scene
+            const allMeshes = this.scene.meshes;
+            
+            // Add receivers with intensity based on blinder state
+            allMeshes.forEach(mesh => {
+                if (!mesh.excludedMeshesFromSunsetLight && !mesh.name.includes("blinder")) {
+                    if (mesh.name.includes("floor") || 
+                        mesh.name.includes("ceiling") || 
+                        mesh.name.includes("wall")) {
+                        
+                        // Add mesh to receivers
+                        this.sunsetLight.includedOnlyMeshes.push(mesh);
+                        
+                        // Adjust material intensity based on blinder state
+                        if (mesh.material && mesh.material.subMaterials) {
+                            // Get the sunset material (first submaterial)
+                            const sunsetMaterial = mesh.material.subMaterials[0];
+                            // Get the neon material (second submaterial)
+                            const neonMaterial = mesh.material.subMaterials[1];
+                            
+                            const baseDiffuse = new BABYLON.Color3(0.1, 0.1, 0.1);
+                            const baseSpecular = new BABYLON.Color3(0.2, 0.2, 0.2);
+                            const lightFactor = 1 - avgBlinderClosure;
+
+                            // Only modify the sunset material
+                            sunsetMaterial.diffuseColor = baseDiffuse.scale(lightFactor);
+                            sunsetMaterial.specularColor = baseSpecular.scale(lightFactor);
+                            
+                            // Keep neon material at full strength
+                            neonMaterial.diffuseColor = baseDiffuse;
+                            neonMaterial.specularColor = baseSpecular;
+                        }
+                    }
+                }
+            });
         };
+
+        // Initial update of receivers
+        this.updateSunsetReceivers();
+        
+        // Update receivers periodically
+        this.scene.onBeforeRenderObservable.add(() => {
+            this.updateSunsetReceivers();
+        });
 
         return shadowGenerator;
     }

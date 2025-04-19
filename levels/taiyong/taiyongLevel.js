@@ -7,6 +7,8 @@ import { TaiyongSkybox } from './skybox.js';
 import { TaiyongLighting } from './lighting.js';
 import { TaiyongTriggerArea } from './taiyongTriggerArea.js';
 import { BlinderComponent } from '../../components/BlinderComponent.js';
+import { DoorComponent } from '../../components/DoorComponent.js';
+import { TaiyongBillboard } from './furniture.js';
 
 export class TaiyongLevel extends CustomLevel {
     static LEVEL_BOUNDS = {
@@ -46,120 +48,29 @@ export class TaiyongLevel extends CustomLevel {
 
     // Override createGround to use FloorComponent with special sunset handling
     createGround(bounds = this.constructor.LEVEL_BOUNDS.floor) {
-        const halfWidth = bounds.width / 2;
+        const floor = new FloorComponent("taiyong-floor");
         
-        // Create vertices for two rectangles - SWAPPED ORDER
-        const positions = [
-            // First rectangle (positive X - neon material, ALWAYS ON)
-            0, 0, -bounds.length/2,           // vertex 0
-            0, 0, bounds.length/2,            // vertex 1
-            halfWidth, 0, bounds.length/2,    // vertex 2
-            halfWidth, 0, -bounds.length/2,   // vertex 3
-            
-            // Second rectangle (negative X - sunset material, controlled by blinders)
-            -halfWidth, 0, -bounds.length/2,  // vertex 4
-            -halfWidth, 0, bounds.length/2,   // vertex 5
-            0, 0, bounds.length/2,            // vertex 6
-            0, 0, -bounds.length/2            // vertex 7
-        ];
-
-        // Define indices for the triangles that make up each rectangle
-        const indices = [
-            // First rectangle (neon)
-            0, 1, 2,    // triangle 1
-            0, 2, 3,    // triangle 2
-            
-            // Second rectangle (sunset)
-            4, 5, 6,    // triangle 3
-            4, 6, 7     // triangle 4
-        ];
-
-        // Create UV coordinates
-        const uvs = [
-            // First rectangle (neon)
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0,
-            
-            // Second rectangle (sunset)
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0
-        ];
-
-        // Create the custom mesh
-        const floor = new BABYLON.Mesh("taiyong-floor", this.scene);
-        const vertexData = new BABYLON.VertexData();
-        vertexData.positions = positions;
-        vertexData.indices = indices;
-        vertexData.uvs = uvs;
+        // Define ALL properties before initialization
+        floor.width = bounds.width;
+        floor.length = bounds.length;
+        floor.position = new BABYLON.Vector3(0, bounds.y, 0);
+        floor.materialType = 'standard';  // Override default 'tile'
         
-        // Compute normals for proper lighting
-        BABYLON.VertexData.ComputeNormals(positions, indices, uvs);
-        vertexData.applyToMesh(floor);
+        // Initialize with proper options
+        floor.initialize(this.scene, {
+            width: floor.width,
+            length: floor.length
+        });
 
-        // Create materials in the CORRECT order
-        const neonMaterial = new BABYLON.StandardMaterial("neon-receiving-material", this.scene);
-        neonMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        neonMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-        neonMaterial.backFaceCulling = false;
+        // Create proper material
+        const material = new BABYLON.StandardMaterial("floor-material", this.scene);
+        material.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);  // Dark gray base
+        material.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2); // Subtle specular
+        floor.mesh.material = material;
 
-        const sunsetMaterial = new BABYLON.StandardMaterial("sunset-receiving-material", this.scene);
-        sunsetMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        sunsetMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-        sunsetMaterial.backFaceCulling = false;
-
-        // Create multi-material with EXPLICIT order
-        const multiMat = new BABYLON.MultiMaterial("floor-multi", this.scene);
-        multiMat.subMaterials.push(neonMaterial);  // Index 0 - NEON
-        multiMat.subMaterials.push(sunsetMaterial); // Index 1 - SUNSET
-
-        floor.material = multiMat;
-        floor.receiveShadows = true;
-        floor.castShadows = true;
+        floor.mesh.receiveShadows = true;
         
-        // Store references to materials in CORRECT order
-        floor.neonMaterial = neonMaterial;    // First material
-        floor.sunsetMaterial = sunsetMaterial; // Second material
-        
-        // Create submeshes with EXPLICIT material indices
-        floor.subMeshes = [];
-        floor.subMeshes.push(new BABYLON.SubMesh(0, 0, 8, 0, 6, floor));    // First rectangle - NEON (always on)
-        floor.subMeshes.push(new BABYLON.SubMesh(1, 0, 8, 6, 6, floor));    // Second rectangle - SUNSET (controlled by blinders)
-
-        // Explicitly remove ANY possible light blocking
-        floor.isBlocker = false;
-        floor.blockAllLight = false;
-        floor.excludedMeshesFromSunsetLight = false;
-
-        // Keep your grid material but make it match the same properties
-        const gridMaterial = new BABYLON.GridMaterial("gridMaterial", this.scene);
-        gridMaterial.majorUnitFrequency = 25;
-        gridMaterial.minorUnitVisibility = 0;
-        gridMaterial.gridRatio = 0.4;
-        gridMaterial.opacity = 0.5;
-        gridMaterial.lineColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-        gridMaterial.mainColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        gridMaterial.backFaceCulling = false;
-
-        const gridMesh = BABYLON.MeshBuilder.CreateGround("gridMesh", {
-            width: bounds.width,
-            height: bounds.length
-        }, this.scene);
-        
-        gridMesh.material = gridMaterial;
-        gridMesh.position.y += 0.01;
-        gridMesh.receiveShadows = true;
-        gridMesh.castShadows = true;
-        
-        // Explicitly remove ANY possible light blocking from grid too
-        gridMesh.isBlocker = false;
-        gridMesh.blockAllLight = false;
-        gridMesh.excludedMeshesFromSunsetLight = false;
-
-        return [floor, gridMesh];
+        return floor.mesh;
     }
 
     createWalls(bounds = this.constructor.LEVEL_BOUNDS.room) {
@@ -168,7 +79,7 @@ export class TaiyongLevel extends CustomLevel {
         
         // Create two sections of the divider wall with an opening in the middle
         const totalWidth = 80; // Total length from z=-40 to z=40
-        const openingWidth = 4; // 4-meter opening
+        const openingWidth = DoorComponent.DOOR_WIDTH; // Use door's standard width
         const sectionWidth = (totalWidth - openingWidth) / 2; // Width of each wall section
         
         // Create two materials: one that completely blocks light, one that receives it
@@ -335,29 +246,29 @@ export class TaiyongLevel extends CustomLevel {
         
         // For each divider wall
         [leftWall, rightWall].forEach(wall => {
-            // Create sunset and neon materials
-            const sunsetMaterial = new BABYLON.StandardMaterial(`${wall.mesh.name}-sunset-material`, this.scene);
+            const sunsetMaterial = new BABYLON.StandardMaterial(`${wall.mesh.name}-sunset`, this.scene);
             sunsetMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
             sunsetMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+            sunsetMaterial.specularPower = 32;
             sunsetMaterial.backFaceCulling = false;
 
-            const neonMaterial = new BABYLON.StandardMaterial(`${wall.mesh.name}-neon-material`, this.scene);
+            const neonMaterial = new BABYLON.StandardMaterial(`${wall.mesh.name}-neon`, this.scene);
             neonMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
             neonMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+            neonMaterial.specularPower = 32;
             neonMaterial.backFaceCulling = false;
 
-            // Create multi-material
             const multiMat = new BABYLON.MultiMaterial(`${wall.mesh.name}-multi`, this.scene);
-            multiMat.subMaterials.push(sunsetMaterial);
-            multiMat.subMaterials.push(neonMaterial);
+            multiMat.subMaterials.push(sunsetMaterial);  // Index 0: Sunset
+            multiMat.subMaterials.push(neonMaterial);    // Index 1: Neon
 
             wall.mesh.material = multiMat;
-            wall.mesh.sunsetMaterial = sunsetMaterial;
-            wall.mesh.neonMaterial = neonMaterial;
-            
             wall.mesh.receiveShadows = true;
-            wall.mesh.castShadows = true;
-            wall.mesh.excludedMeshesFromSunsetLight = false; // Allow sunset light
+            wall.mesh.isDividerWall = true;
+            wall.mesh.materialZones = {
+                neonZone: wall.mesh.position.x < 0,
+                sunsetZone: wall.mesh.position.x > 0
+            };
         });
         leftWall.mesh.position = new BABYLON.Vector3(0, wallHeight/2, -(sectionWidth/2 + openingWidth/2));
         rightWall.mesh.position = new BABYLON.Vector3(0, wallHeight/2, (sectionWidth/2 + openingWidth/2));
@@ -369,6 +280,30 @@ export class TaiyongLevel extends CustomLevel {
         const glassWalls = glassUSection.initialize();
         walls.push(...solidWalls, ...glassWalls);
 
+        // Create the door component for the opening
+        this.doorComponent = new DoorComponent("taiyong-central-door");
+        this.doorComponent.initialize(this.scene);
+
+        // Position the door in the center opening
+        this.doorComponent.mesh.position = new BABYLON.Vector3(0, wallHeight/2, 0);
+        this.doorComponent.setRotation(0, Math.PI/2, 0);
+
+        // Set the door to open and ensure proper collision setup
+        this.doorComponent.setOpen(true);
+
+        // Additional setup for all door meshes
+        this.doorComponent.getMeshes().forEach(mesh => {
+            // Ensure these properties are set
+            mesh.isWalkthrough = true;
+            mesh.checkCollisions = false;
+            
+            // Optional: Add metadata to identify as door
+            mesh.metadata = { isDoor: true };
+        });
+
+        // Add door meshes to walls array
+        walls.push(...this.doorComponent.getMeshes());
+
         // Pass the WallComponent instances to trigger area
         if (this.triggerArea) {
             console.log("Setting glass walls:", this.glassWalls); // Debug log
@@ -378,41 +313,35 @@ export class TaiyongLevel extends CustomLevel {
         return walls;
     }
 
-    createCeiling(bounds = this.constructor.LEVEL_BOUNDS.floor) {
+    createCeiling() {
         const ceiling = new CeilingComponent("taiyong-ceiling");
-        ceiling.width = bounds.width;
-        ceiling.length = bounds.length;
-        ceiling.position = new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 8, 0);
         
+        // Define ALL required properties before initialization
+        ceiling.width = this.constructor.LEVEL_BOUNDS.room.width;   // Match room width
+        ceiling.length = this.constructor.LEVEL_BOUNDS.room.length; // Match room length
+        ceiling.position = new BABYLON.Vector3(
+            0,  // Center X
+            this.constructor.LEVEL_BOUNDS.room.height, // Height from LEVEL_BOUNDS
+            0   // Center Z
+        );
+
+        // Now initialize with proper materials
         ceiling.initialize(this.scene, {
-            width: bounds.width,
-            length: bounds.length
+            width: ceiling.width,
+            length: ceiling.length
         });
 
-        // Create TWO materials like we did for the floor
-        const sunsetMaterial = new BABYLON.StandardMaterial("ceiling-sunset-material", this.scene);
-        sunsetMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        sunsetMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-        sunsetMaterial.backFaceCulling = false;
-
-        const neonMaterial = new BABYLON.StandardMaterial("ceiling-neon-material", this.scene);
-        neonMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        neonMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-        neonMaterial.backFaceCulling = false;
-
-        // Create multi-material
-        const multiMat = new BABYLON.MultiMaterial("ceiling-multi", this.scene);
-        multiMat.subMaterials.push(sunsetMaterial);
-        multiMat.subMaterials.push(neonMaterial);
-
-        ceiling.mesh.material = multiMat;
-        ceiling.mesh.sunsetMaterial = sunsetMaterial;  // Store reference for lighting system
-        ceiling.mesh.neonMaterial = neonMaterial;      // Store reference for lighting system
-        
+        // Setup for sunset lighting
         ceiling.mesh.receiveShadows = true;
-        ceiling.mesh.castShadows = true;
-        ceiling.mesh.excludedMeshesFromSunsetLight = false; // Allow sunset light
-        
+        ceiling.mesh.isCeiling = true;
+
+        // Create proper material (override the debug RED)
+        const material = new BABYLON.StandardMaterial("ceiling-material", this.scene);
+        material.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);  // Dark gray base
+        material.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2); // Subtle specular
+        material.backFaceCulling = false;
+        ceiling.mesh.material = material;
+
         return ceiling.mesh;
     }
 
@@ -444,6 +373,9 @@ export class TaiyongLevel extends CustomLevel {
         
         // Initialize trigger area system
         this.triggerArea.initialize();
+
+        // Create billboards
+        await this.createBillboards();
         
         return result;
     }
@@ -461,6 +393,9 @@ export class TaiyongLevel extends CustomLevel {
         }
         if (this.triggerArea) {
             this.triggerArea.dispose();
+        }
+        if (this.doorComponent) {
+            this.doorComponent.dispose();
         }
         super.dispose();
     }
@@ -489,5 +424,23 @@ export class TaiyongLevel extends CustomLevel {
             sunsetMaterial,
             neonMaterial
         };
+    }
+
+    async createBillboards() {
+        const billboard = new TaiyongBillboard();
+        await billboard.initialize(this.scene);
+        
+        // Direct position in grid units
+        const x = -0.4 * WORLD_CONFIG.GRID_CELL_SIZE;
+        const y = 5.0 * WORLD_CONFIG.GRID_CELL_SIZE;
+        const z = -8.0 * WORLD_CONFIG.GRID_CELL_SIZE;
+        
+        billboard.position = new BABYLON.Vector3(x, y, z);
+        billboard.rotation = new BABYLON.Quaternion.RotationYawPitchRoll(Math.PI / 2, 0, 0);
+        
+        billboard.mesh.position = billboard.position;
+        billboard.mesh.rotationQuaternion = billboard.rotation;
+        
+        this.components.push(billboard);
     }
 }
