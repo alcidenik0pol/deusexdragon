@@ -1,0 +1,27 @@
+# First exclude all media files
+*.glb
+*.gltf
+*.fbx
+*.zip
+*.blend
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.svg
+*.mp4
+
+# Then include exceptions
+!assets/characters/**/*.glb
+!assets/buildings/**/*.glb
+!assets/furniture/**/*.glb
+!assets/static/**/*.png
+!assets/static/**/*.jpg
+!assets/static/**/*.jpeg
+!assets/static/**/*.webp
+!assets/static/**/*.gif
+!assets/static/**/*.svg
+!assets/static/**/*.mp4
+
+# Other standard ignores 
