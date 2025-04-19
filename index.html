@@ -38,10 +38,12 @@
     import { Controls } from './controls.js';
     import { DebugControls } from './debugControls.js';
     import { getSpawnPosition } from './spawnPositions.js';
+    import { DebugUI } from './debugUI.js';
     
     const canvas = document.getElementById("renderCanvas");
     const engine = new BABYLON.Engine(canvas, true);
     const debugOverlay = document.getElementById("debugOverlay");
+    const debugUI = new DebugUI(debugOverlay);
 
     let currentScene = null;
     let currentLevelType = 'taiyong';
@@ -141,6 +143,11 @@
 
         currentCharacter = controls.getCurrentCharacter();
         gameCamera.setCharacter(currentCharacter);
+
+        // Add debug UI update to scene's render loop
+        scene.registerBeforeRender(() => {
+            debugUI.update(currentCharacter);
+        });
 
         // Scene settings
         // scene.ambientColor = BABYLON.Color3.Black();

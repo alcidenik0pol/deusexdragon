@@ -4,7 +4,8 @@ export const LEVEL_SPAWN_POSITIONS = {
     'default': { x: 0, z: 0 },
     // Add other levels as needed
     'grid': { x: 10, z: 10 },
-    'singapore4': { x: -20, z: 30 }
+    'singapore4': { x: -20, z: 30 },
+    'taiyong': { x: -37, z: -37 }
 };
 
 // Helper function to get spawn position for a level

@@ -71,6 +71,13 @@ class NeonFixture extends BaseComponent {
         pool.position.y = -2; // Offset below fixture
 
         this.lightPool = pool;
+
+        // Create a glow layer specifically for this fixture
+        if (!this.scene.glowLayer) {
+            this.scene.glowLayer = new BABYLON.GlowLayer("glow", this.scene);
+            this.scene.glowLayer.intensity = 0.7;
+        }
+        this.scene.glowLayer.addIncludedOnlyMesh(this.mesh);
     }
 
     setIntensity(value) {
@@ -91,12 +98,16 @@ export class TaiyongLighting {
             debug: false
         });
         this.fixtures = [];
+        this.sunsetLight = null; // Store reference to the sunset light
         
         // Turn off ambient light
         this.scene.ambientColor = BABYLON.Color3.Black();
         
-        // Create a glow layer for the neon effects
-        this.glowLayer = new BABYLON.GlowLayer("glowLayer", scene);
+        // Create a custom glow layer that respects occlusion
+        this.glowLayer = new BABYLON.GlowLayer("glowLayer", scene, {
+            mainTextureFixedSize: 1024,
+            blurKernelSize: 64
+        });
         this.glowLayer.intensity = 0.7;
     }
 
@@ -106,6 +117,9 @@ export class TaiyongLighting {
         // Create two real lights using cluster manager
         this.createClusteredLights(bounds);
         
+        // Create the permanent sunset light
+        this.createSunsetLight(bounds);
+        
         // Create decorative neon fixtures
         await this.createNeonFixtures(bounds);
         
@@ -113,45 +127,137 @@ export class TaiyongLighting {
         this.setupLightingControls();
     }
 
+    createSunsetLight(height) {
+        const sunsetColor = new BABYLON.Color3(1, 0.5, 0.2);
+        
+        this.sunsetLight = new BABYLON.DirectionalLight(
+            "sunsetLight",
+            new BABYLON.Vector3(-0.7, -0.3, 0),
+            this.scene
+        );
+        
+        this.sunsetLight.intensity = 2.0;
+        this.sunsetLight.diffuse = sunsetColor;
+        this.sunsetLight.specular = new BABYLON.Color3(1, 0.6, 0.3);
+
+        // Create inclusion/exclusion lists
+        this.sunsetLight.includedOnlyMeshes = []; // Only these meshes will receive light
+        
+        // Get all glass walls to include
+        const glassWalls = this.scene.meshes.filter(mesh => 
+            mesh.name.includes("glass-outer-wall") && 
+            !mesh.name.includes("blinder")
+        );
+        
+        // Add glass walls to inclusion list
+        this.sunsetLight.includedOnlyMeshes.push(...glassWalls);
+
+        // Create shadow generator with PCF
+        const shadowGenerator = new BABYLON.ShadowGenerator(2048, this.sunsetLight);
+        shadowGenerator.usePercentageCloserFiltering = true;
+        shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
+        shadowGenerator.darkness = 1.0;
+        
+        // Enhanced shadow settings
+        shadowGenerator.contactHardeningLightSizeUVRatio = 0.1;
+        shadowGenerator.bias = 0.0001;
+        shadowGenerator.normalBias = 0.0;
+        shadowGenerator.transparencyShadow = true; // Enable for glass walls
+        
+        shadowGenerator.useExponentialShadowMap = true;
+        shadowGenerator.blurScale = 1;
+        shadowGenerator.blurBoxOffset = 1;
+
+        // Add shadow casters
+        const walls = this.scene.getMeshesByTags("wall");
+        walls.forEach(wall => {
+            if (wall.isBlocker || wall.tagList.includes("blinder")) {
+                shadowGenerator.addShadowCaster(wall, true);
+            }
+        });
+
+        // Function to update which meshes receive sunset light
+        this.updateSunsetReceivers = () => {
+            // Clear current receivers
+            this.sunsetLight.includedOnlyMeshes = [...glassWalls];
+            
+            // Get all meshes in the scene
+            const allMeshes = this.scene.meshes;
+            
+            // Check each mesh's position relative to glass walls
+            allMeshes.forEach(mesh => {
+                if (!mesh.excludedMeshesFromSunsetLight && !mesh.name.includes("blinder")) {
+                    // Check if mesh is in path of sunset light through glass
+                    const isInSunsetPath = glassWalls.some(glass => {
+                        // Simple check if mesh is behind glass relative to sunset direction
+                        return BABYLON.Vector3.Dot(
+                            mesh.position.subtract(glass.position),
+                            this.sunsetLight.direction
+                        ) > 0;
+                    });
+                    
+                    if (isInSunsetPath) {
+                        this.sunsetLight.includedOnlyMeshes.push(mesh);
+                    }
+                }
+            });
+        };
+
+        // Initial update of receivers
+        this.updateSunsetReceivers();
+        
+        // Update receivers periodically
+        this.scene.onBeforeRenderObservable.add(() => {
+            this.updateSunsetReceivers();
+        });
+
+        return shadowGenerator;
+    }
+
     createClusteredLights(height) {
         // Create a warmer, more neon-like color for the real lights
-        const neonWarmColor = new BABYLON.Color3(1, 0.85, 0.6); // More orange-tinted warm color
+        const neonWarmColor = new BABYLON.Color3(1, 0.85, 0.6);
 
-        // Main light in the corner, matching neon aesthetic
+        // Reference point for neon cluster center
+        const NEON_CENTER = new BABYLON.Vector3(-24, height/2, 0);
+
+        // Main light at our neon center reference point
         this.clusterManager.registerLight({
-            position: new BABYLON.Vector3(-25, height/2, -25),
-            intensity: 4.0, // Increased for more dramatic effect
+            position: NEON_CENTER,
+            intensity: 4.0,
             range: height * 6,
             diffuse: neonWarmColor,
-            specular: new BABYLON.Color3(1, 0.9, 0.7) // Increased specular for neon-like shine
+            specular: new BABYLON.Color3(1, 0.9, 0.7),
+            excludedMeshes: this.scene.getMeshesByTags("wall")
         });
 
         // Secondary light with same color profile
         this.clusterManager.registerLight({
-            position: new BABYLON.Vector3(-15, height/2, -15),
+            position: new BABYLON.Vector3(-24, height/2, -2),
             intensity: 3.5,
             range: height * 5,
             diffuse: neonWarmColor,
-            specular: new BABYLON.Color3(1, 0.9, 0.7)
+            specular: new BABYLON.Color3(1, 0.9, 0.7),
+            excludedMeshes: this.scene.getMeshesByTags("wall")
         });
     }
 
     async createNeonFixtures(height) {
         // Adjust orange color to match the real lights
-        const orangeNeon = new BABYLON.Color3(1, 0.7, 0.3); // More intense orange
+        const orangeNeon = new BABYLON.Color3(1, 0.7, 0.3);
         
         const fixtureConfigs = [
-            // Orange neons with adjusted color
-            { pos: [-25, 0, -20], rot: Math.PI/4, color: orangeNeon, length: 8 },
-            { pos: [-20, 0, -25], rot: -Math.PI/4, color: orangeNeon, length: 8 },
+            // Orange neons with adjusted color - spread them wider
+            { pos: [-25, 0, 5], rot: Math.PI/4, color: orangeNeon, length: 8 },
+            { pos: [-15, 0, -5], rot: -Math.PI/4, color: orangeNeon, length: 8 },
             
-            // White neons slightly warmer
-            { pos: [-25, 0, -15], rot: Math.PI/3, color: new BABYLON.Color3(1, 0.95, 0.9), length: 10 },
-            { pos: [-15, 0, -25], rot: -Math.PI/3, color: new BABYLON.Color3(1, 0.95, 0.9), length: 10 },
-            { pos: [-20, 0, -20], rot: Math.PI/6, color: new BABYLON.Color3(1, 0.95, 0.9), length: 8 },
-            { pos: [-22, 0, -18], rot: -Math.PI/6, color: new BABYLON.Color3(1, 0.95, 0.9), length: 8 },
-            { pos: [-18, 0, -22], rot: Math.PI/2, color: new BABYLON.Color3(1, 0.95, 0.9), length: 10 },
-            { pos: [-15, 0, -15], rot: 0, color: new BABYLON.Color3(1, 0.95, 0.9), length: 8 }
+            // White neons slightly warmer - create more space between them
+            { pos: [-30, 0, -8], rot: Math.PI/3, color: new BABYLON.Color3(1, 0.95, 0.9), length: 10 },
+            { pos: [-10, 0, 8], rot: -Math.PI/3, color: new BABYLON.Color3(1, 0.95, 0.9), length: 10 },
+            { pos: [-28, 0, 3], rot: Math.PI/6, color: new BABYLON.Color3(1, 0.95, 0.9), length: 8 },
+            { pos: [-12, 0, -3], rot: -Math.PI/6, color: new BABYLON.Color3(1, 0.95, 0.9), length: 8 },
+            { pos: [-20, 0, 0], rot: Math.PI/2, color: new BABYLON.Color3(1, 0.95, 0.9), length: 10 },
+            { pos: [-8, 0, -7], rot: 0, color: new BABYLON.Color3(1, 0.95, 0.9), length: 8 }
         ];
 
         for (const config of fixtureConfigs) {
@@ -207,9 +313,44 @@ export class TaiyongLighting {
         panel.addControl(slider);
     }
 
+    updateShadowCasters(isInTriggerArea) {
+        if (!this.sunsetShadowGenerator) return;
+        
+        // Clear existing shadow casters
+        this.sunsetShadowGenerator.getShadowMap().renderList = [];
+        
+        const walls = this.scene.getMeshesByTags("wall");
+        walls.forEach(wall => {
+            // Always include blinders and solid walls
+            if (wall.tagList.includes("blinder") || wall.name.includes("solid")) {
+                this.sunsetShadowGenerator.addShadowCaster(wall, true);
+                // Ensure blinders block all light
+                if (wall.tagList.includes("blinder")) {
+                    wall.visibility = 1.0;
+                    wall.isBlocker = true;
+                    wall.blockAllLight = true;
+                }
+            }
+        });
+    }
+
+    getSunsetLighting() {
+        return {
+            updateShadowCasters: this.updateShadowCasters.bind(this)
+        };
+    }
+
     dispose() {
         if (this.glowLayer) {
             this.glowLayer.dispose();
+        }
+        
+        if (this.sunsetLight) {
+            this.sunsetLight.dispose();
+        }
+
+        if (this.sunsetShadowGenerator) {
+            this.sunsetShadowGenerator.dispose();
         }
         
         this.fixtures.forEach(fixture => {

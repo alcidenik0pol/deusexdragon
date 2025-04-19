@@ -1,17 +1,9 @@
 import { ChatUI } from './chat/chatUI.js';
 import { LevelGenerator } from './levelGenerator.js';
-import { SingaporeLevel } from './levels/singaporeLevel.js';
-import { Singapore2Level } from './levels/singapore2Level.js';
-import { Singapore3Level } from './levels/singapore3Level.js';
 import { LadiesRoomLevel } from './levels/ladiesRoomLevel.js';
-import { Singapore4Level } from './levels/singapore4Level.js';
-import { NightTestLevel } from './levels/nightTestLevel.js';
-import { ModernOfficeLevel } from './levels/ModernOfficeLevel.js';
 import { TestCameraCollision } from './levels/testCameraCollision.js';
-// import { NightClub } from './levels/NightClub.js';
-import { TestNewMeshes } from './levels/TestNewMeshes.js';
-import { Singapore5Level } from './levels/singapore5/singapore5Level.js';
 import { Singapore6Level } from './levels/singapore6/singapore6Level.js';
+// import { NightClub } from './levels/NightClub.js';
 import { GridLevel } from './levels/grid/GridLevel.js';
 import { TaiyongLevel } from './levels/taiyong/taiyongLevel.js';
 import { FPSDisplay } from './fpsDisplay.js';
@@ -74,30 +66,14 @@ export class DebugControls {
 
     getLevelGenerator(levelType, scene) {
         switch (levelType) {
-            case 'singapore':
-                return new SingaporeLevel(scene);
-            case 'singapore2':
-                return new Singapore2Level(scene);
-            case 'singapore3':
-                return new Singapore3Level(scene);
-            case 'singapore4':
-                return new Singapore4Level(scene);
-            case 'singapore5':
-                return new Singapore5Level(scene);
             case 'singapore6':
                 return new Singapore6Level(scene);
             case 'ladiesroom':
                 return new LadiesRoomLevel(scene);
-            case 'nighttest':
-                return new NightTestLevel(scene);
-            case 'modernoffice':
-                return new ModernOfficeLevel(scene);
             case 'testcamera':
                 return new TestCameraCollision(scene);
             case 'nightclub':
                 return new NightClub(scene);
-            case 'testnewmeshes':
-                return new TestNewMeshes(scene);
             case 'grid':
                 return new GridLevel(scene);
             case 'taiyong':

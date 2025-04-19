@@ -101,39 +101,43 @@ export class ClusterManager {
                 ...props
             }));
             
-            if (this.debug) {
-                // console.log(`Total registered lights: ${allLights.length}`);
-                allLights.forEach((light, i) => {
-                    // console.log(`Light ${i}: pos=${light.position.toString()}, type=${light.type}`);
-                });
-            }
+            // Get all wall meshes
+            const walls = this.scene.getMeshesByTags("wall");
             
-            // Calculate distance and check if light is in front of camera
             allLights.forEach(light => {
                 if (!light.position) {
-                    console.warn(`Light ${light.id} has no position!`, light);
                     light.distance = Infinity;
                     light.inFrustum = false;
+                    light.isOccluded = true;
                     return;
                 }
                 
-                // Calculate vector from camera to light
+                // Check if light is occluded by any wall
+                light.isOccluded = false;
+                for (const wall of walls) {
+                    if (BABYLON.Ray.Intersects(
+                        camera.position,
+                        light.position.subtract(camera.position).normalize(),
+                        wall.getBoundingInfo().boundingBox,
+                        wall.getWorldMatrix()
+                    )) {
+                        light.isOccluded = true;
+                        break;
+                    }
+                }
+
+                // Calculate other properties as before
                 const cameraToLight = light.position.subtract(camera.position);
-                
-                // Calculate dot product with camera direction to check if light is in front
                 const cameraDirVector = camera.getDirection(BABYLON.Vector3.Forward());
                 const dotProduct = BABYLON.Vector3.Dot(cameraDirVector, cameraToLight.normalize());
-                
-                // Light is in front of camera if dot product is positive
                 light.inFrustum = dotProduct > 0;
-                
-                // Calculate distance (used for sorting)
                 light.distance = BABYLON.Vector3.Distance(camera.position, light.position);
             });
             
-            // Filter lights that are actually close enough to matter
+            // Filter lights that are close enough and not occluded
             const visibleLights = allLights.filter(light => {
-                return light.distance < (light.range || WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE) * 1.5;
+                return !light.isOccluded && 
+                       light.distance < (light.range || WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE) * 1.5;
             });
             
             // First prioritize lights in the camera frustum, then by distance
