@@ -46,93 +46,40 @@ export class TaiyongLevel extends CustomLevel {
 
     // Override createGround to use FloorComponent with special sunset handling
     createGround(bounds = this.constructor.LEVEL_BOUNDS.floor) {
-        const halfWidth = bounds.width / 2;
+        const floor = new FloorComponent("taiyong-floor");
+        floor.width = bounds.width;
+        floor.length = bounds.length;
+        floor.initialize(this.scene);
         
-        // Create vertices for two rectangles - SWAPPED ORDER
-        const positions = [
-            // First rectangle (positive X - neon material, ALWAYS ON)
-            0, 0, -bounds.length/2,           // vertex 0
-            0, 0, bounds.length/2,            // vertex 1
-            halfWidth, 0, bounds.length/2,    // vertex 2
-            halfWidth, 0, -bounds.length/2,   // vertex 3
-            
-            // Second rectangle (negative X - sunset material, controlled by blinders)
-            -halfWidth, 0, -bounds.length/2,  // vertex 4
-            -halfWidth, 0, bounds.length/2,   // vertex 5
-            0, 0, bounds.length/2,            // vertex 6
-            0, 0, -bounds.length/2            // vertex 7
-        ];
-
-        // Define indices for the triangles that make up each rectangle
-        const indices = [
-            // First rectangle (neon)
-            0, 1, 2,    // triangle 1
-            0, 2, 3,    // triangle 2
-            
-            // Second rectangle (sunset)
-            4, 5, 6,    // triangle 3
-            4, 6, 7     // triangle 4
-        ];
-
-        // Create UV coordinates
-        const uvs = [
-            // First rectangle (neon)
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0,
-            
-            // Second rectangle (sunset)
-            0, 0,
-            0, 1,
-            1, 1,
-            1, 0
-        ];
-
-        // Create the custom mesh
-        const floor = new BABYLON.Mesh("taiyong-floor", this.scene);
-        const vertexData = new BABYLON.VertexData();
-        vertexData.positions = positions;
-        vertexData.indices = indices;
-        vertexData.uvs = uvs;
-        
-        // Compute normals for proper lighting
-        BABYLON.VertexData.ComputeNormals(positions, indices, uvs);
-        vertexData.applyToMesh(floor);
-
-        // Create materials in the CORRECT order
-        const neonMaterial = new BABYLON.StandardMaterial("neon-receiving-material", this.scene);
-        neonMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        neonMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-        neonMaterial.backFaceCulling = false;
-
+        // Create TWO materials: one for sunset, one for neon reflections
         const sunsetMaterial = new BABYLON.StandardMaterial("sunset-receiving-material", this.scene);
         sunsetMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         sunsetMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
         sunsetMaterial.backFaceCulling = false;
 
-        // Create multi-material with EXPLICIT order
+        const neonMaterial = new BABYLON.StandardMaterial("neon-receiving-material", this.scene);
+        neonMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        neonMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+        neonMaterial.backFaceCulling = false;
+
+        // Create a multi-material to handle both lighting types
         const multiMat = new BABYLON.MultiMaterial("floor-multi", this.scene);
-        multiMat.subMaterials.push(neonMaterial);  // Index 0 - NEON
-        multiMat.subMaterials.push(sunsetMaterial); // Index 1 - SUNSET
+        multiMat.subMaterials.push(sunsetMaterial);
+        multiMat.subMaterials.push(neonMaterial);
 
-        floor.material = multiMat;
-        floor.receiveShadows = true;
-        floor.castShadows = true;
+        // Set the multi-material
+        floor.mesh.material = multiMat;
+        floor.mesh.receiveShadows = true;
+        floor.mesh.castShadows = true;
         
-        // Store references to materials in CORRECT order
-        floor.neonMaterial = neonMaterial;    // First material
-        floor.sunsetMaterial = sunsetMaterial; // Second material
+        // Store references to both materials for lighting system
+        floor.mesh.sunsetMaterial = sunsetMaterial;  // This one will fade with blinders
+        floor.mesh.neonMaterial = neonMaterial;      // This one stays constant
         
-        // Create submeshes with EXPLICIT material indices
-        floor.subMeshes = [];
-        floor.subMeshes.push(new BABYLON.SubMesh(0, 0, 8, 0, 6, floor));    // First rectangle - NEON (always on)
-        floor.subMeshes.push(new BABYLON.SubMesh(1, 0, 8, 6, 6, floor));    // Second rectangle - SUNSET (controlled by blinders)
-
         // Explicitly remove ANY possible light blocking
-        floor.isBlocker = false;
-        floor.blockAllLight = false;
-        floor.excludedMeshesFromSunsetLight = false;
+        floor.mesh.isBlocker = false;
+        floor.mesh.blockAllLight = false;
+        floor.mesh.excludedMeshesFromSunsetLight = false;
 
         // Keep your grid material but make it match the same properties
         const gridMaterial = new BABYLON.GridMaterial("gridMaterial", this.scene);
@@ -159,7 +106,18 @@ export class TaiyongLevel extends CustomLevel {
         gridMesh.blockAllLight = false;
         gridMesh.excludedMeshesFromSunsetLight = false;
 
-        return [floor, gridMesh];
+        const floorMaterials = this.createDualLightingMaterial("floor-multi");
+        
+        // Create submeshes for the floor to properly handle both materials
+        floor.mesh.subdivide(2); // Create two submeshes
+        floor.mesh.subMeshes[0].materialIndex = 0; // Sunset material
+        floor.mesh.subMeshes[1].materialIndex = 1; // Neon material
+        
+        floor.mesh.material = floorMaterials.material;
+        floor.mesh.sunsetMaterial = floorMaterials.sunsetMaterial;
+        floor.mesh.neonMaterial = floorMaterials.neonMaterial;
+
+        return [floor.mesh, gridMesh];
     }
 
     createWalls(bounds = this.constructor.LEVEL_BOUNDS.room) {

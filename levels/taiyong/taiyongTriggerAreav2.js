@@ -76,15 +76,7 @@ export class TaiyongTriggerArea {
             
             // Update lighting with current progress
             if (lighting?.updateSunsetReceivers) {
-                // Only update the sunset materials, leave neon materials alone
                 lighting.updateSunsetReceivers(this.currentBlinderState);
-                
-                // Force update submeshes to ensure both materials render
-                this.scene.meshes.forEach(mesh => {
-                    if (mesh.material && mesh.material.subMaterials) {
-                        mesh.material.subMaterials[1].markAsDirty(BABYLON.Material.TextureDirtyFlag);
-                    }
-                });
             } else {
                 console.warn("Lighting system or updateSunsetReceivers not found!");
             }

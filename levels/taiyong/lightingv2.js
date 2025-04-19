@@ -203,23 +203,16 @@ export class TaiyongLighting {
                         this.sunsetLight.includedOnlyMeshes.push(mesh);
                         
                         // Adjust material intensity based on blinder state
-                        if (mesh.material && mesh.material.subMaterials) {
-                            // Get the sunset material (first submaterial)
-                            const sunsetMaterial = mesh.material.subMaterials[0];
-                            // Get the neon material (second submaterial)
-                            const neonMaterial = mesh.material.subMaterials[1];
-                            
+                        if (mesh.material && mesh.name.includes("floor")) {
                             const baseDiffuse = new BABYLON.Color3(0.1, 0.1, 0.1);
                             const baseSpecular = new BABYLON.Color3(0.2, 0.2, 0.2);
                             const lightFactor = 1 - avgBlinderClosure;
 
-                            // Only modify the sunset material
-                            sunsetMaterial.diffuseColor = baseDiffuse.scale(lightFactor);
-                            sunsetMaterial.specularColor = baseSpecular.scale(lightFactor);
-                            
-                            // Keep neon material at full strength
-                            neonMaterial.diffuseColor = baseDiffuse;
-                            neonMaterial.specularColor = baseSpecular;
+                            // Only modify the sunset material, leave neon material alone
+                            if (mesh.sunsetMaterial) {
+                                mesh.sunsetMaterial.diffuseColor = baseDiffuse.scale(lightFactor);
+                                mesh.sunsetMaterial.specularColor = baseSpecular.scale(lightFactor);
+                            }
                         }
                     }
                 }
@@ -241,25 +234,27 @@ export class TaiyongLighting {
         // Create a warmer, more neon-like color for the real lights
         const neonWarmColor = new BABYLON.Color3(1, 0.85, 0.6);
 
-        // Adjust reference point to be closer to center, but still west side
-        const NEON_CENTER = new BABYLON.Vector3(-12, height/2, 0);
+        // Reference point for neon cluster center
+        const NEON_CENTER = new BABYLON.Vector3(-24, height/2, 0);
 
         // Main light at our neon center reference point
         this.clusterManager.registerLight({
             position: NEON_CENTER,
-            intensity: 3.0,  // Slightly reduced intensity
-            range: height * 4,  // Reduced range to prevent harsh cutoff
+            intensity: 4.0,
+            range: height * 6,
             diffuse: neonWarmColor,
             specular: new BABYLON.Color3(1, 0.9, 0.7),
+            excludedMeshes: this.scene.getMeshesByTags("wall")
         });
 
-        // Secondary light with same color profile, positioned for better coverage
+        // Secondary light with same color profile
         this.clusterManager.registerLight({
-            position: new BABYLON.Vector3(-12, height/2, -8),  // Adjusted position
-            intensity: 2.5,  // Slightly reduced intensity
-            range: height * 3.5,  // Reduced range for softer falloff
+            position: new BABYLON.Vector3(-24, height/2, -2),
+            intensity: 3.5,
+            range: height * 5,
             diffuse: neonWarmColor,
             specular: new BABYLON.Color3(1, 0.9, 0.7),
+            excludedMeshes: this.scene.getMeshesByTags("wall")
         });
     }
 
