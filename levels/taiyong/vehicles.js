@@ -184,29 +184,29 @@ export class TaiyongVehicleSystem {
         // Define vehicle configurations with different depths
         const vehicleConfigs = [
             // East-West Routes
-            { path: 'eastToWest', height: -100, speed: 0.8 },
-            { path: 'eastToWest', height: -80, speed: 0.75 },
-            { path: 'westToEast', height: -120, speed: 0.85 },
-            { path: 'westToEast', height: -90, speed: 0.9 },
+            { path: 'eastToWest', height: -20, speed: 0.8 },
+            { path: 'eastToWest', height: -15, speed: 0.75 },
+            { path: 'westToEast', height: -25, speed: 0.85 },
+            { path: 'westToEast', height: -18, speed: 0.9 },
             
             // North-South Routes (adding more)
-            { path: 'northToSouth', height: -70, speed: 0.7 },
-            { path: 'northToSouth', height: -85, speed: 0.65 },
-            { path: 'southToNorth', height: -75, speed: 0.7 },
-            { path: 'southToNorth', height: -65, speed: 0.8 },
-            { path: 'northToSouth', height: -95, speed: 0.75 },
-            { path: 'southToNorth', height: -110, speed: 0.85 },
+            { path: 'northToSouth', height: -12, speed: 0.7 },
+            { path: 'northToSouth', height: -16, speed: 0.65 },
+            { path: 'southToNorth', height: -14, speed: 0.7 },
+            { path: 'southToNorth', height: -10, speed: 0.8 },
+            { path: 'northToSouth', height: -19, speed: 0.75 },
+            { path: 'southToNorth', height: -22, speed: 0.85 },
             
             // Inner Routes
-            { path: 'innerEastToWest', height: -70, speed: 0.7 },
-            { path: 'innerWestToEast', height: -85, speed: 0.65 },
-            { path: 'eastToWest', height: -75, speed: 0.7 },
-            { path: 'westToEast', height: -65, speed: 0.8 },
+            { path: 'innerEastToWest', height: -13, speed: 0.7 },
+            { path: 'innerWestToEast', height: -17, speed: 0.65 },
+            { path: 'eastToWest', height: -15, speed: 0.7 },
+            { path: 'westToEast', height: -11, speed: 0.8 },
             
             // Deep Vehicles
-            { path: 'northToSouth', height: -150, speed: 0.6 },
-            { path: 'southToNorth', height: -130, speed: 0.65 },
-            { path: 'eastToWest', height: -140, speed: 0.7 }
+            { path: 'northToSouth', height: -30, speed: 0.6 },
+            { path: 'southToNorth', height: -27, speed: 0.65 },
+            { path: 'eastToWest', height: -28, speed: 0.7 }
         ];
 
         // Create vehicles based on configurations
