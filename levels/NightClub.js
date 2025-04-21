@@ -6,7 +6,7 @@
 // import { NightclubLightEffect } from '../src/effects/NightclubLightEffect.js';
 // import { NightclubPanelLightEffect } from '../src/effects/NightclubPanelLightEffect.js';
 // import { Purple02F } from '../characters/purple02f.js';
-// import baseNPCData from '../npcs/data/purple02f.js';
+// import baseNPCData from '../characters/data/purple02f.js';
 // import { DialogueManager } from '../src/dialogue/DialogueManager.js';
 
 // export class NightClub extends LevelGenerator {

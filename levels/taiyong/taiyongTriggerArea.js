@@ -15,6 +15,7 @@ export class TaiyongTriggerArea {
 
     initialize() {
         console.log("TaiyongTriggerArea initialized");
+        
         // Find all blinder components in the scene
         this.blinders = this.scene.meshes
             .filter(mesh => mesh.name.includes("taiyong-blinder"))
@@ -103,6 +104,6 @@ export class TaiyongTriggerArea {
     }
 
     dispose() {
-        // Nothing to clean up anymore
+        // Nothing to clean up
     }
 } 

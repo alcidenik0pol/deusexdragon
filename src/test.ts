@@ -1,5 +1,5 @@
 // import { db } from './db/database.js';
-// import { npc1Data } from './npcs/data/npc1.js';
+// import { npc1Data } from './characters/data/npc1.js';
 
 // async function test() {
 //     try {

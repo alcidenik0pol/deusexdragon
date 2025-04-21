@@ -194,12 +194,13 @@ export class TaiyongLighting {
         const neonWarmColor = new BABYLON.Color3(1, 0.85, 0.6);
 
         // Adjust reference point to be closer to center, but still west side
-        const NEON_CENTER = new BABYLON.Vector3(-12, height/2, 0);
+        const NEON_CENTER = new BABYLON.Vector3(-18, height/2, 0);
 
         // Main light at our neon center reference point
         this.clusterManager.registerLight({
             position: NEON_CENTER,
-            intensity: 3.0,  // Slightly reduced intensity
+            intensity: 6,  // Slightly reduced intensity
+            // intensity: 3.0,  // Slightly reduced intensity
             range: height * 4,  // Reduced range to prevent harsh cutoff
             diffuse: neonWarmColor,
             specular: new BABYLON.Color3(1, 0.9, 0.7),
@@ -208,11 +209,30 @@ export class TaiyongLighting {
         // Secondary light with same color profile, positioned for better coverage
         this.clusterManager.registerLight({
             position: new BABYLON.Vector3(-12, height/2, -8),  // Adjusted position
-            intensity: 2.5,  // Slightly reduced intensity
+            intensity: 4,  // Slightly reduced intensity
+            // intensity: 2.5,  // Slightly reduced intensity
             range: height * 3.5,  // Reduced range for softer falloff
             diffuse: neonWarmColor,
             specular: new BABYLON.Color3(1, 0.9, 0.7),
         });
+
+        // Add elevator light in the southwest corner
+        this.clusterManager.registerLight({
+            position: new BABYLON.Vector3(-37, height/2, -37),  // 3 meters in from both walls
+            intensity: 2.0,  // Slightly dimmer than main lights
+            range: height * 3,  // Slightly smaller range for more localized lighting
+            diffuse: neonWarmColor,
+            specular: new BABYLON.Color3(1, 0.9, 0.7),  // Match the neon light properties
+        });
+
+        // Add door neon light at the center doorway
+        // this.clusterManager.registerLight({
+        //     position: new BABYLON.Vector3(0, height - 1, 0),  // Positioned at top of doorway
+        //     intensity: 1.8,  // Slightly dimmer for accent lighting
+        //     range: height * 2.5,  // Smaller range for focused door lighting
+        //     diffuse: new BABYLON.Color3(0.9, 0.95, 1.0),  // Slightly cooler white to match entrance markers
+        //     specular: new BABYLON.Color3(0.95, 0.98, 1.0),
+        // });
     }
 
     async createNeonFixtures(height) {
@@ -316,38 +336,7 @@ export class TaiyongLighting {
     }
 
     setupLightingControls() {
-        const adt = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("LightingUI");
-
-        const panel = new BABYLON.GUI.StackPanel();
-        panel.width = "220px";
-        panel.top = "-25px";
-        panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-        panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-        adt.addControl(panel);
-
-        // Main light intensity control
-        const header = new BABYLON.GUI.TextBlock();
-        header.text = "Main Lights";
-        header.height = "30px";
-        header.color = "white";
-        panel.addControl(header);
-
-        const slider = new BABYLON.GUI.Slider();
-        slider.minimum = 0;
-        slider.maximum = 1.5;
-        slider.value = 1.0;
-        slider.height = "20px";
-        slider.width = "200px";
-        slider.onValueChangedObservable.add(value => {
-            // Update neon fixtures
-            this.fixtures.forEach(fixture => fixture.setIntensity(value));
-            
-            // Update glow layer
-            if (this.glowLayer) {
-                this.glowLayer.intensity = 0.7 * value;
-            }
-        });
-        panel.addControl(slider);
+        // Method is now empty since we're removing the UI controls
     }
 
     updateShadowCasters() {

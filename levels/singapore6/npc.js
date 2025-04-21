@@ -1,18 +1,18 @@
-import { CopF01 } from '../../characters/copf01.js';
-import { GuardM01 } from '../../characters/guardm01.js';
-import { MaggieChow } from '../../characters/maggiechow.js';
-import { OrangeF01 } from '../../characters/orangef01.js';
-import { Purple02F } from '../../characters/purple02f.js';
-import { BlueF01 } from '../../characters/bluef01.js';
-import { NPCBase } from '../../characters/NPCBase.js';
+import { CopF01 } from '../../characters/gameplay/copf01.js';
+import { GuardM01 } from '../../characters/gameplay/guardm01.js';
+import { MaggieChow } from '../../characters/gameplay/maggiechow.js';
+import { OrangeF01 } from '../../characters/gameplay/orangef01.js';
+import { Purple02F } from '../../characters/gameplay/purple02f.js';
+import { BlueF01 } from '../../characters/gameplay/bluef01.js';
+import { NPCBase } from '../../characters/gameplay/NPCBase.js';
 
 // Import the NPC data to get the canonical IDs
-import guardm01Data from '../../npcs/data/guardm01.js';
-import copf01Data from '../../npcs/data/copf01.js';
-import maggiechowData from '../../npcs/data/maggiechow.js';
-import orangef01Data from '../../npcs/data/orangef01.js';
-import purple02fData from '../../npcs/data/purple02f.js';
-import bluef01Data from '../../npcs/data/bluef01.js';
+import guardm01Data from '../../characters/data/guardm01.js';
+import copf01Data from '../../characters/data/copf01.js';
+import maggiechowData from '../../characters/data/maggiechow.js';
+import orangef01Data from '../../characters/data/orangef01.js';
+import purple02fData from '../../characters/data/purple02f.js';
+import bluef01Data from '../../characters/data/bluef01.js';
 
 export class Singapore6NPCManager {
     constructor(scene) {

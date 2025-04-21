@@ -1,5 +1,5 @@
-import { ChatUI } from '../chat/chatUI.js';
-import { npcService } from '../services/npcService.js';
+import { ChatUI } from '../../chat/chatUI.js';
+import { npcService } from '../npcService.js';
 
 export class NPCBase {
     static DEFAULT_SCALE = 2.0;

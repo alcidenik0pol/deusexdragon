@@ -1,6 +1,6 @@
 import { NPCBase } from './NPCBase.js';
 // import { npcService } from '../dist/client/services/npcService.js';
-import npc1Data from '../npcs/data/npc1.js';
+import npc1Data from '../data/npc1.js';
 
 export class NPC1 extends NPCBase {
     constructor(scene) {

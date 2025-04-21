@@ -1,7 +1,7 @@
 import { NPCBase } from './NPCBase.js';
-import npcData from '../npcs/data/guardm01.js';
+import npcData from '../data/mreed.js';
 
-export class GuardM01 extends NPCBase {
+export class MReed extends NPCBase {
     constructor(scene) {
         super(npcData, scene);
         this.name = npcData.name;

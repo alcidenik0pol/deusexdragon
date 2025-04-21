@@ -5,11 +5,13 @@ import { FloorComponent } from '../../components/FloorComponent.js';
 import { CeilingComponent } from '../../components/NEWCeilingComponent.js';
 import { TaiyongSkybox } from './skybox.js';
 import { TaiyongLighting } from './lighting.js';
-import { TaiyongTriggerArea } from './taiyongTriggerArea.js';
 import { BlinderComponent } from '../../components/BlinderComponent.js';
 import { DoorComponent } from '../../components/DoorComponent.js';
 import { TaiyongBillboard } from './furniture.js';
 import { TaiyongVehicleSystem } from './vehicles.js';
+import { TaiyongNPCManager } from './npc.js';
+import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
+import { TaiyongTriggerArea } from './taiyongTriggerArea.js';
 
 export class TaiyongLevel extends CustomLevel {
     static LEVEL_BOUNDS = {
@@ -40,11 +42,17 @@ export class TaiyongLevel extends CustomLevel {
         // Initialize our lighting system instead
         this.lighting = new TaiyongLighting(scene);
         
-        // Initialize trigger area system
-        this.triggerArea = new TaiyongTriggerArea(scene);
+        // Initialize blinder trigger only (removed door trigger)
+        this.blinderTrigger = new TaiyongTriggerArea(scene);
         
         // Initialize vehicle system
         this.vehicleSystem = new TaiyongVehicleSystem(scene);
+        
+        // Initialize NPC manager
+        this.npcManager = new TaiyongNPCManager(scene);
+
+        // Initialize dialogue manager
+        this.dialogueManager = new DialogueManager(scene);
         
         // Register for updates
         this.scene.registerBeforeRender(() => this.onUpdate());
@@ -287,34 +295,18 @@ export class TaiyongLevel extends CustomLevel {
         const glassWalls = glassUSection.initialize();
         walls.push(...solidWalls, ...glassWalls);
 
-        // Create the door component for the opening
+        // Create door and set it to stay open
         this.doorComponent = new DoorComponent("taiyong-central-door");
         this.doorComponent.initialize(this.scene);
-
-        // Position the door in the center opening
         this.doorComponent.mesh.position = new BABYLON.Vector3(0, wallHeight/2, 0);
         this.doorComponent.setRotation(0, Math.PI/2, 0);
+        this.doorComponent.setOpen(true); // Keep door open
 
-        // Set the door to open and ensure proper collision setup
-        this.doorComponent.setOpen(true);
-
-        // Additional setup for all door meshes
-        this.doorComponent.getMeshes().forEach(mesh => {
-            // Ensure these properties are set
-            mesh.isWalkthrough = true;
-            mesh.checkCollisions = false;
-            
-            // Optional: Add metadata to identify as door
-            mesh.metadata = { isDoor: true };
-        });
-
-        // Add door meshes to walls array
         walls.push(...this.doorComponent.getMeshes());
 
-        // Pass the WallComponent instances to trigger area
-        if (this.triggerArea) {
-            console.log("Setting glass walls:", this.glassWalls); // Debug log
-            this.triggerArea.setGlassWalls(this.glassWalls);
+        // Update to use blinderTrigger instead of doorTrigger for glass walls
+        if (this.blinderTrigger) {
+            this.blinderTrigger.setGlassWalls(glassWalls);
         }
 
         return walls;
@@ -375,22 +367,29 @@ export class TaiyongLevel extends CustomLevel {
             }
         }
         
-        // Initialize lighting instead of createIndoorLights
+        // Initialize lighting
         await this.lighting.initialize();
         
-        // Initialize trigger area system
-        this.triggerArea.initialize();
-
-        // Initialize vehicles
-        await this.vehicleSystem.initialize();
+        // Initialize blinder trigger only (door trigger is handled in createWalls)
+        this.blinderTrigger.initialize();
         
-        // Create billboards
+        // Initialize other systems
+        await this.vehicleSystem.initialize();
+        await this.npcManager.initialize();
+        this.dialogueManager.initialize();
+        this.dialogueManager.registerNPCs(Array.from(this.npcManager.npcs.values()));
+        
         await this.createBillboards();
         
         return result;
     }
 
     onUpdate() {
+        // Update NPCs
+        if (this.npcManager) {
+            this.npcManager.onUpdate();
+        }
+        
         // The cluster manager handles its own updates
     }
 
@@ -401,14 +400,20 @@ export class TaiyongLevel extends CustomLevel {
         if (this.lighting) {
             this.lighting.dispose();
         }
-        if (this.triggerArea) {
-            this.triggerArea.dispose();
+        if (this.blinderTrigger) {
+            this.blinderTrigger.dispose();
         }
         if (this.doorComponent) {
             this.doorComponent.dispose();
         }
         if (this.vehicleSystem) {
             this.vehicleSystem.dispose();
+        }
+        if (this.npcManager) {
+            this.npcManager.dispose();
+        }
+        if (this.dialogueManager) {
+            this.dialogueManager.dispose();
         }
         super.dispose();
     }

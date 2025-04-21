@@ -1,5 +1,6 @@
+import { loadNPC1 } from '../characters/gameplay/npc1.js';
 import { LevelGenerator } from '../levelGenerator.js';
-import { loadNPC1 } from '../characters/npc1.js';  // New import
+
 
 export class LadiesRoomLevel extends LevelGenerator {
     constructor(scene) {

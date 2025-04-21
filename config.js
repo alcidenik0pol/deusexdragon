@@ -8,6 +8,7 @@ export const WORLD_CONFIG = {
     GRID_CELL_SIZE: 1,     // Each grid cell is 1×1×1 meters
     PHYSICS_SCALE: 1,      // Physics scale matches world scale
     DEFAULT_WORLD_SIZE: 100, // Default world is 100x100 meters
+    DOOR_TRIGGER_RADIUS: 1.0,  // 1 meter trigger radius for doors
     
     // Light clustering configuration
     LIGHTING: {
