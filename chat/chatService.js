@@ -1,13 +1,26 @@
 import { config } from '../config/env.js';
+import { userSettings } from './userSettings.js';
 
 export class ChatService {
   constructor() {
     console.log('ChatService initialized');
     this.apiKey = config.OPENROUTER_API_KEY;
     this.baseUrl = config.OPENROUTER_API_URL;
-    this.model = config.OPENROUTER_MODEL;
+    
+    // Listen for model changes
+    window.addEventListener('modelChanged', this._handleModelChange.bind(this));
+    
+    // Initialize with current model from userSettings
+    this._handleModelChange();
+    
     // Conversation history storage - a Map with NPC IDs as keys
     this.conversationHistories = new Map();
+  }
+  
+  _handleModelChange() {
+    // Update the model from userSettings
+    this.model = userSettings.currentModel;
+    console.log(`ChatService using model: ${this.model}`);
   }
 
   /**
@@ -165,7 +178,8 @@ export class ChatService {
         messages.push({ role: 'user', content });
       }
       
-      const payload = {
+      // Use the current model from instance property (which is kept updated)
+      const requestBody = {
         model: this.model,
         messages: messages,
         stream: true,
@@ -183,7 +197,7 @@ export class ChatService {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.status === 429) {

@@ -1,4 +1,5 @@
 import { config } from '../config/env.js';
+import { userSettings } from './userSettings.js';
 
 export class ResolutionManager {
   constructor() {
@@ -8,7 +9,12 @@ export class ResolutionManager {
     this.levelThresholds = {};
     this.apiKey = config.OPENROUTER_API_KEY;
     this.evaluationEndpoint = config.OPENROUTER_API_URL;
-    this.evaluationModel = config.OPENROUTER_MODEL;
+    
+    // Listen for model changes
+    window.addEventListener('modelChanged', this._handleModelChange.bind(this));
+    
+    // Initialize with current model from userSettings
+    this._handleModelChange();
     
     // Clear sessionStorage on fresh page load
     if (window.performance && window.performance.navigation.type === window.performance.navigation.TYPE_RELOAD) {
@@ -20,6 +26,12 @@ export class ResolutionManager {
     this.loadProgressState();
     
     console.log('ResolutionManager initialized');
+  }
+  
+  _handleModelChange() {
+    // Update the model from userSettings
+    this.evaluationModel = userSettings.currentModel;
+    console.log(`ResolutionManager using model: ${this.evaluationModel}`);
   }
   
   registerLevel(levelId, conditions, pointThreshold) {

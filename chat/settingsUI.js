@@ -1,4 +1,5 @@
 import { ChatUI } from './chatUI.js';
+import { userSettings, UserSettings } from './userSettings.js';
 
 export class SettingsUI {
     static isActive = false;
@@ -120,17 +121,11 @@ export class SettingsUI {
             </div>
         `;
 
-        // Define available LLM options
-        const llmOptions = [
-            { id: 'claude-3-opus', name: 'Claude 3 Opus', description: 'Most powerful model with highest reasoning capabilities' },
-            { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', description: 'Balanced performance and speed' },
-            { id: 'claude-3-haiku', name: 'Claude 3 Haiku', description: 'Fastest model with good capabilities' },
-            { id: 'gpt-4', name: 'GPT-4', description: 'OpenAI\'s most capable model' },
-            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Faster, more economical OpenAI model' }
-        ];
+        // Get available LLM options from UserSettings
+        const llmOptions = userSettings.getLLMOptions();
 
-        // Get currently selected LLM (default to claude-3-sonnet if not set)
-        const currentLLM = localStorage.getItem('selectedLLM') || 'claude-3-sonnet';
+        // Get currently selected LLM
+        const currentLLM = userSettings.currentModel;
 
         // Create radio button group for LLM selection
         llmOptions.forEach(option => {
@@ -195,8 +190,8 @@ export class SettingsUI {
         const selectedLLM = document.querySelector('input[name="llm-selection"]:checked')?.value;
         
         if (selectedLLM) {
-            // Save to localStorage
-            localStorage.setItem('selectedLLM', selectedLLM);
+            // Update the model in UserSettings (which saves to sessionStorage)
+            userSettings.currentModel = selectedLLM;
             
             // Show success message
             const successMsg = document.createElement('div');
