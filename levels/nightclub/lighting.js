@@ -42,40 +42,46 @@ export class NightClubLighting {
         this.glowLayer = null;
         this.floorMaterial = null;
         
-        // Initialize sequence manager - MUCH shorter intense mode
+        // Intense sequence configuration - short and aggressive
+        this.intenseSequence = {
+            duration: {
+                min: 8000,        // 8 seconds
+                max: 10000,       // 10 seconds
+                current: 9000     // Initial value
+            },
+            blackouts: {
+                min: 50,         // 0.05 seconds
+                max: 150,        // 0.15 seconds
+                next: 100,       // Initial value
+                lastChange: 0,
+                isBlackout: false,
+                pattern: 'normal' // 'normal', 'strobe', 'pulse'
+            }
+        };
+
+        // Calm sequence configuration - long and smooth
+        this.calmSequence = {
+            duration: {
+                min: 30000,      // 30 seconds
+                max: 35000,      // 35 seconds
+                current: 32000   // Initial value
+            },
+            colorTransition: {
+                duration: 10000,  // 10 seconds for each transition
+                active: false,
+                startColor: null,
+                targetColor: null,
+                progress: 0
+            }
+        };
+
+        // Initialize sequence manager with proper references
         this.sequenceManager = {
             isIntenseMode: true,
             lastModeChange: 0,
-            modeDuration: {
-                min: 8000,        // 8 seconds for intense
-                max: 10000,       // 10 seconds max
-                current: 9000     // Initial duration
-            }
+            currentDuration: this.intenseSequence.duration.current
         };
         
-        // Store original timing values for calm periods - MUCH slower now
-        this.calmTimings = {
-            min: 10000,    // 10 seconds minimum between color changes
-            max: 15000,    // 15 seconds maximum
-            next: 12000    // Initial value
-        };
-        
-        // Color transition duration also increased for smoother blends
-        this.colorTransition = {
-            active: false,
-            startColor: null,
-            targetColor: null,
-            progress: 0,
-            duration: 4000, // 4 seconds for smooth transition
-        };
-        
-        // Keep intense timings the same
-        this.intenseTimings = {
-            min: 50,      // 0.05 seconds
-            max: 150,     // 0.15 seconds
-            next: 100     // Initial value
-        };
-
         // Create a custom glow layer that we can control
         this.glowLayer = new BABYLON.GlowLayer("nightclub-glow", scene, {
             mainTextureFixedSize: 1024,
@@ -437,13 +443,13 @@ export class NightClubLighting {
 
     getNextModeDuration() {
         if (this.sequenceManager.isIntenseMode) {
-            // Short duration for intense mode
-            return Math.random() * 2000 + 8000; // 8-10 seconds
-        } else {
-            // Keep long duration for calm mode
             return Math.random() * 
-                (this.sequenceManager.modeDuration.max - this.sequenceManager.modeDuration.min) + 
-                this.sequenceManager.modeDuration.min;
+                (this.intenseSequence.duration.max - this.intenseSequence.duration.min) + 
+                this.intenseSequence.duration.min;
+        } else {
+            return Math.random() * 
+                (this.calmSequence.duration.max - this.calmSequence.duration.min) + 
+                this.calmSequence.duration.min;
         }
     }
 
@@ -452,7 +458,7 @@ export class NightClubLighting {
         const currentTime = performance.now();
         
         // Check if we should switch modes
-        if (currentTime - this.sequenceManager.lastModeChange >= this.sequenceManager.modeDuration.current) {
+        if (currentTime - this.sequenceManager.lastModeChange >= this.sequenceManager.currentDuration) {
             // Log end of current session
             if (this.sequenceManager.isIntenseMode) {
                 console.log("🎵 INTENSE SESSION ENDS");
@@ -473,10 +479,10 @@ export class NightClubLighting {
             }
 
             this.sequenceManager.lastModeChange = currentTime;
-            this.sequenceManager.modeDuration.current = this.getNextModeDuration();
+            this.sequenceManager.currentDuration = this.getNextModeDuration();
             
             // Reset states when switching modes
-            this.colorTransition.active = false;
+            this.calmSequence.colorTransition.active = false;
             this.blackoutTimings.isBlackout = false;
         }
 
@@ -498,37 +504,33 @@ export class NightClubLighting {
             const color = this.colorSequence[this.currentColorIndex];
             this.applyIntenseColor(color);
         } else {
-            // CALM SEQUENCE (25-35 seconds)
-            // Handle smooth color transitions, NO blackouts
-            if (!this.colorTransition.active) {
-                if (currentTime - this.lastColorChange >= this.calmTimings.next) {
-                    const nextColorIndex = (this.currentColorIndex + 1) % this.colorSequence.length;
-                    this.colorTransition.startColor = this.colorSequence[this.currentColorIndex];
-                    this.colorTransition.targetColor = this.colorSequence[nextColorIndex];
-                    this.colorTransition.active = true;
-                    this.colorTransition.progress = 0;
-                    this.currentColorIndex = nextColorIndex;
-                    this.lastColorChange = currentTime;
-                    this.calmTimings.next = Math.random() * (this.calmTimings.max - this.calmTimings.min) + this.calmTimings.min;
-                }
-            } else {
-                // Update smooth transition progress
-                this.colorTransition.progress = Math.min(
-                    (currentTime - this.lastColorChange) / this.colorTransition.duration,
-                    1
-                );
-                
-                const lerpedColor = BABYLON.Color3.Lerp(
-                    this.colorTransition.startColor,
-                    this.colorTransition.targetColor,
-                    this.colorTransition.progress
-                );
-                
-                this.applyCalmColor(lerpedColor);
-                
-                if (this.colorTransition.progress >= 1) {
-                    this.colorTransition.active = false;
-                }
+            // CALM SEQUENCE - constant smooth transitions
+            if (!this.calmSequence.colorTransition.active) {
+                // Start new transition
+                const nextColorIndex = (this.currentColorIndex + 1) % this.colorSequence.length;
+                this.calmSequence.colorTransition.startColor = this.colorSequence[this.currentColorIndex];
+                this.calmSequence.colorTransition.targetColor = this.colorSequence[nextColorIndex];
+                this.calmSequence.colorTransition.active = true;
+                this.calmSequence.colorTransition.progress = 0;
+                this.currentColorIndex = nextColorIndex;
+                this.lastColorChange = performance.now();
+            }
+
+            // Update transition progress
+            const currentTime = performance.now();
+            this.calmSequence.colorTransition.progress = (currentTime - this.lastColorChange) / this.calmSequence.colorTransition.duration;
+            
+            const lerpedColor = BABYLON.Color3.Lerp(
+                this.calmSequence.colorTransition.startColor,
+                this.calmSequence.colorTransition.targetColor,
+                this.calmSequence.colorTransition.progress
+            );
+            
+            this.applyCalmColor(lerpedColor);
+            
+            // If transition complete, start next one immediately
+            if (this.calmSequence.colorTransition.progress >= 1) {
+                this.calmSequence.colorTransition.active = false;
             }
         }
     }
