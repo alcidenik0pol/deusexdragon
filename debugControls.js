@@ -34,21 +34,28 @@ export class DebugControls {
 
     setupDebugControls() {
         window.addEventListener("keydown", (e) => {
-            if ((e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'm' || e.key.toLowerCase() === 'f') && ChatUI.isActive) return; // Disable keys when chat is active
+            // Import SettingsUI class to check its active state
+            import('./chat/settingsUI.js').then(module => {
+                const SettingsUI = module.SettingsUI;
+                
+                // Disable keys when chat or any UI is active
+                if ((e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'm' || e.key.toLowerCase() === 'f') && 
+                    (ChatUI.isActive || SettingsUI.isActive)) return;
 
-            switch (e.key.toLowerCase()) {
-                case 'l':
-                    this.handleLevelSelection();
-                    break;
-                case 'm':
-                    console.log("M key pressed");
-                    this.handleMinimapToggle();
-                    break;
-                case 'f':
-                    this.handleFPSToggle();
-                    break;
-                // Add more debug keys here as needed
-            }
+                switch (e.key.toLowerCase()) {
+                    case 'l':
+                        this.handleLevelSelection();
+                        break;
+                    case 'm':
+                        console.log("M key pressed");
+                        this.handleMinimapToggle();
+                        break;
+                    case 'f':
+                        this.handleFPSToggle();
+                        break;
+                    // Add more debug keys here as needed
+                }
+            });
         });
     }
 

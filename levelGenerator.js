@@ -1,6 +1,7 @@
 import { Minimap } from './src/ui/Minimap.js';
 import { WORLD_CONFIG } from './config.js';
 import { SkyboxComponent } from './components/SkyboxComponent.js';
+import { SettingsUI } from './chat/settingsUI.js';
 
 export class LevelGenerator {
     // Default level boundaries - all based on DEFAULT_WORLD_SIZE
@@ -48,6 +49,9 @@ export class LevelGenerator {
         this.components = [];
         this.minimap = new Minimap(scene);
         this.skyboxComponent = new SkyboxComponent(scene);
+        
+        // Initialize settings UI
+        this.settingsUI = new SettingsUI();
         
         // Set the level ID based on class name by default
         this.levelId = this.constructor.name.replace(/Level$/, '').toLowerCase();
@@ -146,6 +150,11 @@ export class LevelGenerator {
         // Clean up minimap
         if (this.minimap) {
             this.minimap.dispose();
+        }
+
+        // Clean up settings UI
+        if (this.settingsUI) {
+            this.settingsUI.dispose();
         }
 
         if (this.skyboxComponent) {

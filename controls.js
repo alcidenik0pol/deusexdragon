@@ -62,33 +62,43 @@ export class Controls {
 
     setupKeyboardControls() {
         window.addEventListener("keydown", (e) => {
-            // Allow 'E' key to be typed in the text area when chat UI is active
-            if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
-
-            // Skip movement if controls are locked
-            if (this.movementLocked) return;
-            
-            if (e.key.toLowerCase() in this.keys) {
-                this.keys[e.key.toLowerCase()] = true;
+            // Import SettingsUI class to check its active state
+            import('./chat/settingsUI.js').then(module => {
+                const SettingsUI = module.SettingsUI;
                 
-                // Update character animation based on current key state
-                this.updateCharacterAnimation();
-            }
+                // Allow 'E' key to be typed in the text area when chat UI is active
+                if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
+
+                // Skip movement if controls are locked or any UI is active
+                if (this.movementLocked || SettingsUI.isActive) return;
+                
+                if (e.key.toLowerCase() in this.keys) {
+                    this.keys[e.key.toLowerCase()] = true;
+                    
+                    // Update character animation based on current key state
+                    this.updateCharacterAnimation();
+                }
+            });
         });
 
         window.addEventListener("keyup", (e) => {
-            // Allow 'E' key to be typed in the text area when chat UI is active
-            if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
-
-            // Skip movement if controls are locked
-            if (this.movementLocked) return;
-            
-            if (e.key.toLowerCase() in this.keys) {
-                this.keys[e.key.toLowerCase()] = false;
+            // Import SettingsUI class to check its active state
+            import('./chat/settingsUI.js').then(module => {
+                const SettingsUI = module.SettingsUI;
                 
-                // Update character animation based on current key state
-                this.updateCharacterAnimation();
-            }
+                // Allow 'E' key to be typed in the text area when chat UI is active
+                if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
+
+                // Skip movement if controls are locked or any UI is active
+                if (this.movementLocked || SettingsUI.isActive) return;
+                
+                if (e.key.toLowerCase() in this.keys) {
+                    this.keys[e.key.toLowerCase()] = false;
+                    
+                    // Update character animation based on current key state
+                    this.updateCharacterAnimation();
+                }
+            });
         });
     }
 

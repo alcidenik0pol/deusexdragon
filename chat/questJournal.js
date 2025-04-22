@@ -142,10 +142,13 @@ export class QuestJournal {
             const points = condition.points > 0 ? ` [${condition.points} pts]` : '';
             const required = condition.required ? ' (Required)' : '';
             
+            // Use a darker gray (#6B7280) for non-required objectives that aren't completed
+            const textColor = isComplete ? '#10B981' : (condition.required ? '#D1D5DB' : '#6B7280');
+            
             content += `
                 <div style="margin-bottom: 0.5rem; display: flex; align-items: start;">
                     <span style="color: ${statusColor}; margin-right: 0.5rem; flex-shrink: 0;">${status}</span>
-                    <span style="color: ${isComplete ? '#10B981' : '#D1D5DB'}; word-wrap: break-word; overflow-wrap: break-word; flex-grow: 1;">
+                    <span style="color: ${textColor}; word-wrap: break-word; overflow-wrap: break-word; flex-grow: 1;">
                         ${condition.condition}${points}${required}
                     </span>
                 </div>
