@@ -14,12 +14,10 @@ export class NightClubLighting {
             fixtureMaterial: null,
             volumetricCone: null,
             volumetricMaterial: null,
-            isActive: true,  // Changed from false to true
-            spotlightZone: null
+            isActive: true  // Changed from false to true
         };
         this.mainLightId = null;
         this.glowLayer = null;
-        this.floorMaterial = null;
     }
 
     initialize(clusterManager) {
@@ -60,12 +58,13 @@ export class NightClubLighting {
         
         this.glowLayer.addIncludedOnlyMesh(fixture);
         
+        // Dramatically reduce light intensity and range for more focused effect
         this.mainLightId = this.clusterManager.registerLight({
             position: fixture.position.clone(),
             intensity: 1,
             diffuse: new BABYLON.Color3(1, 0, 1),
             specular: new BABYLON.Color3(1, 0, 1),
-            range: WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 5,
+            range: WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 5, // Halved from 10 for more focused pool
             shadowEnabled: true
         });
         
@@ -90,106 +89,12 @@ export class NightClubLighting {
         ambientLight.specular = new BABYLON.Color3(0.4, 0.4, 0.5); // Increased for walls
         ambientLight.groundColor = new BABYLON.Color3(0.02, 0.02, 0.02); // Darker ground
         
-        // this.lights.push(ambientLight);
+        this.lights.push(ambientLight);
         
         // Add secondary point lights for enhanced wall illumination
-        // this.addSecondaryLights();
-
-        // Create custom shader material for the floor
-        const shaderMaterial = new BABYLON.ShaderMaterial(
-            "floorShader",
-            this.scene,
-            {
-                vertex: "custom",
-                fragment: "custom",
-            },
-            {
-                attributes: ["position", "normal", "uv"],
-                uniforms: ["world", "worldView", "worldViewProjection", "view", "projection", "lightPosition", "lightColor", "maxDistance"]
-            }
-        );
-
-        // Define the shader code
-        BABYLON.Effect.ShadersStore["customVertexShader"] = `
-            precision highp float;
-            
-            // Attributes
-            attribute vec3 position;
-            attribute vec2 uv;
-            
-            // Uniforms
-            uniform mat4 worldViewProjection;
-            uniform mat4 world;
-            uniform vec3 lightPosition;
-            uniform float maxDistance;
-            
-            // Varying
-            varying float vDistanceFactor;
-            varying vec2 vUV;
-            
-            void main(void) {
-                vec4 worldPosition = world * vec4(position, 1.0);
-                gl_Position = worldViewProjection * vec4(position, 1.0);
-                
-                // Calculate distance from vertex to light
-                float distance = length(lightPosition - worldPosition.xyz);
-                
-                // MUCH more aggressive falloff
-                float hotspotRadius = maxDistance * 0.2; // Super tight hotspot
-                float falloffStart = maxDistance * 0.4;  // Start fading earlier
-                
-                if (distance < hotspotRadius) {
-                    vDistanceFactor = 1.0; // Full intensity in hotspot
-                } else if (distance < falloffStart) {
-                    float t = (distance - hotspotRadius) / (falloffStart - hotspotRadius);
-                    vDistanceFactor = 1.0 - pow(t, 3.0); // Cubic falloff for sharp drop
-                } else {
-                    vDistanceFactor = 0.0; // Dark outside falloff
-                }
-                
-                vUV = uv;
-            }
-        `;
-
-        BABYLON.Effect.ShadersStore["customFragmentShader"] = `
-            precision highp float;
-            
-            varying float vDistanceFactor;
-            varying vec2 vUV;
-            
-            uniform vec3 lightColor;
-            
-            void main(void) {
-                float baseReflectivity = 0.02;
-                float maxReflectivity = 0.8; // CRANKED UP for more punch
-                
-                // Sharp transition between base and max
-                float reflectivity = mix(baseReflectivity, maxReflectivity, pow(vDistanceFactor, 1.5));
-                
-                // Add subtle ambient
-                vec3 ambientColor = vec3(0.05, 0.05, 0.05);
-                
-                // Mix with more contrast
-                vec3 finalColor = (lightColor * reflectivity * 1.5) + ambientColor;
-                
-                gl_FragColor = vec4(finalColor, 1.0);
-            }
-        `;
-
-        // Find and update floor material
-        const floor = this.scene.getMeshByID("nightclub-floor");
-        if (floor) {
-            floor.material = shaderMaterial;
-            
-            // MUCH tighter radius - just 10 meters
-            shaderMaterial.setVector3("lightPosition", this.mainLight.fixture.position);
-            shaderMaterial.setFloat("maxDistance", WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 0.7); // Just 10.5 meters
-            shaderMaterial.setVector3("lightColor", new BABYLON.Vector3(1, 0, 1));
-            
-            this.floorMaterial = shaderMaterial;
-        }
+        this.addSecondaryLights();
     }
-
+    
     createVolumetricEffect(fixture) {
         // Create a cone for the volumetric light effect
         const cone = BABYLON.MeshBuilder.CreateCylinder(
@@ -300,20 +205,34 @@ export class NightClubLighting {
         this.clusterManager.updateLightProperty(this.mainLight.id, 'specular', newColor);
         this.mainLight.fixtureMaterial.emissiveColor = newColor;
         
-        // Update volumetric light color
         if (this.mainLight.volumetricMaterial) {
             this.mainLight.volumetricMaterial.emissiveColor = newColor;
         }
         
-        // Update floor shader if it exists
-        if (this.floorMaterial) {
-            this.floorMaterial.setVector3("lightColor", 
-                new BABYLON.Vector3(
-                    newColor.r,
-                    newColor.g,
-                    newColor.b
-                )
-            );
+        // Find and update floor material if it exists
+        const floor = this.scene.getMeshByID("nightclub-floor");
+        if (floor && floor.material) {
+            // Get floor vertices for distance calculation
+            const positions = floor.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+            if (!positions) return;
+
+            // Calculate distance from light to floor center
+            const lightPos = this.mainLight.fixture.position;
+            const maxDistance = WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 5; // Same as light range
+            
+            // Get floor center (assuming floor is centered at origin for simplicity)
+            const floorCenter = new BABYLON.Vector3(0, floor.position.y, 0);
+            const distanceToCenter = BABYLON.Vector3.Distance(lightPos, floorCenter);
+            
+            // Calculate intensity falloff based on distance
+            const falloff = Math.max(0, 1 - (distanceToCenter / maxDistance));
+            const baseIntensity = 0.15; // Base reflection intensity
+            const distanceBasedIntensity = baseIntensity * falloff;
+            
+            // Apply color with distance-based intensity
+            floor.material.emissiveColor = newColor.scale(distanceBasedIntensity);
+            floor.material.albedoColor = new BABYLON.Color3(0.05, 0.05, 0.05);
+            floor.material.reflectionColor = newColor.scale(distanceBasedIntensity);
         }
         
         // Pulse the intensity slightly for a more dynamic effect

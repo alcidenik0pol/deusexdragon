@@ -25,6 +25,11 @@ export class NightClubLevel extends CustomLevel {
     constructor(scene) {
         super(scene);
         this.lighting = null;
+        
+        // Nuke the scene's ambient lighting
+        scene.ambientColor = new BABYLON.Color3(0, 0, 0);
+        scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+        scene.environmentIntensity = 0;
     }
 
     createLevel() {
@@ -49,41 +54,25 @@ export class NightClubLevel extends CustomLevel {
     createFloor(bounds = this.constructor.LEVEL_BOUNDS.floor) {
         const floor = new FloorComponent("nightclub-floor");
         
-        // Define properties before initialization
         floor.width = bounds.width;
         floor.length = bounds.length;
         floor.position = new BABYLON.Vector3(0, bounds.y, 0);
         
-        // Initialize with proper options
         floor.initialize(this.scene, {
             width: floor.width,
             length: floor.length
         });
 
-        // Create glossy PBR material for the floor
+        // Create PBR material for the floor with proper reflection properties
         const floorMaterial = new BABYLON.PBRMaterial("floor-material", this.scene);
-        floorMaterial.albedoColor = new BABYLON.Color3(0.02, 0.02, 0.02); // Almost black
-        floorMaterial.metallic = 0.0; // Non-metallic
-        floorMaterial.roughness = 0.05; // Very glossy
-        floorMaterial.reflectionTexture = new BABYLON.MirrorTexture(
-            "floor-mirror", 
-            1024, 
-            this.scene, 
-            true
-        );
-        floorMaterial.reflectionTexture.mirrorPlane = new BABYLON.Plane(0, -1, 0, 0);
-        floorMaterial.reflectionTexture.level = 0.6; // Reflection intensity
-        floorMaterial.reflectionTexture.adaptiveBlurKernel = 32;
-        
-        // Add all meshes to the reflection texture
-        this.scene.meshes.forEach(mesh => {
-            if (mesh !== floor.mesh) {
-                floorMaterial.reflectionTexture.renderList.push(mesh);
-            }
-        });
+        floorMaterial.albedoColor = new BABYLON.Color3(0.01, 0.01, 0.01);
+        floorMaterial.metallic = 0.8;  // More metallic for better light reflection
+        floorMaterial.roughness = 0.15;  // Smoother surface for clearer reflections
+        floorMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);  // Full reflectivity
+        floorMaterial.microSurface = 0.95;  // Very smooth surface
         
         floor.mesh.material = floorMaterial;
-        floor.mesh.receiveShadows = true;
+        floor.mesh.receiveShadows = true;  // Important! This makes the floor receive light properly
         
         return floor.mesh;
     }
@@ -102,11 +91,11 @@ export class NightClubLevel extends CustomLevel {
 
         // Create metallic PBR material for walls
         const wallMaterial = new BABYLON.PBRMaterial("wall-material", this.scene);
-        wallMaterial.albedoColor = new BABYLON.Color3(0.02, 0.02, 0.02); // Almost black
-        wallMaterial.metallic = 0.8; // Very metallic
-        wallMaterial.roughness = 0.2; // Fairly smooth
-        wallMaterial.reflectivityColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-        wallMaterial.microSurface = 0.95; // Very smooth surface
+        wallMaterial.albedoColor = new BABYLON.Color3(0.02, 0.02, 0.02);
+        wallMaterial.metallic = 0.6; // Reduced metallic for walls
+        wallMaterial.roughness = 0.2; // Slightly rougher
+        wallMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        wallMaterial.microSurface = 0.85;
         wallMaterial.backFaceCulling = false;
 
         // Create walls manually with proper dimensions
