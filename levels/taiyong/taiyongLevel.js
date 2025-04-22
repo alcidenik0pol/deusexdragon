@@ -12,6 +12,8 @@ import { TaiyongVehicleSystem } from './vehicles.js';
 import { TaiyongNPCManager } from './npc.js';
 import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
 import { TaiyongTriggerArea } from './taiyongTriggerArea.js';
+import { QuestJournal } from '../../chat/questJournal.js';
+import { TaiyongMedicalQuest } from './quest.js';
 
 export class TaiyongLevel extends CustomLevel {
     static LEVEL_BOUNDS = {
@@ -53,6 +55,13 @@ export class TaiyongLevel extends CustomLevel {
 
         // Initialize dialogue manager
         this.dialogueManager = new DialogueManager(scene);
+        
+        // Initialize quest system and resolution manager
+        this.quest = new TaiyongMedicalQuest(scene);
+        this.resolutionManager = this.quest.resolutionManager;
+        
+        // Initialize quest journal
+        this.questJournal = new QuestJournal();
         
         // Register for updates
         this.scene.registerBeforeRender(() => this.onUpdate());
@@ -295,12 +304,12 @@ export class TaiyongLevel extends CustomLevel {
         const glassWalls = glassUSection.initialize();
         walls.push(...solidWalls, ...glassWalls);
 
-        // Create door and set it to stay open
+        // Create door and set it to stay closed initially (changed from open)
         this.doorComponent = new DoorComponent("taiyong-central-door");
         this.doorComponent.initialize(this.scene);
         this.doorComponent.mesh.position = new BABYLON.Vector3(0, wallHeight/2, 0);
         this.doorComponent.setRotation(0, Math.PI/2, 0);
-        this.doorComponent.setOpen(true); // Keep door open
+        this.doorComponent.setOpen(false); // Keep door closed initially
 
         walls.push(...this.doorComponent.getMeshes());
 
@@ -379,6 +388,11 @@ export class TaiyongLevel extends CustomLevel {
         this.dialogueManager.initialize();
         this.dialogueManager.registerNPCs(Array.from(this.npcManager.npcs.values()));
         
+        // Listen for condition completion events
+        window.addEventListener('conditionCompleted', (event) => {
+            this.updateDoorState(event.detail.conditionId);
+        });
+        
         await this.createBillboards();
         
         return result;
@@ -415,6 +429,23 @@ export class TaiyongLevel extends CustomLevel {
         if (this.dialogueManager) {
             this.dialogueManager.dispose();
         }
+        if (this.questJournal) {
+            this.questJournal.dispose();
+        }
+        
+        // Dispose the quest system
+        if (this.quest) {
+            this.quest.dispose();
+            this.quest = null;
+        }
+        
+        // Clear the resolution manager state
+        if (this.resolutionManager) {
+            this.resolutionManager.resetProgress();
+        }
+        
+        this.resolutionManager = null;
+        
         super.dispose();
     }
 
@@ -460,5 +491,13 @@ export class TaiyongLevel extends CustomLevel {
         billboard.mesh.rotationQuaternion = billboard.rotation;
         
         this.components.push(billboard);
+    }
+
+    // Add new method to handle door state
+    updateDoorState(conditionId) {
+        if (conditionId === "Door_Unlocked" && this.doorComponent) {
+            this.doorComponent.setOpen(true);
+            console.log("Door unlocked and opened");
+        }
     }
 }

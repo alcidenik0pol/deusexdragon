@@ -65,16 +65,10 @@ export class ResolutionManager {
   }
   
   formatConversationForLLM(npcId, history) {
-    // Get NPC name from their data if available
-    let npcName = npcId;
-    if (window.characters && window.characters[npcId]) {
-      npcName = window.characters[npcId].name;
-    }
-    
-    let formattedConversation = `Conversation between Player and ${npcName} (${npcId}):\n\n`;
+    let formattedConversation = `Conversation between Player and ${npcId}:\n\n`;
     
     history.forEach(msg => {
-      const speaker = msg.role === 'user' ? 'Player' : npcName;
+      const speaker = msg.role === 'user' ? 'Player' : npcId;
       formattedConversation += `${speaker}: ${msg.content}\n`;
     });
     

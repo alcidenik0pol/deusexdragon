@@ -399,6 +399,8 @@ export class ChatUI {
             return;
         }
         
+        // Reset color to original before displaying goodbye
+        this.outputBlock.style.color = '#fbbf24';
         // Display a goodbye message
         this.outputBlock.textContent = "Goodbye!";
         
@@ -430,44 +432,46 @@ export class ChatUI {
         const question = this.textArea.value.trim();
         if (!question) return;
 
-        this.outputBlock.textContent = 'Thinking...';
+        // Add the thinking message with character name and cyan color
+        const thinkingMsg = `${this.currentNPC?.name || 'Character'} is thinking...`;
+        this.outputBlock.textContent = thinkingMsg;
+        this.outputBlock.style.color = '#8FEFEF'; // Light cyan color
         this.textArea.value = '';
 
         try {
             // Switch to player focus
             if (window.gameCamera) {
-                // console.log("Switching to player focus while waiting for response");
                 window.gameCamera.focusOnPlayer();
             }
 
             // After 1 second, switch back to NPC regardless of API status
             setTimeout(() => {
                 if (window.gameCamera) {
-                    console.log("Switching back to NPC focus after delay");
                     window.gameCamera.clearWaitingFocus();
                     window.gameCamera.focusOnNPC(this.currentNPC);
                 }
             }, 1000);
 
-            // Start the API call immediately
             await this.streamResponse(question);
         } catch (error) {
             this.outputBlock.textContent = `Error: ${error.message}`;
+            this.outputBlock.style.color = '#fbbf24'; // Reset to original color
         }
     }
 
     async streamResponse(question) {
-        this.outputBlock.textContent = '';
-        
         try {
             await this.chatService.streamChat(
                 question,
                 this.currentNPC,
                 // Chunk handler
                 (chunk) => {
-                    // Filter out action text in asterisks
-                    const filteredChunk = chunk.replace(/\*[^*]*\*/g, '');
-                    this.outputBlock.textContent += filteredChunk;
+                    // Only clear the "thinking" message when we get the first real chunk
+                    if (this.outputBlock.textContent.includes('thinking...')) {
+                        this.outputBlock.textContent = '';
+                        this.outputBlock.style.color = '#fbbf24'; // Reset to original color
+                    }
+                    this.outputBlock.textContent += chunk;
                     // Auto-scroll as content streams in
                     this.outputBlock.scrollTop = this.outputBlock.scrollHeight;
                 },

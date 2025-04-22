@@ -14,6 +14,7 @@ import { Singapore6NPCManager } from './npc.js';
 import { Car03 } from './vehicles.js';
 import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
 import { Singapore6Quest } from './quest.js';
+import { QuestJournal } from '../../chat/questJournal.js';
 
 export class Singapore6Level extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -32,6 +33,21 @@ export class Singapore6Level extends LevelGenerator {
             ...config
         };
         super(scene, customConfig);
+        
+        // Set current level FIRST
+        window.currentLevel = this;
+        
+        // Ensure scene has no ambient light
+        scene.ambientColor = BABYLON.Color3.Black();
+
+        // Initialize quest system and resolution manager first
+        this.quest = new Singapore6Quest(scene);
+        this.resolutionManager = this.quest.resolutionManager;
+
+        // Initialize quest journal after quest system
+        this.questJournal = new QuestJournal();
+        
+        // Initialize other systems
         this.lighting = null;
         this.effects = null;
         this.npcManager = null;
@@ -39,15 +55,8 @@ export class Singapore6Level extends LevelGenerator {
         this.vehicles = [];
         this.dialogueManager = new DialogueManager(scene);
         
-        // Ensure scene has no ambient light
-        scene.ambientColor = BABYLON.Color3.Black();
-
         // Register for updates
         this.scene.registerBeforeRender(() => this.onUpdate());
-
-        // Initialize the quest system
-        this.quest = new Singapore6Quest(scene);
-        this.resolutionManager = this.quest.resolutionManager;
     }
 
     // Override the createGround method to use a dark grey flat color
@@ -440,6 +449,11 @@ export class Singapore6Level extends LevelGenerator {
         }
         
         this.resolutionManager = null;
+        
+        // Add quest journal disposal
+        if (this.questJournal) {
+            this.questJournal.dispose();
+        }
         
         super.dispose();
     }

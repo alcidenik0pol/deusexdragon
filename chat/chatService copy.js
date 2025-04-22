@@ -186,13 +186,9 @@ export class ChatService {
         body: JSON.stringify(payload),
       });
 
-      if (response.status === 429) {
+      if (!response.ok) {
         const errorData = await response.text();
         console.error(`API request failed with status ${response.status}: ${errorData}`);
-        
-        // Add this line to show the error in UI
-        if (window.debugUI) window.debugUI.showApiError({ code: 429 });
-        
         throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
 
@@ -236,28 +232,7 @@ export class ChatService {
 
               try {
                 const parsed = JSON.parse(data);
-                
-                // When we get an unexpected format or error
-                if (!parsed.choices) {
-                    console.warn('Unexpected API response format:', parsed);
-                    // Pass the entire parsed object
-                    if (window.debugUI) {
-                        window.debugUI.showApiError(parsed);
-                    }
-                    continue;
-                }
-
-                // Check for API errors
-                if (parsed.error) {
-                    console.error('API returned error:', parsed.error);
-                    // Show the error in UI
-                    if (window.debugUI) {
-                        window.debugUI.showApiError(parsed.error);
-                    }
-                    continue;
-                }
-
-                const contentChunk = parsed.choices?.[0]?.delta?.content;
+                const contentChunk = parsed.choices[0]?.delta?.content;
                 
                 if (contentChunk) {
                   // Add to accumulated response
@@ -270,15 +245,7 @@ export class ChatService {
                   handleChunk(contentChunk);
                 }
               } catch (e) {
-                // Log the problematic data
                 console.warn('Error parsing JSON from stream:', e.message);
-                console.warn('Problematic data:', data);
-                // Show parsing error in UI
-                if (window.debugUI) {
-                    window.debugUI.showApiError({
-                        message: `Stream parsing error: ${e.message}`
-                    });
-                }
                 // Continue processing despite JSON errors
               }
             }
@@ -317,9 +284,6 @@ export class ChatService {
       }
     } catch (error) {
       console.error('Error in streamChat:', error);
-      
-      // Add this line to show the error in UI
-      if (window.debugUI) window.debugUI.showApiError(error);
       
       // Provide a fallback response if the API fails
       const fallbackResponse = `I'm sorry, I seem to be having trouble with my communication systems right now. Could you try again in a moment?`;

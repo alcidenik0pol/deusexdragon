@@ -20,7 +20,7 @@ export class TaiyongMedicalQuest {
         
         // Add a listener to the levelExitUnlocked event
         window.addEventListener('levelExitUnlocked', (event) => {
-            if (event.detail.levelId === 'taiyongmedical') {
+            if (event.detail.levelId === 'taiyong') {
                 console.log(`Level completed!`);
                 this.showLevelCompletionNotification();
             }
@@ -34,7 +34,7 @@ export class TaiyongMedicalQuest {
             {
                 id: "Spoken_To_Lab_Assistant",
                 points: 2,
-                condition: "Did the player express they are here for testing/trials/experiments to the Lab Assistant?",
+                condition: "Did the player express they are here for testing/trials/experiments/interview/hiring to the Lab Assistant?",
                 npcIds: ["bangweitun"], // Lab Assistant
                 required: true
             },
@@ -52,7 +52,7 @@ export class TaiyongMedicalQuest {
             {
                 id: "Discussed_Maxeen_Augmentations",
                 points: 1,
-                condition: "Did the player ask Maxeen about her augmentations or show concern for her health?",
+                condition: "Did the player ask Maxeen about his augmentations or show concern for his health?",
                 npcIds: ["maxeen"],
                 required: false
             },
@@ -61,7 +61,7 @@ export class TaiyongMedicalQuest {
             {
                 id: "Door_Unlocked",
                 points: 2,
-                condition: "Did the player return to the Lab Assistant after verifying their exam results with Maxeen?",
+                condition: "Did Bang Wei Tun mention unlocking or opening the door, or say 'Door_unlocked'?",
                 npcIds: ["bangweitun"],
                 required: true
             },
@@ -71,7 +71,7 @@ export class TaiyongMedicalQuest {
                 id: "Explained_Augmentation_Motivation",
                 points: 3,
                 condition: "Did the player explain their motivation for wanting augmentations to Dr. Reed?",
-                npcIds: ["meganreed"],
+                npcIds: ["mreed"],
                 required: true
             },
             
@@ -80,7 +80,7 @@ export class TaiyongMedicalQuest {
                 id: "Acknowledged_Augmentation_Risks",
                 points: 3,
                 condition: "Did the player acknowledge understanding the risks of augmentation when discussing with Dr. Reed?",
-                npcIds: ["meganreed"],
+                npcIds: ["mreed"],
                 required: true
             },
             
@@ -89,7 +89,7 @@ export class TaiyongMedicalQuest {
                 id: "Answered_NUPOZ_Scenario",
                 points: 3,
                 condition: "Did the player provide a thoughtful answer to Dr. Reed's scenario about not being able to afford NUPOZ?",
-                npcIds: ["meganreed"],
+                npcIds: ["mreed"],
                 required: true
             },
             
@@ -98,7 +98,7 @@ export class TaiyongMedicalQuest {
                 id: "Hired_By_Reed",
                 points: 4,
                 condition: "Did Dr. Reed offer the player a position in Tai Yong Medical's neural augmentation trial program?",
-                npcIds: ["meganreed"],
+                npcIds: ["mreed"],
                 required: true,
                 resolvesLevel: true
             },
@@ -110,21 +110,12 @@ export class TaiyongMedicalQuest {
                 condition: "Did the player engage in conversation with Khy Choon Soh about regulation, warnings, or philosophical aspects of augmentation?",
                 npcIds: ["khychoonsoh"],
                 required: false
-            },
-            
-            // Optional path with Lab Assistant
-            {
-                id: "Discovered_Lab_Assistant_Espionage",
-                points: 1,
-                condition: "Did the player discover or discuss Bang Wei Tun's involvement in corporate espionage?",
-                npcIds: ["bangweitun"],
-                required: false
             }
         ];
         
         // Register the level with conditions and point threshold
         // Player needs to complete the main questline (approximately 20 points) to succeed
-        this.resolutionManager.registerLevel('taiyongmedical', taiyongMedicalConditions, 20);
+        this.resolutionManager.registerLevel('taiyong', taiyongMedicalConditions, 20);
     }
 
     // Method to show a notification when the level is completed
@@ -141,7 +132,7 @@ export class TaiyongMedicalQuest {
     
     // Helper method to check progress through level
     getProgressSummary() {
-        const levelId = 'taiyongmedical';
+        const levelId = 'taiyong';
         const conditions = this.resolutionManager.levelConditions[levelId] || [];
         const completed = this.resolutionManager.completedConditions || {};
         const points = this.resolutionManager.levelPoints[levelId] || 0;

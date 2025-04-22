@@ -2,21 +2,17 @@ import { ResolutionManager } from '../../chat/ResolutionManager.js';
 
 export class Singapore6Quest {
     constructor(scene) {
-        // Initialize the resolution manager if not already created
-        if (!window.resolutionManager) {
-            this.resolutionManager = new ResolutionManager();
-            window.resolutionManager = this.resolutionManager;
-            
-            // Register Singapore6 level conditions
-            this.registerLevelConditions();
-            
-            // Add debug listener for NPC IDs
-            window.addEventListener('npcInteraction', (event) => {
-                console.log(`DEBUG: NPC interaction with ID: ${event.detail.npcId}`);
-            });
-        } else {
-            this.resolutionManager = window.resolutionManager;
-        }
+        // Always create a new ResolutionManager for this level
+        this.resolutionManager = window.resolutionManager || new ResolutionManager();
+        window.resolutionManager = this.resolutionManager;
+        
+        // Always register conditions for this level
+        this.registerLevelConditions();
+        
+        // Add debug listener for NPC IDs
+        window.addEventListener('npcInteraction', (event) => {
+            console.log(`DEBUG: NPC interaction with ID: ${event.detail.npcId}`);
+        });
         
         // Add a listener to the levelExitUnlocked event
         window.addEventListener('levelExitUnlocked', (event) => {
@@ -28,6 +24,11 @@ export class Singapore6Quest {
     }
 
     registerLevelConditions() {
+        // Clear existing conditions for singapore6 level
+        if (this.resolutionManager.levelConditions['singapore6']) {
+            delete this.resolutionManager.levelConditions['singapore6'];
+        }
+        
         // Define the conditions for Singapore6 level based on the questline
         const singapore6Conditions = [
             // Initial discovery phase
@@ -229,5 +230,37 @@ export class Singapore6Quest {
         // Don't dispose the resolution manager as it should persist between level loads
         // Just remove the reference
         this.resolutionManager = null;
+    }
+
+    // Helper method to check progress through level
+    getProgressSummary() {
+        const levelId = 'singapore6';
+        const conditions = this.resolutionManager.levelConditions[levelId] || [];
+        const completed = this.resolutionManager.completedConditions || {};
+        const points = this.resolutionManager.levelPoints[levelId] || 0;
+        const threshold = this.resolutionManager.levelThresholds[levelId] || 0;
+        
+        const completedConditions = conditions.filter(c => completed[c.id]).length;
+        const totalConditions = conditions.length;
+        const requiredCompleted = conditions.filter(c => c.required && completed[c.id]).length;
+        const totalRequired = conditions.filter(c => c.required).length;
+        
+        return {
+            points,
+            threshold,
+            completedConditions,
+            totalConditions,
+            requiredCompleted,
+            totalRequired,
+            percentage: Math.floor((points / threshold) * 100)
+        };
+    }
+    
+    // Debug method to log current progress
+    logProgress() {
+        const progress = this.getProgressSummary();
+        console.log(`Level Progress: ${progress.points}/${progress.threshold} points (${progress.percentage}%)`);
+        console.log(`Required Objectives: ${progress.requiredCompleted}/${progress.totalRequired}`);
+        console.log(`All Objectives: ${progress.completedConditions}/${progress.totalConditions}`);
     }
 } 

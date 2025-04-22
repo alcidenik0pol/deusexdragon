@@ -7,8 +7,8 @@ export class DoorComponent extends BaseComponent {
 
     constructor(id) {
         super(id);
-        this.isOpen = false;     // Door starts closed
-        this.isLocked = false;   // Door starts unlocked
+        this.isOpen = false;
+        this.isLocked = false;
     }
 
     async initialize(scene, options = {}) {
@@ -79,7 +79,7 @@ export class DoorComponent extends BaseComponent {
             mesh.checkCollisions = !open;
             mesh.isWalkthrough = open;
             mesh.isBlocker = !open;
-            mesh.visibility = 0;  // Always keep invisible when open
+            mesh.visibility = open ? 0 : 1;  // Changed: visible when closed, invisible when open
             
             // Additional collision-related properties
             mesh.isPickable = !open;  // Can't be picked when open
