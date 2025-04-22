@@ -6,6 +6,27 @@ export class NightClubLighting {
         this.lights = [];
         this.fixtures = [];
         this.clusterManager = null;
+        
+        // Define our color palette
+        this.CLUB_COLORS = {
+            WHITE: new BABYLON.Color3(1, 0.98, 0.95),     // Slightly warm white
+            COBALT: new BABYLON.Color3(0.1, 0.3, 0.9),    // Deep cobalt blue
+            RED: new BABYLON.Color3(1, 0.1, 0.1),         // Vivid red
+            MATRIX: new BABYLON.Color3(0.2, 0.9, 0.2),    // Digital green
+            YELLOW: new BABYLON.Color3(1, 0.9, 0.1),      // Lemon yellow
+            ORANGE: new BABYLON.Color3(1, 0.5, 0.1),      // Intense orange
+        };
+        
+        // Convert colors array for easy cycling
+        this.colorSequence = Object.values(this.CLUB_COLORS);
+        this.currentColorIndex = 0;
+        this.lastColorChange = 0;
+        this.colorChangeTimings = {
+            min: 1000,  // 1 second
+            max: 5000,  // 5 seconds
+            next: 2000  // Initial value
+        };
+        
         this.animationSpeed = 0.0005; // Controls how fast colors change
         this.mainLight = {
             id: null,
@@ -20,6 +41,107 @@ export class NightClubLighting {
         this.mainLightId = null;
         this.glowLayer = null;
         this.floorMaterial = null;
+        
+        // Initialize sequence manager - MUCH shorter intense mode
+        this.sequenceManager = {
+            isIntenseMode: true,
+            lastModeChange: 0,
+            modeDuration: {
+                min: 8000,        // 8 seconds for intense
+                max: 10000,       // 10 seconds max
+                current: 9000     // Initial duration
+            }
+        };
+        
+        // Store original timing values for calm periods - MUCH slower now
+        this.calmTimings = {
+            min: 10000,    // 10 seconds minimum between color changes
+            max: 15000,    // 15 seconds maximum
+            next: 12000    // Initial value
+        };
+        
+        // Color transition duration also increased for smoother blends
+        this.colorTransition = {
+            active: false,
+            startColor: null,
+            targetColor: null,
+            progress: 0,
+            duration: 4000, // 4 seconds for smooth transition
+        };
+        
+        // Keep intense timings the same
+        this.intenseTimings = {
+            min: 50,      // 0.05 seconds
+            max: 150,     // 0.15 seconds
+            next: 100     // Initial value
+        };
+
+        // Create a custom glow layer that we can control
+        this.glowLayer = new BABYLON.GlowLayer("nightclub-glow", scene, {
+            mainTextureFixedSize: 1024,
+            blurKernelSize: 64
+        });
+        this.glowLayer.intensity = 0.7;
+
+        // Add intensity pulsing configuration
+        this.intensityPulse = {
+            min: 1.0,    // Base intensity
+            max: 3.0,    // Peak intensity
+            current: 1.0,
+            phase: 0
+        };
+
+        // Intense mode configuration
+        this.intenseMode = {
+            colorIndex: 0,
+            lastColorChange: 0,
+            timings: {
+                min: 50,      // 0.05 seconds
+                max: 150,     // 0.15 seconds
+                next: 100     // Initial value
+            },
+            blackout: {
+                isActive: false,
+                lastChange: 0,
+                min: 50,     // 0.05 seconds
+                max: 150,    // 0.15 seconds
+                next: 100,   // Initial value
+                pattern: 'normal' // 'normal', 'strobe', 'pulse'
+            },
+            intensity: 2.5    // Higher base intensity for intense mode
+        };
+        
+        // Calm mode configuration
+        this.calmMode = {
+            colorIndex: 0,
+            lastColorChange: 0,
+            timings: {
+                min: 1000,    // 1 second
+                max: 5000,    // 5 seconds
+                next: 2000    // Initial value
+            },
+            transition: {
+                active: false,
+                startColor: null,
+                targetColor: null,
+                progress: 0,
+                duration: 2000 // 2 seconds for smooth transition
+            },
+            intensity: 1.0    // Normal base intensity for calm mode
+        };
+
+        // Much more aggressive blackout timing for strobe effects
+        this.blackoutTimings = {
+            min: 50,     // 0.05 seconds - super fast!
+            max: 150,    // 0.15 seconds
+            next: 100,   // Initial value
+            lastChange: 0,
+            isBlackout: false,
+            // Add strobe pattern control
+            patternDuration: 5000,  // 5 seconds per pattern
+            lastPatternChange: 0,
+            currentPattern: 'normal' // 'normal', 'strobe', 'pulse'
+        };
     }
 
     initialize(clusterManager) {
@@ -50,21 +172,22 @@ export class NightClubLighting {
         );
         fixture.position = new BABYLON.Vector3(0, roomHeight * 0.7, 0);
         
-        // Create emissive material for the central cube
+        // Create emissive material for the central cube - INCREASED EMISSION
         const fixtureMaterial = new BABYLON.StandardMaterial("central-cube-material", this.scene);
         fixtureMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         fixtureMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        fixtureMaterial.emissiveColor = new BABYLON.Color3(1, 0, 1);
+        fixtureMaterial.emissiveColor = new BABYLON.Color3(1.5, 0, 1.5); // Increased intensity
         fixtureMaterial.disableLighting = true;
         fixture.material = fixtureMaterial;
         
         this.glowLayer.addIncludedOnlyMesh(fixture);
         
+        // Register with INCREASED intensity
         this.mainLightId = this.clusterManager.registerLight({
             position: fixture.position.clone(),
-            intensity: 1,
-            diffuse: new BABYLON.Color3(1, 0, 1),
-            specular: new BABYLON.Color3(1, 0, 1),
+            intensity: 2.5, // Increased from 1
+            diffuse: new BABYLON.Color3(1.5, 0, 1.5), // Increased color intensity
+            specular: new BABYLON.Color3(1.5, 0, 1.5), // Increased specular
             range: WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 5,
             shadowEnabled: true
         });
@@ -76,7 +199,7 @@ export class NightClubLighting {
         
         this.fixtures.push(fixture);
         
-        // Add volumetric light effect
+        // Add volumetric light effect with INCREASED intensity
         this.createVolumetricEffect(fixture);
         
         // Reduce ambient light intensity but keep strong specular for wall reflections
@@ -85,10 +208,10 @@ export class NightClubLighting {
             new BABYLON.Vector3(0, 1, 0), 
             this.scene
         );
-        ambientLight.intensity = 1; // Changed from 0
+        ambientLight.intensity = 1.5; // Increased from 1
         ambientLight.diffuse = new BABYLON.Color3(0.2, 0.2, 0.3);
-        ambientLight.specular = new BABYLON.Color3(0.4, 0.4, 0.5); // Increased for walls
-        ambientLight.groundColor = new BABYLON.Color3(0.02, 0.02, 0.02); // Darker ground
+        ambientLight.specular = new BABYLON.Color3(0.6, 0.6, 0.7); // Increased for more punch
+        ambientLight.groundColor = new BABYLON.Color3(0.02, 0.02, 0.02);
         
         // this.lights.push(ambientLight);
         
@@ -215,18 +338,18 @@ export class NightClubLighting {
         // Rotate to point downward
         cone.rotation.x = Math.PI;
         
-        // Create volumetric material
+        // Create volumetric material with INCREASED values
         const volumetricMaterial = new BABYLON.StandardMaterial("volumetric-material", this.scene);
         volumetricMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        volumetricMaterial.emissiveColor = new BABYLON.Color3(1, 0, 1); // Start with purple
-        volumetricMaterial.alpha = 0.15; // Very transparent
+        volumetricMaterial.emissiveColor = new BABYLON.Color3(1.5, 0, 1.5); // Increased intensity
+        volumetricMaterial.alpha = 0.2; // Slightly increased from 0.15
         volumetricMaterial.disableLighting = true;
         
-        // Add alpha gradient texture
+        // More intense alpha gradient
         const alphaTexture = new BABYLON.DynamicTexture("alpha-gradient", 256, this.scene);
         const ctx = alphaTexture.getContext();
         const gradient = ctx.createLinearGradient(0, 0, 0, 256);
-        gradient.addColorStop(0, "rgba(255,255,255,0.4)");
+        gradient.addColorStop(0, "rgba(255,255,255,0.6)"); // Increased from 0.4
         gradient.addColorStop(1, "rgba(255,255,255,0)");
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 256, 256);
@@ -283,59 +406,248 @@ export class NightClubLighting {
         });
     }
     
+    getNextColorChangeDuration() {
+        // Returns a random duration between min and max (in milliseconds)
+        return Math.random() * (this.colorChangeTimings.max - this.colorChangeTimings.min) + this.colorChangeTimings.min;
+    }
+
+    getNextBlackoutDuration() {
+        const currentTime = performance.now();
+        
+        // Check if it's time to change patterns
+        if (currentTime - this.blackoutTimings.lastPatternChange > this.blackoutTimings.patternDuration) {
+            this.blackoutTimings.lastPatternChange = currentTime;
+            // Randomly select next pattern
+            const patterns = ['normal', 'strobe', 'pulse'];
+            this.blackoutTimings.currentPattern = patterns[Math.floor(Math.random() * patterns.length)];
+        }
+        
+        switch(this.blackoutTimings.currentPattern) {
+            case 'strobe':
+                // Ultra-fast strobe (50-80ms)
+                return Math.random() * 30 + 50;
+            case 'pulse':
+                // Rhythmic pulse (100-300ms)
+                return Math.random() * 200 + 100;
+            default:
+                // Normal pattern (200-500ms)
+                return Math.random() * 300 + 200;
+        }
+    }
+
+    getNextModeDuration() {
+        if (this.sequenceManager.isIntenseMode) {
+            // Short duration for intense mode
+            return Math.random() * 2000 + 8000; // 8-10 seconds
+        } else {
+            // Keep long duration for calm mode
+            return Math.random() * 
+                (this.sequenceManager.modeDuration.max - this.sequenceManager.modeDuration.min) + 
+                this.sequenceManager.modeDuration.min;
+        }
+    }
+
     updateLights() {
         if (!this.mainLight.isActive) return;
-
         const currentTime = performance.now();
-        this.mainLight.colorPhase += this.animationSpeed;
         
-        const r = (Math.sin(this.mainLight.colorPhase) + 1) / 2;
-        const g = (Math.sin(this.mainLight.colorPhase + 2.1) + 1) / 2;
-        const b = (Math.sin(this.mainLight.colorPhase + 4.2) + 1) / 2;
+        // Check if we should switch modes
+        if (currentTime - this.sequenceManager.lastModeChange >= this.sequenceManager.modeDuration.current) {
+            // Log end of current session
+            if (this.sequenceManager.isIntenseMode) {
+                console.log("🎵 INTENSE SESSION ENDS");
+            } else {
+                console.log("🌟 CALM SESSION ENDS");
+            }
+
+            // Switch mode
+            this.sequenceManager.isIntenseMode = !this.sequenceManager.isIntenseMode;
+            
+            // When switching TO intense mode, pick a random color to use
+            if (this.sequenceManager.isIntenseMode) {
+                console.log("⚡ INTENSE SESSION STARTS");
+                // Pick random color from sequence for this intense session
+                this.currentColorIndex = Math.floor(Math.random() * this.colorSequence.length);
+            } else {
+                console.log("✨ CALM SESSION STARTS");
+            }
+
+            this.sequenceManager.lastModeChange = currentTime;
+            this.sequenceManager.modeDuration.current = this.getNextModeDuration();
+            
+            // Reset states when switching modes
+            this.colorTransition.active = false;
+            this.blackoutTimings.isBlackout = false;
+        }
+
+        if (this.sequenceManager.isIntenseMode) {
+            // INTENSE SEQUENCE - single color with blackouts
+            if (currentTime - this.blackoutTimings.lastChange >= this.blackoutTimings.next) {
+                this.blackoutTimings.isBlackout = !this.blackoutTimings.isBlackout;
+                this.blackoutTimings.lastChange = currentTime;
+                this.blackoutTimings.next = this.getNextBlackoutDuration();
+            }
+
+            if (this.blackoutTimings.isBlackout) {
+                console.log("💥 BLACKOUT");
+                this.applyBlackout();
+                return;
+            }
+
+            // Apply the single chosen color (no cycling)
+            const color = this.colorSequence[this.currentColorIndex];
+            this.applyIntenseColor(color);
+        } else {
+            // CALM SEQUENCE (25-35 seconds)
+            // Handle smooth color transitions, NO blackouts
+            if (!this.colorTransition.active) {
+                if (currentTime - this.lastColorChange >= this.calmTimings.next) {
+                    const nextColorIndex = (this.currentColorIndex + 1) % this.colorSequence.length;
+                    this.colorTransition.startColor = this.colorSequence[this.currentColorIndex];
+                    this.colorTransition.targetColor = this.colorSequence[nextColorIndex];
+                    this.colorTransition.active = true;
+                    this.colorTransition.progress = 0;
+                    this.currentColorIndex = nextColorIndex;
+                    this.lastColorChange = currentTime;
+                    this.calmTimings.next = Math.random() * (this.calmTimings.max - this.calmTimings.min) + this.calmTimings.min;
+                }
+            } else {
+                // Update smooth transition progress
+                this.colorTransition.progress = Math.min(
+                    (currentTime - this.lastColorChange) / this.colorTransition.duration,
+                    1
+                );
+                
+                const lerpedColor = BABYLON.Color3.Lerp(
+                    this.colorTransition.startColor,
+                    this.colorTransition.targetColor,
+                    this.colorTransition.progress
+                );
+                
+                this.applyCalmColor(lerpedColor);
+                
+                if (this.colorTransition.progress >= 1) {
+                    this.colorTransition.active = false;
+                }
+            }
+        }
+    }
+    
+    applyIntenseColor(color) {
+        const intensifiedColor = color.scale(this.intenseMode.intensity);
         
-        const newColor = new BABYLON.Color3(r, g, b);
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'diffuse', intensifiedColor);
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'specular', intensifiedColor);
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'intensity', this.intenseMode.intensity);
         
-        // Update main light properties
-        this.clusterManager.updateLightProperty(this.mainLight.id, 'diffuse', newColor);
-        this.clusterManager.updateLightProperty(this.mainLight.id, 'specular', newColor);
-        this.mainLight.fixtureMaterial.emissiveColor = newColor;
+        this.mainLight.fixtureMaterial.emissiveColor = intensifiedColor;
         
-        // Update volumetric light color
         if (this.mainLight.volumetricMaterial) {
-            this.mainLight.volumetricMaterial.emissiveColor = newColor;
+            this.mainLight.volumetricMaterial.emissiveColor = intensifiedColor;
+            this.mainLight.volumetricMaterial.alpha = 0.2;
         }
         
-        // Update floor shader if it exists
         if (this.floorMaterial) {
             this.floorMaterial.setVector3("lightColor", 
-                new BABYLON.Vector3(
-                    newColor.r,
-                    newColor.g,
-                    newColor.b
-                )
+                new BABYLON.Vector3(intensifiedColor.r, intensifiedColor.g, intensifiedColor.b)
             );
         }
+    }
+
+    applyCalmColor(color) {
+        const baseColor = color.scale(this.calmMode.intensity);
         
-        // Pulse the intensity slightly for a more dynamic effect
-        const pulseIntensity = 25.0 + Math.sin(currentTime * this.animationSpeed * 0.5) * 8.0;
-        this.clusterManager.updateLightProperty(this.mainLight.id, 'intensity', pulseIntensity);
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'diffuse', baseColor);
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'specular', baseColor);
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'intensity', this.calmMode.intensity);
         
-        // Update secondary lights with offset colors
-        this.lights.forEach((light, index) => {
+        this.mainLight.fixtureMaterial.emissiveColor = baseColor;
+        
+        if (this.mainLight.volumetricMaterial) {
+            this.mainLight.volumetricMaterial.emissiveColor = baseColor;
+            this.mainLight.volumetricMaterial.alpha = 0.15;
+        }
+        
+        if (this.floorMaterial) {
+            this.floorMaterial.setVector3("lightColor", 
+                new BABYLON.Vector3(baseColor.r, baseColor.g, baseColor.b)
+            );
+        }
+    }
+
+    applyBlackout() {
+        const blackColor = new BABYLON.Color3(0, 0, 0);
+        
+        // Completely disable glow layer during blackout
+        this.glowLayer.intensity = 0;
+        
+        // Force scene to complete darkness
+        this.scene.ambientColor = blackColor;
+        this.scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+        this.scene.environmentIntensity = 0;
+        
+        // Disable all PBR properties globally
+        this.scene.materials.forEach(material => {
+            if (material instanceof BABYLON.PBRMaterial) {
+                material._cachedAlbedo = material.albedoColor?.clone();
+                material._cachedEmissive = material.emissiveColor?.clone();
+                material._cachedAmbient = material.ambientColor?.clone();
+                material._cachedReflectivity = material.reflectivityColor?.clone();
+                
+                material.albedoColor = blackColor;
+                material.emissiveColor = blackColor;
+                material.ambientColor = blackColor;
+                material.reflectivityColor = blackColor;
+                material.environmentIntensity = 0;
+                material.metallic = 0;
+                material.roughness = 1;
+            }
+        });
+        
+        // Zero out all lights
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'diffuse', blackColor);
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'specular', blackColor);
+        this.clusterManager.updateLightProperty(this.mainLight.id, 'intensity', 0);
+        
+        // Find the character meshes and temporarily disable their emission/glow
+        const characterMeshes = this.scene.meshes.filter(mesh => 
+            mesh.name.includes("PlayerCharacter") || 
+            mesh.parent?.name?.includes("PlayerCharacter")
+        );
+        
+        characterMeshes.forEach(mesh => {
+            if (mesh.material) {
+                // Store original values if not already stored
+                if (!mesh.material._originalEmissive) {
+                    mesh._originalVisibility = mesh.visibility;
+                    mesh.material._originalEmissive = mesh.material.emissiveColor?.clone();
+                    mesh.material._originalAmbient = mesh.material.ambientColor?.clone();
+                }
+                // Force complete darkness
+                mesh.visibility = 0.99; // Just shy of invisible to maintain collision
+                mesh.material.emissiveColor = blackColor;
+                mesh.material.ambientColor = blackColor;
+            }
+        });
+        
+        // Zero out all other lighting properties
+        this.mainLight.fixtureMaterial.emissiveColor = blackColor;
+        this.mainLight.fixtureMaterial.ambientColor = blackColor;
+        
+        if (this.mainLight.volumetricMaterial) {
+            this.mainLight.volumetricMaterial.emissiveColor = blackColor;
+        }
+        
+        if (this.floorMaterial) {
+            this.floorMaterial.setVector3("lightColor", new BABYLON.Vector3(0, 0, 0));
+        }
+        
+        // Zero out secondary lights
+        this.lights.forEach(light => {
             if (light.id !== undefined) {
-                // Offset the color phase for each light
-                const phase = this.mainLight.colorPhase + index * Math.PI / 2;
-                
-                const r2 = (Math.sin(phase) + 1) / 2;
-                const g2 = (Math.sin(phase + 2.1) + 1) / 2;
-                const b2 = (Math.sin(phase + 4.2) + 1) / 2;
-                
-                const secondaryColor = new BABYLON.Color3(r2, g2, b2);
-                this.clusterManager.updateLightProperty(light.id, 'diffuse', secondaryColor);
-                
-                // Pulse secondary lights too, but with different timing
-                const secondaryPulse = 8.0 + Math.sin(currentTime * this.animationSpeed * 0.3 + index) * 3.0;
-                this.clusterManager.updateLightProperty(light.id, 'intensity', secondaryPulse);
+                this.clusterManager.updateLightProperty(light.id, 'diffuse', blackColor);
+                this.clusterManager.updateLightProperty(light.id, 'specular', blackColor);
+                this.clusterManager.updateLightProperty(light.id, 'intensity', 0);
             }
         });
     }

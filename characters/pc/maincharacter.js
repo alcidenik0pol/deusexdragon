@@ -75,10 +75,7 @@ export const loadCharacters = async (scene) => {
                     mesh.material.needDepthPrePass = false;
                     mesh.material.alpha = 1;
                     
-                    if (scene.name === "Singapore4Level") {
-                        mesh.material.specularColor = BABYLON.Color3.Black();
-                        mesh.material.ambientColor = new BABYLON.Color3(0.02, 0.02, 0.03);
-                    }
+
                 }
             });
         });
