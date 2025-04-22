@@ -1,6 +1,6 @@
 export default {
     id: "mreed",
-    name: "M. Reed",
+    name: "Megan Reed",
     animations: {
         idle: "/assets/characters/mreed/idle.glb",
         walking: "/assets/characters/mreed/walking.glb",
