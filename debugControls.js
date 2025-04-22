@@ -3,6 +3,7 @@ import { LevelGenerator } from './levelGenerator.js';
 import { LadiesRoomLevel } from './levels/ladiesRoomLevel.js';
 import { TestCameraCollision } from './levels/testCameraCollision.js';
 import { Singapore6Level } from './levels/singapore6/singapore6Level.js';
+import { NightClubLevel } from './levels/nightclub/nightClubLevel.js';
 // import { NightClub } from './levels/NightClub.js';
 import { GridLevel } from './levels/grid/GridLevel.js';
 import { TaiyongLevel } from './levels/taiyong/taiyongLevel.js';
@@ -80,7 +81,7 @@ export class DebugControls {
             case 'testcamera':
                 return new TestCameraCollision(scene);
             case 'nightclub':
-                return new NightClub(scene);
+                return new NightClubLevel(scene);
             case 'grid':
                 return new GridLevel(scene);
             case 'taiyong':
