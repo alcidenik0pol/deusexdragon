@@ -182,10 +182,71 @@ export class NightClubLighting {
                 }
             }
         };
+
+        // Add base specular color for all materials
+        this.baseSpecular = new BABYLON.Color3(0.2, 0.2, 0.2);
+        
+        // Register a callback to enhance character materials when they're loaded
+        this.characterMaterialsEnhanced = false;
+        this.scene.onNewMeshAddedObservable.add(mesh => {
+            if (mesh.name === "PlayerCharacter" || mesh.name.includes("pdenton_")) {
+                this.enhanceCharacterMaterials(mesh);
+            }
+        });
+        
+        // Also check existing meshes
+        this.scene.meshes.forEach(mesh => {
+            if (mesh.name === "PlayerCharacter" || mesh.name.includes("pdenton_")) {
+                this.enhanceCharacterMaterials(mesh);
+            }
+        });
     }
 
-    initialize(clusterManager) {
+    enhanceCharacterMaterials(mesh) {
+        if (!mesh || !mesh.material) return;
+        
+        console.log("Enhancing character material for:", mesh.name);
+        
+        // Create PBR material for character
+        const pbrMat = new BABYLON.PBRMaterial(mesh.material.name + "_pbr", this.scene);
+        
+        // Copy basic properties
+        if (mesh.material.diffuseColor) {
+            pbrMat.albedoColor = mesh.material.diffuseColor.clone();
+        } else {
+            pbrMat.albedoColor = new BABYLON.Color3(0.8, 0.8, 0.8);
+        }
+        
+        // Set PBR properties for good reflections
+        pbrMat.metallic = 0.3;
+        pbrMat.roughness = 0.4;
+        pbrMat.metallicF0Factor = 0.7;
+        pbrMat.metallicReflectanceColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+        pbrMat.microSurface = 0.9;
+        pbrMat.useRadianceOverAlpha = true;
+        pbrMat.useSpecularOverAlpha = true;
+        pbrMat.environmentIntensity = 0.5;
+        
+        // Apply to all submeshes
+        if (mesh.subMeshes && mesh.subMeshes.length > 0) {
+            for (let i = 0; i < mesh.subMeshes.length; i++) {
+                const subMesh = mesh.subMeshes[i];
+                if (subMesh.getMaterial()) {
+                    subMesh.setMaterial(pbrMat.clone(subMesh.getMaterial().name + "_pbr"));
+                }
+            }
+        } else {
+            // Apply to the whole mesh
+            mesh.material = pbrMat;
+        }
+        
+        // Mark as enhanced
+        mesh._reflectionEnhanced = true;
+    }
+
+    initialize(clusterManager, entranceFloor) {
         this.clusterManager = clusterManager;
+        this.entranceFloor = entranceFloor;
         
         // Create a glow layer for enhanced visual effect
         this.glowLayer = new BABYLON.GlowLayer("nightclub-glow", this.scene);
@@ -196,6 +257,12 @@ export class NightClubLighting {
         
         // Set up animation loop
         this.setupAnimations();
+        
+        // Add emergency exit light
+        this.createEmergencyLight();
+
+        // Setup environment and reflections
+        this.setupEnvironmentReflections();
         
         return this;
     }
@@ -893,6 +960,16 @@ export class NightClubLighting {
             this.strobeBeams.material.dispose();
         }
         
+        // Clean up reflection probe
+        if (this.reflectionProbe) {
+            this.reflectionProbe.dispose();
+        }
+        
+        // Clean up environment texture
+        if (this.scene.environmentTexture) {
+            this.scene.environmentTexture.dispose();
+        }
+        
         // Clear arrays
         this.lights = [];
         this.fixtures = [];
@@ -940,5 +1017,145 @@ export class NightClubLighting {
         });
 
         return walls;
+    }
+
+    createEmergencyLight() {
+        const entranceHeight = WORLD_CONFIG.GRID_CELL_SIZE * 3;
+        
+        // Register light with explicit includedOnlyMeshes
+        const emergencyLightId = this.clusterManager.registerLight({
+            position: new BABYLON.Vector3(0, entranceHeight - 0.5, -69),
+            intensity: 4.0,
+            diffuse: new BABYLON.Color3(0, 1, 0),
+            specular: new BABYLON.Color3(0, 1, 0),
+            range: 12,
+            includedOnlyMeshes: [this.entranceFloor] // Explicitly include only the entrance floor
+        });
+        
+        // Create the fixture
+        const fixture = BABYLON.MeshBuilder.CreateBox(
+            "emergency-light-fixture",
+            { height: 0.2, width: 0.4, depth: 0.1 },
+            this.scene
+        );
+        fixture.position = new BABYLON.Vector3(0, entranceHeight - 0.5, -69);
+        
+        // Make fixture glow
+        const fixtureMaterial = new BABYLON.StandardMaterial("emergency-light-material", this.scene);
+        fixtureMaterial.emissiveColor = new BABYLON.Color3(0, 1, 0);
+        fixtureMaterial.disableLighting = true;
+        fixture.material = fixtureMaterial;
+        
+        // Create a light pool (visual effect) below the fixture
+        const pool = BABYLON.MeshBuilder.CreatePlane("emergency-light-pool", {
+            width: 4,
+            height: 2
+        }, this.scene);
+        
+        // Create gradient material for light pool
+        const poolMaterial = new BABYLON.StandardMaterial("emergency-light-pool-material", this.scene);
+        poolMaterial.emissiveColor = new BABYLON.Color3(0, 1, 0).scale(0.3);
+        poolMaterial.alpha = 0.3;
+        poolMaterial.disableLighting = true;
+        
+        // Apply gradient texture
+        const texture = new BABYLON.DynamicTexture("emergency-gradient", 256, this.scene);
+        const ctx = texture.getContext();
+        const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+        gradient.addColorStop(0, "rgba(0,255,0,0.7)");
+        gradient.addColorStop(1, "rgba(0,255,0,0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 256, 256);
+        texture.update();
+        poolMaterial.opacityTexture = texture;
+        
+        pool.material = poolMaterial;
+        pool.position = new BABYLON.Vector3(0, 0.02, -69); // Just above the floor
+        pool.rotation.x = Math.PI/2;
+        
+        // Update entrance floor material to properly reflect the emergency light
+        const entranceFloor = this.scene.getMeshByID("entrance-floor");
+        if (entranceFloor) {
+            const entranceFloorMaterial = new BABYLON.PBRMaterial("entrance-floor-material", this.scene);
+            entranceFloorMaterial.albedoColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+            entranceFloorMaterial.metallic = 0.9;
+            entranceFloorMaterial.roughness = 0.1;
+            entranceFloorMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+            entranceFloorMaterial.microSurface = 1.0;
+            
+            // Ensure the material properly reflects light
+            entranceFloorMaterial.usePhysicalLightFalloff = true;
+            entranceFloorMaterial.useRadianceOverAlpha = true;
+            entranceFloorMaterial.useSpecularOverAlpha = true;
+            
+            // Make sure the emergency light affects this material
+            entranceFloorMaterial.maxSimultaneousLights = 4;
+            
+            entranceFloor.material = entranceFloorMaterial;
+            entranceFloor.receiveShadows = true;
+        }
+        
+        // Add to glow layer
+        if (!this.scene.glowLayer) {
+            this.scene.glowLayer = new BABYLON.GlowLayer("glow", this.scene);
+            this.scene.glowLayer.intensity = 0.7;
+        }
+        this.scene.glowLayer.addIncludedOnlyMesh(fixture);
+        
+        this.fixtures.push(fixture);
+        this.lights.push({
+            id: emergencyLightId,
+            fixture: fixture,
+            pool: pool,
+            isActive: true
+        });
+    }
+
+    setupEnvironmentReflections() {
+        // Create HDR environment texture for reflections
+        const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+            "https://assets.babylonjs.com/environments/environmentSpecular.env",
+            this.scene
+        );
+        
+        // Set as scene environment texture
+        this.scene.environmentTexture = hdrTexture;
+        this.scene.environmentIntensity = 0.5;
+        
+        // Create a reflection probe for accurate real-time reflections
+        const reflectionProbe = new BABYLON.ReflectionProbe("nightclubReflectionProbe", 512, this.scene);
+        reflectionProbe.refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        
+        // Position the probe in the center of the room
+        reflectionProbe.position = new BABYLON.Vector3(0, 20, 0);
+        
+        // Add meshes that should be reflected
+        this.scene.meshes.forEach(mesh => {
+            if (mesh.name.includes("nightclub-wall") || 
+                mesh.name.includes("nightclub-floor") || 
+                mesh.name.includes("nightclub-ceiling") ||
+                mesh.name.includes("fixture")) {
+                reflectionProbe.renderList.push(mesh);
+            }
+        });
+        
+        // Store reference for disposal
+        this.reflectionProbe = reflectionProbe;
+        
+        // Configure image processing for better PBR
+        if (!this.scene.imageProcessingConfiguration) {
+            this.scene.imageProcessingConfiguration = new BABYLON.ImageProcessingConfiguration();
+        }
+        const ipc = this.scene.imageProcessingConfiguration;
+        ipc.exposure = 1.0;
+        ipc.contrast = 1.1;
+        ipc.toneMappingEnabled = true;
+        
+        // Check for character meshes again
+        this.scene.meshes.forEach(mesh => {
+            if ((mesh.name === "PlayerCharacter" || mesh.name.includes("pdenton_")) && !mesh._reflectionEnhanced) {
+                this.enhanceCharacterMaterials(mesh);
+            }
+        });
     }
 } 

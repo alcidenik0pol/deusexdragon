@@ -29,6 +29,15 @@ export class NightClubLevel extends CustomLevel {
             z2: -60,  // Interior wall
             width: 40, // x2 - x1
             depth: 10  // z2 - z1
+        },
+        // Define toilet area bounds (mirrored on north side)
+        toiletArea: {
+            x1: -20,  // Left boundary
+            x2: 20,   // Right boundary
+            z1: 40,   // Interior wall (north)
+            z2: 70,   // Back wall
+            width: 40, // x2 - x1
+            depth: 10  // z2 - z1
         }
     };
 
@@ -50,18 +59,15 @@ export class NightClubLevel extends CustomLevel {
             debug: false
         });
 
-        // Create basic level elements
+        // IMPORTANT: Change the order - create entrance floor BEFORE lighting
         this.createFloor();
+        const entranceFloor = this.createEntranceFloor(); // Store the reference
         this.createWalls();
         this.createCeiling();
 
-        // Initialize lighting after the level is created
+        // Initialize lighting AFTER all meshes are created
         this.lighting = new NightClubLighting(this.scene);
-        this.lighting.initialize(this.clusterManager);
-
-        // Add fog effect
-        // this.fogEffect = new NightclubFogEffect(this.scene);
-        // this.fogEffect.start();
+        this.lighting.initialize(this.clusterManager, entranceFloor); // Pass the entrance floor reference
 
         return this;
     }
@@ -92,6 +98,37 @@ export class NightClubLevel extends CustomLevel {
         return floor.mesh;
     }
 
+    createEntranceFloor() {
+        const entranceArea = this.constructor.LEVEL_BOUNDS.entranceArea;
+        
+        const entranceFloor = BABYLON.MeshBuilder.CreateBox("entrance-floor", {
+            width: entranceArea.width,
+            height: 0.02,
+            depth: entranceArea.depth
+        }, this.scene);
+        
+        entranceFloor.position = new BABYLON.Vector3(
+            (entranceArea.x1 + entranceArea.x2) / 2,
+            0.011,
+            (entranceArea.z1 + entranceArea.z2) / 2
+        );
+        
+        const entranceFloorMaterial = new BABYLON.PBRMaterial("entrance-floor-material", this.scene);
+        entranceFloorMaterial.albedoColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        entranceFloorMaterial.metallic = 0.9;
+        entranceFloorMaterial.roughness = 0.1;
+        entranceFloorMaterial.reflectivityColor = new BABYLON.Color3(0.8, 0.8, 0.8);
+        entranceFloorMaterial.microSurface = 1.0;
+        
+        entranceFloor.material = entranceFloorMaterial;
+        entranceFloor.receiveShadows = true;
+        
+        // Remove any rendering group changes that might interfere
+        entranceFloor.renderingGroupId = 0;
+        
+        return entranceFloor; // Return the mesh for reference
+    }
+
     createWalls(bounds = this.constructor.LEVEL_BOUNDS.room) {
         const walls = [];
         const wallHeight = bounds.height; // 40 meters
@@ -114,21 +151,15 @@ export class NightClubLevel extends CustomLevel {
         wallMaterial.backFaceCulling = false;
 
         positions.forEach(({ id, pos, rot }) => {
-            // Use WallComponent instead of direct mesh creation
             const wall = new WallComponent(`nightclub-wall-${id}`);
             wall.height = wallHeight;
             wall.width = (id === "north" || id === "south") ? bounds.width : bounds.length;
             wall.thickness = 0.4;
             wall.initialize(this.scene);
             
-            // Position and rotate
             wall.mesh.position = pos;
             wall.setRotation(0, rot, 0);
-            
-            // Apply material
             wall.mesh.material = wallMaterial.clone(`wall-material-${id}`);
-            
-            // WallComponent handles collisions automatically, but let's be explicit
             wall.setCollision(true);
             wall.mesh.checkCollisions = true;
             wall.mesh.isBlocker = true;
@@ -148,11 +179,7 @@ export class NightClubLevel extends CustomLevel {
         // Position using entrance area coordinates
         const xCenter = (entranceArea.x1 + entranceArea.x2) / 2;
         interiorWall.mesh.position = new BABYLON.Vector3(xCenter, wallHeight/2, entranceArea.z2);
-        
-        // Apply same material as other walls
         interiorWall.mesh.material = wallMaterial.clone('wall-material-interior');
-        
-        // Set up collision properties
         interiorWall.setCollision(true);
         interiorWall.mesh.checkCollisions = true;
         interiorWall.mesh.isBlocker = true;

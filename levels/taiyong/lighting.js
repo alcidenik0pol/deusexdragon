@@ -117,6 +117,9 @@ export class TaiyongLighting {
         // Define base material colors
         this.baseDiffuse = new BABYLON.Color3(0.1, 0.1, 0.1);
         this.baseSpecular = new BABYLON.Color3(0.2, 0.2, 0.2);
+
+        // Add environment texture for reflections
+        this.setupEnvironmentReflections();
     }
 
     async initialize() {
@@ -185,6 +188,22 @@ export class TaiyongLighting {
             shadowGenerator.darkness = blinderState; // 1 = dark (closed), 0 = bright (open)
             this.sunsetLight.intensity = 2.0 * (1 - blinderState); // Fade light with blinders
         };
+
+        // Add IBL (Image Based Lighting) support
+        this.scene.environmentIntensity = 0.3;
+        
+        // Enable reflections on receivers
+        receivers.forEach(mesh => {
+            mesh.receiveShadows = true;
+            // Add reflection properties
+            if (mesh.material) {
+                mesh.material.reflectionFresnelParameters = new BABYLON.FresnelParameters();
+                mesh.material.reflectionFresnelParameters.bias = 0.02;
+                mesh.material.reflectionFresnelParameters.power = 1;
+                mesh.material.reflectionFresnelParameters.leftColor = BABYLON.Color3.White();
+                mesh.material.reflectionFresnelParameters.rightColor = BABYLON.Color3.Black();
+            }
+        });
 
         return shadowGenerator;
     }
@@ -376,6 +395,38 @@ export class TaiyongLighting {
         };
     }
 
+    setupEnvironmentReflections() {
+        // Create a reflection probe for accurate real-time reflections
+        const reflectionProbe = new BABYLON.ReflectionProbe("characterReflectionProbe", 512, this.scene);
+        reflectionProbe.refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        
+        // Position the probe in the center of the room
+        reflectionProbe.position = new BABYLON.Vector3(0, WORLD_CONFIG.GRID_CELL_SIZE * 4, 0);
+        
+        // Add meshes that should be reflected (walls, floor, ceiling, fixtures)
+        this.scene.meshes.forEach(mesh => {
+            if (mesh.name.includes("wall") || 
+                mesh.name.includes("floor") || 
+                mesh.name.includes("ceiling") ||
+                mesh.name.includes("fixture")) {
+                reflectionProbe.renderList.push(mesh);
+            }
+        });
+
+        // Create environment texture for general reflections
+        const hdrTexture = new BABYLON.CubeTexture.CreateFromPrefilteredData(
+            "./assets/environment/taiyong_env.env",
+            this.scene
+        );
+        this.scene.environmentTexture = hdrTexture;
+        
+        // Set default intensity for environment reflections
+        this.scene.environmentIntensity = 0.3;
+
+        // Store reference for disposal
+        this.reflectionProbe = reflectionProbe;
+    }
+
     dispose() {
         if (this.glowLayer) {
             this.glowLayer.dispose();
@@ -399,5 +450,13 @@ export class TaiyongLighting {
         this.entranceMarkers.forEach(marker => {
             if (marker) marker.dispose();
         });
+
+        if (this.reflectionProbe) {
+            this.reflectionProbe.dispose();
+        }
+        
+        if (this.scene.environmentTexture) {
+            this.scene.environmentTexture.dispose();
+        }
     }
 } 
