@@ -1,4 +1,4 @@
-import { ChatUI } from './chatUI.js';
+import { ChatUI } from '../ui/chatUI.js';
 import { userSettings, UserSettings } from './userSettings.js';
 
 export class SettingsUI {

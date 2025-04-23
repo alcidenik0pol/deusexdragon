@@ -1,5 +1,5 @@
-import { ClusterManager } from '../../lighting/ClusterManager.js';
-import { WORLD_CONFIG } from '../../config.js';
+import { ClusterManager } from '../../src/lighting/ClusterManager.js';
+import { WORLD_CONFIG } from '../../config/config.js';
 import { BaseComponent } from '../../components/BaseComponent.js';
 
 // Class for decorative light fixtures that don't use real lights
@@ -414,11 +414,11 @@ export class TaiyongLighting {
         });
 
         // Create environment texture for general reflections
-        const hdrTexture = new BABYLON.CubeTexture.CreateFromPrefilteredData(
-            "./assets/environment/taiyong_env.env",
-            this.scene
-        );
-        this.scene.environmentTexture = hdrTexture;
+        // const hdrTexture = new BABYLON.CubeTexture.CreateFromPrefilteredData(
+        //     "./assets/environment/taiyong_env.env",
+        //     this.scene
+        // );
+        // this.scene.environmentTexture = hdrTexture;
         
         // Set default intensity for environment reflections
         this.scene.environmentIntensity = 0.3;

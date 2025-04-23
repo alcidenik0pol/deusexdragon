@@ -1,7 +1,7 @@
-import { Minimap } from './src/ui/Minimap.js';
-import { WORLD_CONFIG } from './config.js';
-import { SkyboxComponent } from './components/SkyboxComponent.js';
-import { SettingsUI } from './chat/settingsUI.js';
+import { Minimap } from '../src/ui/Minimap.js';
+import { WORLD_CONFIG } from '../config/config.js';
+import { SkyboxComponent } from '../components/SkyboxComponent.js';
+import { SettingsUI } from '../quest/settingsUI.js';
 
 export class LevelGenerator {
     // Default level boundaries - all based on DEFAULT_WORLD_SIZE

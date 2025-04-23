@@ -1,4 +1,4 @@
-import { WORLD_CONFIG } from '../config.js';
+import { WORLD_CONFIG } from '../../config/config.js';
 
 export class ClusterManager {
     constructor(scene, options = {}) {

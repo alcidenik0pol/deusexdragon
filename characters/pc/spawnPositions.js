@@ -6,8 +6,7 @@ export const LEVEL_SPAWN_POSITIONS = {
     'grid': { x: 10, z: 10 },
     'singapore4': { x: -20, z: 30 },
     'taiyong': { x: -37, z: -37 },
-    'nightclub': { x: 0, z: -67 }  // Position player near southwest corner
-    // 'nightclub': { x: 0, z: 30 }  // Position player near southwest corner
+    'nightclub': { x: 0, z: -48 }  // Position player near southwest corner
 };
 
 // Helper function to get spawn position for a level

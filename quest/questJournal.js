@@ -1,4 +1,4 @@
-import { ChatUI } from './chatUI.js';
+import { ChatUI } from '../ui/chatUI.js';
 
 export class QuestJournal {
     static isActive = false;

@@ -1,4 +1,4 @@
-import { ChatUI } from '../../chat/chatUI.js';
+import { ChatUI } from '../../ui/chatUI.js';
 import { npcService } from '../npcService.js';
 
 export class NPCBase {

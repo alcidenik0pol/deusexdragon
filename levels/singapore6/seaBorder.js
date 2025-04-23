@@ -1,6 +1,6 @@
 import { BaseComponent } from '../../components/BaseComponent.js';
-import { WORLD_CONFIG } from '../../config.js';
-import { LevelGenerator } from '../../levelGenerator.js';
+import { WORLD_CONFIG } from '../../config/config.js';
+import { LevelGenerator } from '../levelGenerator.js';
 import { WaterArea } from './water.js';
 
 export class SeaBorder extends BaseComponent {

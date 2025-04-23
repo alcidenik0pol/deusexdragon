@@ -1,4 +1,4 @@
-import { WORLD_CONFIG } from '../../config.js';
+import { WORLD_CONFIG } from '../../config/config.js';
 
 export class NightClubLighting {
     constructor(scene) {
@@ -203,7 +203,10 @@ export class NightClubLighting {
     }
 
     enhanceCharacterMaterials(mesh) {
-        if (!mesh || !mesh.material) return;
+        if (!mesh || !mesh.material) {
+            console.log(`Cannot enhance material for mesh: ${mesh ? mesh.name : 'undefined'} - no material found`);
+            return;
+        }
         
         console.log("Enhancing character material for:", mesh.name);
         
@@ -229,6 +232,7 @@ export class NightClubLighting {
         
         // Apply to all submeshes
         if (mesh.subMeshes && mesh.subMeshes.length > 0) {
+            console.log(`Mesh ${mesh.name} has ${mesh.subMeshes.length} submeshes`);
             for (let i = 0; i < mesh.subMeshes.length; i++) {
                 const subMesh = mesh.subMeshes[i];
                 if (subMesh.getMaterial()) {
@@ -264,12 +268,18 @@ export class NightClubLighting {
         // Setup environment and reflections
         this.setupEnvironmentReflections();
         
+        // Add a delay to ensure all NPCs are loaded before enhancing
+        setTimeout(() => {
+            this.enhanceAllNPCMaterials();
+            this.diagnoseCharacterLighting();
+        }, 2000);
+        
         return this;
     }
     
     createMainLight() {
         const roomHeight = WORLD_CONFIG.GRID_CELL_SIZE * 40;
-        const roomWidth = WORLD_CONFIG.GRID_CELL_SIZE * 80;
+        const roomWidth = WORLD_CONFIG.GRID_CELL_SIZE * 50; // Reduced from 80 to 50
         
         // Create the central cube light fixture - main visual centerpiece of the nightclub
         const fixture = BABYLON.MeshBuilder.CreateBox(
@@ -289,14 +299,15 @@ export class NightClubLighting {
         
         this.glowLayer.addIncludedOnlyMesh(fixture);
         
-        // Register with INCREASED intensity
+        // Register with INCREASED intensity and no includedOnlyMeshes restriction
         this.mainLightId = this.clusterManager.registerLight({
             position: fixture.position.clone(),
-            intensity: 4.0, // Increased from 2.5
-            diffuse: new BABYLON.Color3(2.0, 0, 2.0), // Increased color intensity
-            specular: new BABYLON.Color3(2.0, 0, 2.0), // Increased specular
+            intensity: 4.0,
+            diffuse: new BABYLON.Color3(2.0, 0, 2.0),
+            specular: new BABYLON.Color3(2.0, 0, 2.0),
             range: WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 5,
             shadowEnabled: true
+            // No includedOnlyMeshes property to ensure it affects all meshes
         });
         
         // Store references for animation
@@ -495,7 +506,7 @@ export class NightClubLighting {
     
     addSecondaryLights() {
         const roomHeight = WORLD_CONFIG.GRID_CELL_SIZE * 40;
-        const roomWidth = WORLD_CONFIG.GRID_CELL_SIZE * 80;
+        const roomWidth = WORLD_CONFIG.GRID_CELL_SIZE * 50; // Reduced from 80 to 50
         const wallDistance = roomWidth / 2 - 5; // 5m from walls
         
         // Create 4 secondary lights near the walls
@@ -980,7 +991,7 @@ export class NightClubLighting {
     createWalls(bounds = this.constructor.LEVEL_BOUNDS.room) {
         const walls = [];
         const wallHeight = WORLD_CONFIG.GRID_CELL_SIZE * 40;
-        const roomWidth = WORLD_CONFIG.GRID_CELL_SIZE * 80;
+        const roomWidth = WORLD_CONFIG.GRID_CELL_SIZE * 50; // Reduced from 80 to 50
         
         // Create outer walls using WallComponent
         const positions = [
@@ -1022,14 +1033,17 @@ export class NightClubLighting {
     createEmergencyLight() {
         const entranceHeight = WORLD_CONFIG.GRID_CELL_SIZE * 3;
         
+        // Find the entrance floor by ID
+        const entranceFloor = this.scene.getMeshByID("entrance-floor");
+        
         // Register light with explicit includedOnlyMeshes
         const emergencyLightId = this.clusterManager.registerLight({
-            position: new BABYLON.Vector3(0, entranceHeight - 0.5, -69),
-            intensity: 4.0,
+            position: new BABYLON.Vector3(0, entranceHeight - 0.5, -49),
+            intensity: 1.0, // Reduced intensity further
             diffuse: new BABYLON.Color3(0, 1, 0),
-            specular: new BABYLON.Color3(0, 1, 0),
-            range: 12,
-            includedOnlyMeshes: [this.entranceFloor] // Explicitly include only the entrance floor
+            specular: new BABYLON.Color3(0, 0, 0), // No specular reflection
+            range: 8, // Reduced range further
+            includedOnlyMeshes: entranceFloor ? [entranceFloor] : undefined
         });
         
         // Create the fixture
@@ -1038,7 +1052,7 @@ export class NightClubLighting {
             { height: 0.2, width: 0.4, depth: 0.1 },
             this.scene
         );
-        fixture.position = new BABYLON.Vector3(0, entranceHeight - 0.5, -69);
+        fixture.position = new BABYLON.Vector3(0, entranceHeight - 0.5, -49);
         
         // Make fixture glow
         const fixtureMaterial = new BABYLON.StandardMaterial("emergency-light-material", this.scene);
@@ -1046,69 +1060,15 @@ export class NightClubLighting {
         fixtureMaterial.disableLighting = true;
         fixture.material = fixtureMaterial;
         
-        // Create a light pool (visual effect) below the fixture
-        const pool = BABYLON.MeshBuilder.CreatePlane("emergency-light-pool", {
-            width: 4,
-            height: 2
-        }, this.scene);
+        // REMOVE the light pool effect completely
+        // Instead, just add a subtle glow to the fixture
+        this.glowLayer.addIncludedOnlyMesh(fixture);
+        this.glowLayer.intensity = 0.8;
         
-        // Create gradient material for light pool
-        const poolMaterial = new BABYLON.StandardMaterial("emergency-light-pool-material", this.scene);
-        poolMaterial.emissiveColor = new BABYLON.Color3(0, 1, 0).scale(0.3);
-        poolMaterial.alpha = 0.3;
-        poolMaterial.disableLighting = true;
-        
-        // Apply gradient texture
-        const texture = new BABYLON.DynamicTexture("emergency-gradient", 256, this.scene);
-        const ctx = texture.getContext();
-        const gradient = ctx.createLinearGradient(0, 0, 0, 256);
-        gradient.addColorStop(0, "rgba(0,255,0,0.7)");
-        gradient.addColorStop(1, "rgba(0,255,0,0)");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 256, 256);
-        texture.update();
-        poolMaterial.opacityTexture = texture;
-        
-        pool.material = poolMaterial;
-        pool.position = new BABYLON.Vector3(0, 0.02, -69); // Just above the floor
-        pool.rotation.x = Math.PI/2;
-        
-        // Update entrance floor material to properly reflect the emergency light
-        const entranceFloor = this.scene.getMeshByID("entrance-floor");
-        if (entranceFloor) {
-            const entranceFloorMaterial = new BABYLON.PBRMaterial("entrance-floor-material", this.scene);
-            entranceFloorMaterial.albedoColor = new BABYLON.Color3(0.3, 0.3, 0.3);
-            entranceFloorMaterial.metallic = 0.9;
-            entranceFloorMaterial.roughness = 0.1;
-            entranceFloorMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
-            entranceFloorMaterial.microSurface = 1.0;
-            
-            // Ensure the material properly reflects light
-            entranceFloorMaterial.usePhysicalLightFalloff = true;
-            entranceFloorMaterial.useRadianceOverAlpha = true;
-            entranceFloorMaterial.useSpecularOverAlpha = true;
-            
-            // Make sure the emergency light affects this material
-            entranceFloorMaterial.maxSimultaneousLights = 4;
-            
-            entranceFloor.material = entranceFloorMaterial;
-            entranceFloor.receiveShadows = true;
-        }
-        
-        // Add to glow layer
-        if (!this.scene.glowLayer) {
-            this.scene.glowLayer = new BABYLON.GlowLayer("glow", this.scene);
-            this.scene.glowLayer.intensity = 0.7;
-        }
-        this.scene.glowLayer.addIncludedOnlyMesh(fixture);
-        
+        // Store for cleanup
         this.fixtures.push(fixture);
-        this.lights.push({
-            id: emergencyLightId,
-            fixture: fixture,
-            pool: pool,
-            isActive: true
-        });
+        
+        return emergencyLightId;
     }
 
     setupEnvironmentReflections() {
@@ -1129,12 +1089,16 @@ export class NightClubLighting {
         // Position the probe in the center of the room
         reflectionProbe.position = new BABYLON.Vector3(0, 20, 0);
         
-        // Add meshes that should be reflected
+        // Find entrance floor to exclude it
+        const entranceFloor = this.scene.getMeshByID("entrance-floor");
+        
+        // Add meshes that should be reflected - EXCLUDE entrance floor
         this.scene.meshes.forEach(mesh => {
-            if (mesh.name.includes("nightclub-wall") || 
+            if ((mesh.name.includes("nightclub-wall") || 
                 mesh.name.includes("nightclub-floor") || 
                 mesh.name.includes("nightclub-ceiling") ||
-                mesh.name.includes("fixture")) {
+                mesh.name.includes("fixture")) && 
+                mesh.id !== "entrance-floor") { // Explicitly exclude entrance floor
                 reflectionProbe.renderList.push(mesh);
             }
         });
@@ -1154,6 +1118,65 @@ export class NightClubLighting {
         // Check for character meshes again
         this.scene.meshes.forEach(mesh => {
             if ((mesh.name === "PlayerCharacter" || mesh.name.includes("pdenton_")) && !mesh._reflectionEnhanced) {
+                this.enhanceCharacterMaterials(mesh);
+            }
+        });
+    }
+
+    // Add a diagnostic method to check all character meshes
+    diagnoseCharacterLighting() {
+        console.log("=== CHARACTER LIGHTING DIAGNOSTIC ===");
+        
+        // Find all character meshes
+        const characterMeshes = this.scene.meshes.filter(mesh => 
+            mesh.name === "PlayerCharacter" || 
+            mesh.name.includes("pdenton_") ||
+            mesh.name.includes("npc_") ||
+            mesh.name.includes("character_")
+        );
+        
+        console.log(`Found ${characterMeshes.length} character meshes`);
+        
+        // Check each mesh
+        characterMeshes.forEach(mesh => {
+            console.log(`Mesh: ${mesh.name}`);
+            console.log(`  - Has material: ${mesh.material ? 'Yes' : 'No'}`);
+            console.log(`  - Material type: ${mesh.material ? mesh.material.getClassName() : 'N/A'}`);
+            console.log(`  - Enhanced: ${mesh._reflectionEnhanced ? 'Yes' : 'No'}`);
+            console.log(`  - Visibility: ${mesh.visibility}`);
+            console.log(`  - Position: ${mesh.position.toString()}`);
+            
+            // Check if mesh is in any light's includedOnlyMeshes
+            const isExclusiveToAnyLight = this.clusterManager.activeLights.some(light => 
+                light.includedOnlyMeshes && 
+                light.includedOnlyMeshes.includes(mesh)
+            );
+            console.log(`  - Exclusive to any light: ${isExclusiveToAnyLight ? 'Yes' : 'No'}`);
+        });
+        
+        // Check main light settings
+        console.log("=== MAIN LIGHT SETTINGS ===");
+        console.log(`Main light intensity: ${this.clusterManager.lightRegistry.get(this.mainLightId)?.intensity || 'N/A'}`);
+        console.log(`Main light range: ${this.clusterManager.lightRegistry.get(this.mainLightId)?.range || 'N/A'}`);
+        
+        console.log("=== END DIAGNOSTIC ===");
+    }
+
+    // Add a method to specifically enhance all NPC materials
+    enhanceAllNPCMaterials() {
+        console.log("Enhancing all NPC materials...");
+        
+        // Find all NPC meshes
+        const npcMeshes = this.scene.meshes.filter(mesh => 
+            mesh.name.includes("npc_") || 
+            mesh.name.includes("character_")
+        );
+        
+        console.log(`Found ${npcMeshes.length} NPC meshes to enhance`);
+        
+        // Enhance each mesh
+        npcMeshes.forEach(mesh => {
+            if (!mesh._reflectionEnhanced) {
                 this.enhanceCharacterMaterials(mesh);
             }
         });

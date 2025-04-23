@@ -1,5 +1,5 @@
 import { LevelGenerator } from './levelGenerator.js';
-import { WORLD_CONFIG } from './config.js';
+import { WORLD_CONFIG } from '../config/config.js';
 
 export class CustomLevel extends LevelGenerator {
     // Override default bounds if needed

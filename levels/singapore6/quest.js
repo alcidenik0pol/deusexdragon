@@ -1,4 +1,4 @@
-import { ResolutionManager } from '../../chat/ResolutionManager.js';
+import { ResolutionManager } from '../../quest/ResolutionManager.js';
 
 export class Singapore6Quest {
     constructor(scene) {
@@ -21,6 +21,11 @@ export class Singapore6Quest {
                 this.showLevelCompletionNotification();
             }
         });
+        
+        // Add a listener for condition completion to check for path completion
+        window.addEventListener('conditionCompleted', (event) => {
+            this.checkPathCompletion(event.detail.conditionId);
+        });
     }
 
     registerLevelConditions() {
@@ -37,6 +42,15 @@ export class Singapore6Quest {
                 points: 2,
                 condition: "Did the player learn about or discuss Tai Yong Medical's recruitment activities?",
                 npcIds: ["linmeihua", "zaratan", "khaichen", "maggiechow", "victorialim", "nikazhang"], // List all NPCs explicitly
+                required: true
+            },
+            
+            // Add a new condition that will be triggered when any path is completed
+            {
+                id: "found_way_inside_taiyong",
+                points: 5,
+                condition: "Did the player find a way to get inside the Tai Yong Medical facility?",
+                npcIds: ["ANY"], // This will be triggered programmatically, not by NPC conversation
                 required: true
             },
             
@@ -262,5 +276,29 @@ export class Singapore6Quest {
         console.log(`Level Progress: ${progress.points}/${progress.threshold} points (${progress.percentage}%)`);
         console.log(`Required Objectives: ${progress.requiredCompleted}/${progress.totalRequired}`);
         console.log(`All Objectives: ${progress.completedConditions}/${progress.totalConditions}`);
+    }
+
+    // Add a new method to check if any path is completed
+    checkPathCompletion(conditionId) {
+        // List of final conditions for each path
+        const finalConditions = [
+            'blackmailed_guard_khai',
+            'used_executive_credentials',
+            'executed_diversion_plan',
+            'secured_recruitment_referral',
+            'used_contractor_credentials'
+        ];
+        
+        // If any of the final conditions is completed, mark the "found_way_inside" condition as completed
+        if (finalConditions.includes(conditionId)) {
+            console.log(`Path completion detected via condition: ${conditionId}`);
+            // Complete the "found way inside" condition
+            if (!this.resolutionManager.completedConditions['found_way_inside_taiyong']) {
+                const condition = this.resolutionManager.levelConditions['singapore6'].find(c => c.id === 'found_way_inside_taiyong');
+                if (condition) {
+                    this.resolutionManager.completeCondition('singapore6', condition);
+                }
+            }
+        }
     }
 } 

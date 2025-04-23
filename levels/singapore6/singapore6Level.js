@@ -1,7 +1,7 @@
-import { LevelGenerator } from '../../levelGenerator.js';
+import { LevelGenerator } from '../levelGenerator.js';
 import { MBSBuilding, CapitasBuilding, FultonBuilding, ParkviewBuilding, 
          OUCBuilding, RepublicBuilding, ShopsBuilding, UOBHighBuilding, MerlionBuilding, ContainerShip } from './buildings.js';
-import { WORLD_CONFIG } from '../../config.js';
+import { WORLD_CONFIG } from '../../config/config.js';
 import { Singapore6Skybox } from './skybox.js';
 import { Streetlight } from './furniture.js';
 import { WaterArea } from './water.js';
@@ -14,7 +14,7 @@ import { Singapore6NPCManager } from './npc.js';
 import { Car03 } from './vehicles.js';
 import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
 import { Singapore6Quest } from './quest.js';
-import { QuestJournal } from '../../chat/questJournal.js';
+import { QuestJournal } from '../../quest/questJournal.js';
 
 export class Singapore6Level extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -57,6 +57,14 @@ export class Singapore6Level extends LevelGenerator {
         
         // Register for updates
         this.scene.registerBeforeRender(() => this.onUpdate());
+
+        // Set level ID for quest system
+        this.levelId = 'singapore6';
+        
+        // Register with level progression if available
+        if (window.levelProgression) {
+            window.levelProgression.currentLevel = this.levelId;
+        }
     }
 
     // Override the createGround method to use a dark grey flat color

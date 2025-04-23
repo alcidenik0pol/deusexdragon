@@ -1,4 +1,4 @@
-import { CustomLevel } from '../../customLevel.js';
+import { CustomLevel } from '../customLevel.js';
 import { GridConfig } from './GridConfig.js';
 import { testLevel } from './testLevel.js';
 

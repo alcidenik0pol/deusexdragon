@@ -1,6 +1,6 @@
 import { BaseComponent } from '../../components/BaseComponent.js';
-import { WORLD_CONFIG } from '../../config.js';
-import { LevelGenerator } from '../../levelGenerator.js';
+import { WORLD_CONFIG } from '../../config/config.js';
+import { LevelGenerator } from '../levelGenerator.js';
 
 export class WaterArea extends BaseComponent {
     constructor() {
@@ -25,7 +25,7 @@ export class WaterArea extends BaseComponent {
 
         // Create water material
         const waterMaterial = new BABYLON.WaterMaterial("water", scene);
-        waterMaterial.bumpTexture = new BABYLON.Texture("textures/waterbump.png", scene);
+        // waterMaterial.bumpTexture = new BABYLON.Texture("textures/waterbump.png", scene);
 
         const referenceSize = 40;
         const scaleFactor = Math.min(x_length, z_length) / (WORLD_CONFIG.GRID_CELL_SIZE * referenceSize);
@@ -37,8 +37,8 @@ export class WaterArea extends BaseComponent {
         waterMaterial.waveLength = 0.5;       // Increased from 0.3
         
         // Increased texture tiling for finer detail
-        waterMaterial.bumpTexture.uScale = x_length / 5;  // Changed from /10 to /5
-        waterMaterial.bumpTexture.vScale = z_length / 5;  // Changed from /10 to /5
+        // waterMaterial.bumpTexture.uScale = x_length / 5;  // Changed from /10 to /5
+        // waterMaterial.bumpTexture.vScale = z_length / 5;  // Changed from /10 to /5
 
         waterMaterial.windDirection = new BABYLON.Vector2(1, 1);  // Diagonal waves look more natural
         waterMaterial.waterColor = new BABYLON.Color3(0.1, 0.1, 0.6);

@@ -1,5 +1,5 @@
-import { ClusterManager } from '../../lighting/ClusterManager.js';
-import { WORLD_CONFIG } from '../../config.js';
+import { ClusterManager } from '../../src/lighting/ClusterManager.js';
+import { WORLD_CONFIG } from '../../config/config.js';
 
 export class Singapore6Lighting {
     constructor(scene) {

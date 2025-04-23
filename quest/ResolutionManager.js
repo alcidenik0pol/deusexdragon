@@ -10,6 +10,9 @@ export class ResolutionManager {
     this.apiKey = config.OPENROUTER_API_KEY;
     this.evaluationEndpoint = config.OPENROUTER_API_URL;
     
+    // Add global points tracker
+    this.globalPoints = 0;
+    
     // Listen for model changes
     window.addEventListener('modelChanged', this._handleModelChange.bind(this));
     
@@ -288,11 +291,12 @@ export class ResolutionManager {
   }
   
   saveProgressState() {
-    // Save to sessionStorage instead of localStorage
     try {
+      // Save to sessionStorage instead of localStorage
       sessionStorage.setItem('gameProgress', JSON.stringify({
         completedConditions: this.completedConditions,
-        levelPoints: this.levelPoints
+        levelPoints: this.levelPoints,
+        globalPoints: this.globalPoints
       }));
       console.log('Progress saved to sessionStorage');
     } catch (error) {
@@ -307,6 +311,7 @@ export class ResolutionManager {
       if (savedState) {
         this.completedConditions = savedState.completedConditions || {};
         this.levelPoints = savedState.levelPoints || {};
+        this.globalPoints = savedState.globalPoints || 0;
         console.log('Progress loaded from sessionStorage');
       }
     } catch (error) {
@@ -347,7 +352,29 @@ export class ResolutionManager {
   resetProgress() {
     this.completedConditions = {};
     this.levelPoints = {};
+    this.globalPoints = 0;
     this.saveProgressState();
     console.log('Progress reset');
+  }
+  
+  // Add method to add current level points to global score
+  addLevelPointsToGlobal(levelId) {
+    const levelPoints = this.levelPoints[levelId] || 0;
+    this.globalPoints += levelPoints;
+    console.log(`[ResolutionManager] Added ${levelPoints} points from level ${levelId} to global score. Total: ${this.globalPoints}`);
+    this.saveProgressState();
+    
+    // Dispatch event for global points update
+    const event = new CustomEvent('globalPointsUpdated', { 
+      detail: { 
+        globalPoints: this.globalPoints 
+      } 
+    });
+    window.dispatchEvent(event);
+  }
+  
+  // Get global points
+  getGlobalPoints() {
+    return this.globalPoints;
   }
 } 

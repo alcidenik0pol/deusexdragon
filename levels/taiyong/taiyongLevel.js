@@ -1,5 +1,5 @@
-import { CustomLevel } from '../../customLevel.js';
-import { WORLD_CONFIG } from '../../config.js';
+import { CustomLevel } from '../customLevel.js';
+import { WORLD_CONFIG } from '../../config/config.js';
 import { WallComponent } from '../../components/WallComponent.js';
 import { FloorComponent } from '../../components/FloorComponent.js';
 import { CeilingComponent } from '../../components/NEWCeilingComponent.js';
@@ -12,7 +12,7 @@ import { TaiyongVehicleSystem } from './vehicles.js';
 import { TaiyongNPCManager } from './npc.js';
 import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
 import { TaiyongTriggerArea } from './taiyongTriggerArea.js';
-import { QuestJournal } from '../../chat/questJournal.js';
+import { QuestJournal } from '../../quest/questJournal.js';
 import { TaiyongMedicalQuest } from './quest.js';
 
 export class TaiyongLevel extends CustomLevel {
@@ -37,6 +37,9 @@ export class TaiyongLevel extends CustomLevel {
             ...config
         };
         super(scene, customConfig);
+        
+        // Set current level FIRST
+        window.currentLevel = this;
         
         // Remove ambient light since we'll use clustered lighting
         scene.ambientColor = BABYLON.Color3.Black();
@@ -65,6 +68,14 @@ export class TaiyongLevel extends CustomLevel {
         
         // Register for updates
         this.scene.registerBeforeRender(() => this.onUpdate());
+        
+        // Set level ID for quest system
+        this.levelId = 'taiyong';
+        
+        // Register with level progression if available
+        if (window.levelProgression) {
+            window.levelProgression.currentLevel = this.levelId;
+        }
     }
 
     // Override createGround to use FloorComponent with special sunset handling

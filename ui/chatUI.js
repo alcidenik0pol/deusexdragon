@@ -1,4 +1,4 @@
-import { ChatService } from './chatService.js';
+import { ChatService } from '../quest/chatService.js';
 
 export class ChatUI {
     static isActive = false;  // Static property to track chat state

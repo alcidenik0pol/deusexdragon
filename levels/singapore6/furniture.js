@@ -1,5 +1,5 @@
 import { BaseComponent } from '../../components/BaseComponent.js';
-import { WORLD_CONFIG } from '../../config.js';
+import { WORLD_CONFIG } from '../../config/config.js';
 
 export class Streetlight extends BaseComponent {
     constructor() {

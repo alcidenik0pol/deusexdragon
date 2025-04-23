@@ -1,5 +1,5 @@
 import { WallComponent } from '../../components/WallComponent.js';
-import { WORLD_CONFIG } from '../../config.js';
+import { WORLD_CONFIG } from '../../config/config.js';
 
 export class CityscapeBorder extends WallComponent {
     constructor(id = 'cityscape-border') {

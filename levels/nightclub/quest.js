@@ -1,6 +1,6 @@
 import { ResolutionManager } from '../../quest/ResolutionManager.js';
 
-export class TaiyongMedicalQuest {
+export class NightClubQuest {
     constructor(scene) {
         // Initialize the resolution manager if not already created
         this.resolutionManager = window.resolutionManager || new ResolutionManager();
@@ -16,7 +16,7 @@ export class TaiyongMedicalQuest {
         
         // Add a listener to the levelExitUnlocked event
         window.addEventListener('levelExitUnlocked', (event) => {
-        if (event.detail.levelId === 'taiyong') {
+            if (event.detail.levelId === 'nightclub') {
                 console.log(`Level completed!`);
                 this.showLevelCompletionNotification();
             }
@@ -24,99 +24,72 @@ export class TaiyongMedicalQuest {
     }
 
     registerLevelConditions() {
-        // Define the conditions for TaiyongMedical level based on the questline
-        const taiyongMedicalConditions = [
-            // Initial contact with Lab Assistant
+        // Define the conditions for NightClub level based on the questline
+        const nightClubConditions = [
+            // Initial encounter with Tong
             {
-                id: "Spoken_To_Lab_Assistant",
+                id: "Met_Tong_Si_Hung",
                 points: 2,
-                condition: "Did the player express they are here for testing/trials/experiments/interview/hiring to the Lab Assistant?",
-                npcIds: ["bangweitun"], // Lab Assistant
+                condition: "Did the player meet and have an initial conversation with Tong Si Hung?",
+                npcIds: ["tong"],
                 required: true
             },
             
-            // Verification with Maxeen
+            // Optional discussion about Tai Yong's true purpose
             {
-                id: "Verified_Exam_Results",
+                id: "Discussed_Tai_Yong_True_Purpose",
                 points: 3,
-                condition: "Did the player present exam results or mention passing the compatibility screening to Maxeen?",
-                npcIds: ["maxeen"], // Augmented Test Coordinator
-                required: true
-            },
-            
-            // Optional Maxeen dialogue path
-            {
-                id: "Discussed_Maxeen_Augmentations",
-                points: 1,
-                condition: "Did the player ask Maxeen about his augmentations or show concern for his health?",
-                npcIds: ["maxeen"],
+                condition: "Did Tong and the player discuss what Tai Yong Medical actually does with its subjects beyond 'medical research'?",
+                npcIds: ["tong"],
                 required: false
             },
             
-            // Door unlock
+            // Accept the package retrieval job
             {
-                id: "Door_Unlocked",
-                points: 2,
-                condition: "Did Bang Wei Tun mention unlocking or opening the door, or say 'Door_unlocked'?",
-                npcIds: ["bangweitun"],
+                id: "Accepted_Initial_Job",
+                points: 5,
+                condition: "Did the player agree to retrieve a package from a Belltower security checkpoint for Tong?",
+                npcIds: ["tong"],
                 required: true
             },
             
-            // Reed Interview: Motivation phase
+            // Optional discussion about recovery timeline
             {
-                id: "Explained_Augmentation_Motivation",
+                id: "Shared_Recovery_Timeline",
                 points: 3,
-                condition: "Did the player explain their motivation for wanting augmentations to Dr. Reed?",
-                npcIds: ["mreed"],
-                required: true
+                condition: "Did the player share information about their augmentation surgery recovery timeline with Tong?",
+                npcIds: ["tong"],
+                required: false
             },
             
-            // Reed Interview: Risk acknowledgment
+            // Optional discussion about augmentation politics
             {
-                id: "Acknowledged_Augmentation_Risks",
-                points: 3,
-                condition: "Did the player acknowledge understanding the risks of augmentation when discussing with Dr. Reed?",
-                npcIds: ["mreed"],
-                required: true
-            },
-            
-            // Reed Interview: NUPOZ scenario
-            {
-                id: "Answered_NUPOZ_Scenario",
-                points: 3,
-                condition: "Did the player provide a thoughtful answer to Dr. Reed's scenario about not being able to afford NUPOZ?",
-                npcIds: ["mreed"],
-                required: true
-            },
-            
-            // Final hiring resolution
-            {
-                id: "Hired_By_Reed",
+                id: "Discussed_Augmentation_Politics",
                 points: 4,
-                condition: "Did Dr. Reed offer the player a position in Tai Yong Medical's neural augmentation trial program?",
-                npcIds: ["mreed"],
+                condition: "Did the player and Tong discuss political aspects of augmentation technology, including Tong's views on NUPOZ control?",
+                npcIds: ["tong"],
+                required: false
+            },
+            
+            // Final resolution - getting hired by Tong
+            {
+                id: "Hired_By_Tong",
+                points: 8,
+                condition: "Did Tong give the player a credstick as payment and confirm he'll have future work for them after their augmentation surgery?",
+                npcIds: ["tong"],
                 required: true,
                 resolvesLevel: true
-            },
-            
-            // Encounter with Khy Choon Soh - optional but enhances story
-            {
-                id: "Met_Khy_Choon_Soh",
-                points: 2,
-                condition: "Did the player engage in conversation with Khy Choon Soh about regulation, warnings, or philosophical aspects of augmentation?",
-                npcIds: ["khychoonsoh"],
-                required: false
             }
         ];
         
         // Register the level with conditions and point threshold
-        // Player needs to complete the main questline (approximately 20 points) to succeed
-        this.resolutionManager.registerLevel('taiyong', taiyongMedicalConditions, 20);
+        // Player needs to complete the main questline (15 points) to succeed
+        this.resolutionManager.registerLevel('nightclub', nightClubConditions, 15);
     }
 
     // Method to show a notification when the level is completed
     showLevelCompletionNotification() {
-        let message = "You've successfully been hired as a test subject for Tai Yong Medical's augmentation program. Press 'P' to proceed to the next level.";
+        let message = "You've successfully been hired by Tong Si Hung. Press 'P' to see the credits.";
         
         // Show a prominent notification
         if (this.resolutionManager) {
@@ -128,7 +101,7 @@ export class TaiyongMedicalQuest {
     
     // Helper method to check progress through level
     getProgressSummary() {
-        const levelId = 'taiyong';
+        const levelId = 'nightclub';
         const conditions = this.resolutionManager.levelConditions[levelId] || [];
         const completed = this.resolutionManager.completedConditions || {};
         const points = this.resolutionManager.levelPoints[levelId] || 0;
@@ -163,4 +136,4 @@ export class TaiyongMedicalQuest {
         // Just remove the reference
         this.resolutionManager = null;
     }
-}
+} 

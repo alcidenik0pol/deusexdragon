@@ -1,4 +1,4 @@
-import { ChatUI } from './chat/chatUI.js';
+import { ChatUI } from './chatUI.js';
 
 export class Controls {
     constructor(scene, idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter, danceCharacter, gameCamera) {
@@ -66,14 +66,51 @@ export class Controls {
     setupKeyboardControls() {
         window.addEventListener("keydown", (e) => {
             // Import SettingsUI class to check its active state
-            import('./chat/settingsUI.js').then(module => {
+            import('../quest/settingsUI.js').then(module => {
                 const SettingsUI = module.SettingsUI;
                 
                 // Allow 'E' key to be typed in the text area when chat UI is active
                 if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
-
+                
                 // Skip movement if controls are locked or any UI is active
                 if (this.movementLocked || SettingsUI.isActive) return;
+                
+                // Handle 'P' key for level progression - only if exit is unlocked
+                if (e.key.toLowerCase() === 'p') {
+                    if (window.currentLevel) {
+                        // Get resolutionManager from either quest or questSystem
+                        const resolutionManager = window.currentLevel.quest?.resolutionManager || 
+                                                window.currentLevel.questSystem?.resolutionManager;
+                        const levelId = window.currentLevel.levelId;
+                        
+                        if (resolutionManager) {
+                            // Check if level exit is unlocked (all required objectives completed)
+                            const levelPoints = resolutionManager.levelPoints[levelId] || 0;
+                            const threshold = resolutionManager.levelThresholds[levelId] || 0;
+                            const allRequiredMet = (resolutionManager.levelConditions[levelId] || [])
+                                .filter(c => c.required)
+                                .every(c => resolutionManager.completedConditions[c.id]);
+                            
+                            if (levelPoints >= threshold && allRequiredMet) {
+                                console.log(`Exit unlocked for level ${levelId}. Moving to next level.`);
+                                
+                                // Stop character movement before level change
+                                this.stopCharacterMovement();
+                                
+                                // Add points to global score before changing level
+                                resolutionManager.addLevelPointsToGlobal(levelId);
+                                
+                                // Change to next level
+                                if (window.levelProgression) {
+                                    window.levelProgression.goToNextLevel();
+                                }
+                            } else {
+                                console.log(`Exit locked for level ${levelId}. Complete objectives first.`);
+                            }
+                        }
+                    }
+                    return;
+                }
                 
                 if (e.key.toLowerCase() in this.keys) {
                     this.keys[e.key.toLowerCase()] = true;
@@ -83,15 +120,15 @@ export class Controls {
                 }
             });
         });
-
+        
         window.addEventListener("keyup", (e) => {
             // Import SettingsUI class to check its active state
-            import('./chat/settingsUI.js').then(module => {
+            import('../quest/settingsUI.js').then(module => {
                 const SettingsUI = module.SettingsUI;
                 
                 // Allow 'E' key to be typed in the text area when chat UI is active
                 if (ChatUI.isActive && e.target.tagName === 'TEXTAREA') return;
-
+                
                 // Skip movement if controls are locked or any UI is active
                 if (this.movementLocked || SettingsUI.isActive) return;
                 

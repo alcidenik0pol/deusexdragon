@@ -1,12 +1,9 @@
-import { ChatUI } from './chat/chatUI.js';
-import { LevelGenerator } from './levelGenerator.js';
-import { LadiesRoomLevel } from './levels/ladiesRoomLevel.js';
-import { TestCameraCollision } from './levels/testCameraCollision.js';
-import { Singapore6Level } from './levels/singapore6/singapore6Level.js';
-import { NightClubLevel } from './levels/nightclub/nightClubLevel.js';
-// import { NightClub } from './levels/NightClub.js';
-import { GridLevel } from './levels/grid/GridLevel.js';
-import { TaiyongLevel } from './levels/taiyong/taiyongLevel.js';
+import { ChatUI } from '../ui/chatUI.js';
+import { LevelGenerator } from '../levels/levelGenerator.js';
+import { Singapore6Level } from '../levels/singapore6/singapore6Level.js';
+import { NightClubLevel } from '../levels/nightclub/nightClubLevel.js';
+import { GridLevel } from '../levels/grid/GridLevel.js';
+import { TaiyongLevel } from '../levels/taiyong/taiyongLevel.js';
 import { FPSDisplay } from './fpsDisplay.js';
 
 export class DebugControls {
@@ -36,7 +33,7 @@ export class DebugControls {
     setupDebugControls() {
         window.addEventListener("keydown", (e) => {
             // Import SettingsUI class to check its active state
-            import('./chat/settingsUI.js').then(module => {
+            import('../quest/settingsUI.js').then(module => {
                 const SettingsUI = module.SettingsUI;
                 
                 // Disable keys when chat or any UI is active

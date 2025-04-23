@@ -1,4 +1,4 @@
-import { ChatUI } from '../../chat/chatUI.js';
+import { ChatUI } from '../../ui/chatUI.js';
 
 export class DialogueManager {
     constructor(scene) {
