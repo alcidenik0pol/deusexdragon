@@ -107,7 +107,7 @@
         const { ground, walls, cellSize } = await levelGenerator.createLevel();
 
         // Load characters ONCE
-        const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter } = await loadCharacters(scene);
+        const { idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter, danceCharacter } = await loadCharacters(scene);
         
         // Get the spawn position for this level
         const spawnPosition = getSpawnPosition(levelType);
@@ -131,6 +131,9 @@
         runCharacter.position.x = spawnPosition.x;
         runCharacter.position.z = spawnPosition.z;
         
+        danceCharacter.position.x = spawnPosition.x;
+        danceCharacter.position.z = spawnPosition.z;
+        
         // Initialize controls with all character models
         const controls = new Controls(
             scene, 
@@ -140,6 +143,7 @@
             leftCharacter, 
             rightCharacter, 
             runCharacter,
+            danceCharacter,
             gameCamera
         );
 

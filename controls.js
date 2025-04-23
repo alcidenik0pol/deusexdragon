@@ -1,7 +1,7 @@
 import { ChatUI } from './chat/chatUI.js';
 
 export class Controls {
-    constructor(scene, idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter, gameCamera) {
+    constructor(scene, idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter, danceCharacter, gameCamera) {
         this.scene = scene;
         this.idleCharacter = idleCharacter;
         this.forwardCharacter = forwardCharacter;
@@ -9,11 +9,12 @@ export class Controls {
         this.leftCharacter = leftCharacter;
         this.rightCharacter = rightCharacter;
         this.runCharacter = runCharacter;
+        this.danceCharacter = danceCharacter;
         this.currentCharacter = idleCharacter;
         this.gameCamera = gameCamera;
         
         // Simple movement keys state
-        this.keys = { w: false, a: false, s: false, d: false, shift: false };
+        this.keys = { w: false, a: false, s: false, d: false, shift: false, k: false };
         this.baseMoveSpeed = 0.04; // Base movement speed (reduced from 0.08)
         this.forwardSpeed = this.baseMoveSpeed * 0.75;  // Forward speed (75% of base)
         this.backwardSpeed = this.baseMoveSpeed * 0.25; // Backward speed (25% of base)
@@ -41,6 +42,7 @@ export class Controls {
         this.leftCharacter.setEnabled(false);
         this.rightCharacter.setEnabled(false);
         this.runCharacter.setEnabled(false);
+        this.danceCharacter.setEnabled(false);
     }
 
     updateCharacterPositions(newPosition) {
@@ -50,11 +52,12 @@ export class Controls {
         this.leftCharacter.position = newPosition;
         this.rightCharacter.position = newPosition;
         this.runCharacter.position = newPosition;
+        this.danceCharacter.position = newPosition;
     }
 
     stopCharacterMovement() {
         // Reset all movement keys
-        this.keys = { w: false, a: false, s: false, d: false, shift: false };
+        this.keys = { w: false, a: false, s: false, d: false, shift: false, k: false };
         this.setAllCharactersInvisible();
         this.idleCharacter.setEnabled(true);
         this.currentCharacter = this.idleCharacter;
@@ -104,6 +107,13 @@ export class Controls {
 
     updateCharacterAnimation() {
         this.setAllCharactersInvisible();
+        
+        // Check for dance animation first
+        if (this.keys.k) {
+            this.danceCharacter.setEnabled(true);
+            this.currentCharacter = this.danceCharacter;
+            return;
+        }
         
         // If no movement keys are pressed, return to idle
         if (!this.keys.w && !this.keys.a && !this.keys.s && !this.keys.d) {

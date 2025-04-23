@@ -13,7 +13,8 @@ export const loadCharacters = async (scene) => {
             BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_walkb.glb", scene),
             BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_sleft.glb", scene),
             BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_sright.glb", scene),
-            BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_run.glb", scene)
+            BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_run.glb", scene),
+            BABYLON.SceneLoader.ImportMeshAsync("", basePath, "pdenton_dance.glb", scene)
         ];
 
         const results = await Promise.all(modelPromises.map(p => p.catch(error => {
@@ -32,7 +33,8 @@ export const loadCharacters = async (scene) => {
             backwardCharacterResult,
             leftCharacterResult,
             rightCharacterResult,
-            runCharacterResult
+            runCharacterResult,
+            danceCharacterResult
         ] = results;
 
         console.log("All models loaded, applying standard dimensions...");
@@ -42,7 +44,7 @@ export const loadCharacters = async (scene) => {
         
         // Apply standard dimensions to all character states
         [idleCharacterResult, forwardCharacterResult, backwardCharacterResult, 
-            leftCharacterResult, rightCharacterResult, runCharacterResult].forEach(result => {
+            leftCharacterResult, rightCharacterResult, runCharacterResult, danceCharacterResult].forEach(result => {
             const rootMesh = result.meshes[0];
             
             // Debug log the current dimensions
@@ -87,6 +89,7 @@ export const loadCharacters = async (scene) => {
         const leftCharacter = leftCharacterResult.meshes[0];
         const rightCharacter = rightCharacterResult.meshes[0];
         const runCharacter = runCharacterResult.meshes[0];
+        const danceCharacter = danceCharacterResult.meshes[0];
 
         // Add rotation update function to the scene's render loop
         scene.registerBeforeRender(() => {
@@ -94,7 +97,7 @@ export const loadCharacters = async (scene) => {
             if (camera) {
                 const yaw = camera.rotation.y;
                 [idleCharacter, forwardCharacter, backwardCharacter, 
-                 leftCharacter, rightCharacter, runCharacter].forEach(char => {
+                 leftCharacter, rightCharacter, runCharacter, danceCharacter].forEach(char => {
                     char.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                         BABYLON.Vector3.Up(),
                         yaw
@@ -110,6 +113,7 @@ export const loadCharacters = async (scene) => {
         leftCharacter.setEnabled(false);
         rightCharacter.setEnabled(false);
         runCharacter.setEnabled(false);
+        danceCharacter.setEnabled(false);
 
         idleCharacter.name = "PlayerCharacter";
 
@@ -125,7 +129,8 @@ export const loadCharacters = async (scene) => {
             backwardCharacter,
             leftCharacter,
             rightCharacter,
-            runCharacter
+            runCharacter,
+            danceCharacter
         };
     } catch (error) {
         console.error("Error in loadCharacters:", error);
