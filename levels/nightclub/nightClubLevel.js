@@ -8,18 +8,27 @@ import { NightClubLighting } from './lighting.js';
 import { NightclubFogEffect } from '../../src/effects/NightclubFogEffect.js';
 
 export class NightClubLevel extends CustomLevel {
-    // Define level bounds - making it 80x80 with higher ceiling
+    // Define level bounds and areas
     static LEVEL_BOUNDS = {
         ...CustomLevel.LEVEL_BOUNDS,
         floor: {
             y: 0,
-            width: WORLD_CONFIG.GRID_CELL_SIZE * 80,  // 80x80 meter space
-            length: WORLD_CONFIG.GRID_CELL_SIZE * 80
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 140,  // 140 meter space
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 140
         },
         room: {
-            width: WORLD_CONFIG.GRID_CELL_SIZE * 80,
-            length: WORLD_CONFIG.GRID_CELL_SIZE * 80,
+            width: WORLD_CONFIG.GRID_CELL_SIZE * 140,
+            length: WORLD_CONFIG.GRID_CELL_SIZE * 140,
             height: WORLD_CONFIG.GRID_CELL_SIZE * 40  // Higher 40m ceiling
+        },
+        // Define entrance area bounds
+        entranceArea: {
+            x1: -20,  // Left boundary
+            x2: 20,  // Right boundary
+            z1: -70,  // Back wall (south)
+            z2: -60,  // Interior wall
+            width: 40, // x2 - x1
+            depth: 10  // z2 - z1
         }
     };
 
@@ -127,6 +136,29 @@ export class NightClubLevel extends CustomLevel {
             
             walls.push(wall.mesh);
         });
+
+        // Add interior wall using entrance area coordinates
+        const entranceArea = this.constructor.LEVEL_BOUNDS.entranceArea;
+        const interiorWall = new WallComponent('nightclub-wall-interior');
+        interiorWall.height = wallHeight;
+        interiorWall.width = entranceArea.width;
+        interiorWall.thickness = 0.4;
+        interiorWall.initialize(this.scene);
+        
+        // Position using entrance area coordinates
+        const xCenter = (entranceArea.x1 + entranceArea.x2) / 2;
+        interiorWall.mesh.position = new BABYLON.Vector3(xCenter, wallHeight/2, entranceArea.z2);
+        
+        // Apply same material as other walls
+        interiorWall.mesh.material = wallMaterial.clone('wall-material-interior');
+        
+        // Set up collision properties
+        interiorWall.setCollision(true);
+        interiorWall.mesh.checkCollisions = true;
+        interiorWall.mesh.isBlocker = true;
+        interiorWall.mesh.receiveShadows = true;
+        
+        walls.push(interiorWall.mesh);
 
         return walls;
     }

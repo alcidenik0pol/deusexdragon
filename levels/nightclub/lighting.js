@@ -216,7 +216,7 @@ export class NightClubLighting {
         const fixtureMaterial = new BABYLON.StandardMaterial("central-cube-material", this.scene);
         fixtureMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         fixtureMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        fixtureMaterial.emissiveColor = new BABYLON.Color3(1.5, 0, 1.5); // Increased intensity
+        fixtureMaterial.emissiveColor = new BABYLON.Color3(2.0, 0, 2.0); // Increased from 1.5
         fixtureMaterial.disableLighting = true;
         fixture.material = fixtureMaterial;
         
@@ -225,9 +225,9 @@ export class NightClubLighting {
         // Register with INCREASED intensity
         this.mainLightId = this.clusterManager.registerLight({
             position: fixture.position.clone(),
-            intensity: 2.5, // Increased from 1
-            diffuse: new BABYLON.Color3(1.5, 0, 1.5), // Increased color intensity
-            specular: new BABYLON.Color3(1.5, 0, 1.5), // Increased specular
+            intensity: 4.0, // Increased from 2.5
+            diffuse: new BABYLON.Color3(2.0, 0, 2.0), // Increased color intensity
+            specular: new BABYLON.Color3(2.0, 0, 2.0), // Increased specular
             range: WORLD_CONFIG.LIGHTING.DEFAULT_LIGHT_RANGE * 5,
             shadowEnabled: true
         });
@@ -268,7 +268,7 @@ export class NightClubLighting {
             },
             {
                 attributes: ["position", "normal", "uv"],
-                uniforms: ["world", "worldView", "worldViewProjection", "view", "projection", "lightPosition", "lightColor", "maxDistance"]
+                uniforms: ["world", "worldView", "worldViewProjection", "view", "projection", "lightPosition", "lightColor", "maxDistance", "time"]
             }
         );
 
@@ -321,19 +321,27 @@ export class NightClubLighting {
             varying vec2 vUV;
             
             uniform vec3 lightColor;
+            uniform float time;
             
             void main(void) {
-                float baseReflectivity = 0.02;
-                float maxReflectivity = 0.8; // CRANKED UP for more punch
+                float baseReflectivity = 0.04;
+                float maxReflectivity = 1.0;
                 
-                // Sharp transition between base and max
-                float reflectivity = mix(baseReflectivity, maxReflectivity, pow(vDistanceFactor, 1.5));
+                // Create smooth wave pattern using time
+                float wave = sin(time * 0.001) * 0.5 + 0.5; // Converts time to smooth 0-1 range
                 
-                // Add subtle ambient
-                vec3 ambientColor = vec3(0.05, 0.05, 0.05);
+                // Modulate reflectivity with wave
+                float reflectivityRange = maxReflectivity - baseReflectivity;
+                float currentMaxReflectivity = baseReflectivity + (reflectivityRange * (0.7 + wave * 0.3)); // Varies between 70-100% of range
                 
-                // Mix with more contrast
-                vec3 finalColor = (lightColor * reflectivity * 1.5) + ambientColor;
+                // Sharper transition with time-based variation
+                float reflectivity = mix(baseReflectivity, currentMaxReflectivity, pow(vDistanceFactor, 1.2));
+                
+                vec3 ambientColor = vec3(0.08, 0.08, 0.08);
+                
+                // Add subtle pulse to final intensity
+                float pulseIntensity = 1.8 + sin(time * 0.002) * 0.4; // Varies between 1.4-2.2
+                vec3 finalColor = (lightColor * reflectivity * pulseIntensity) + ambientColor;
                 
                 gl_FragColor = vec4(finalColor, 1.0);
             }
@@ -501,6 +509,11 @@ export class NightClubLighting {
     updateLights() {
         if (!this.mainLight.isActive) return;
         const currentTime = performance.now();
+        
+        // Update shader time uniform
+        if (this.floorMaterial) {
+            this.floorMaterial.setFloat("time", currentTime);
+        }
         
         // Check if we should switch modes
         if (currentTime - this.sequenceManager.lastModeChange >= this.sequenceManager.currentDuration) {
