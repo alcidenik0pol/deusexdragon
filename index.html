@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Deus Ex Dragon</title>
+    <title>Deus Ex Neon Merlion</title>
     <style>
         html, body {
             margin: 0;
@@ -188,6 +188,11 @@
     window.recreateScene = recreateScene;
 
     const main = async () => {
+        // Initialize MusicManager FIRST
+        import('./quest/MusicManager.js').then(module => {
+            new module.MusicManager();  // Create singleton instance
+        });
+
         // Initialize level progression manager
         import('./quest/levelProgression.js').then(module => {
             window.levelProgression = new module.LevelProgression();

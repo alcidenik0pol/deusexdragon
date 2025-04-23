@@ -1,10 +1,12 @@
 import { MAIN_MENU_ID, getNextLevel } from '../config/levelOrder.js';
 import { MainMenu } from './mainMenu.js';
+import { MusicManager } from './MusicManager.js';
 
 export class LevelProgression {
     constructor() {
         this.currentLevel = null;
         this.mainMenu = null;
+        this.musicManager = MusicManager.getInstance();
         
         // Setup event listeners
         window.addEventListener('changeLevel', this.handleLevelChange.bind(this));
@@ -20,6 +22,8 @@ export class LevelProgression {
         // Create main menu if it doesn't exist
         if (!this.mainMenu) {
             this.mainMenu = new MainMenu();
+        } else {
+            this.mainMenu.show(); // Show existing menu
         }
     }
     
@@ -55,6 +59,17 @@ export class LevelProgression {
     }
     
     showCredits() {
+        // Stop any current music before showing credits
+        this.musicManager.stopAll();
+        
+        // Hide main menu if it exists
+        if (this.mainMenu) {
+            this.mainMenu.hide(); // Add this method to MainMenu
+        }
+        
+        // Start credits music
+        this.musicManager.playSpecialTrack('credits');
+        
         // Create a simple credits screen
         const creditsDiv = document.createElement('div');
         creditsDiv.style.position = 'absolute';
@@ -103,6 +118,8 @@ export class LevelProgression {
         
         backButton.onclick = () => {
             document.body.removeChild(creditsDiv);
+            // Stop credits music
+            this.musicManager.stopAll();
             this.showMainMenu();
         };
         

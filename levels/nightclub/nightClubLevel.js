@@ -3,12 +3,13 @@ import { WORLD_CONFIG } from '../../config/config.js';
 import { WallComponent } from '../../components/WallComponent.js';
 import { FloorComponent } from '../../components/FloorComponent.js';
 import { CeilingComponent } from '../../components/NEWCeilingComponent.js';
-import { ClusterManager } from '../../src/lighting/ClusterManager.js';
+import { ClusterManager } from '../../fx/lighting/ClusterManager.js';
 import { NightClubLighting } from './lighting.js';
 import { NightClubNPCManager } from './npc.js';
-import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
+import { DialogueManager } from '../../quest/DialogueManager.js';
 import { NightClubQuest } from './quest.js';
 import { QuestJournal } from '../../quest/questJournal.js';
+import { MusicManager } from '../../quest/MusicManager.js';
 
 export class NightClubLevel extends CustomLevel {
     // Define level bounds and areas
@@ -110,6 +111,9 @@ export class NightClubLevel extends CustomLevel {
         
         // Initialize components (NPCs, dialogue)
         await this.initializeComponents();
+
+        const musicManager = MusicManager.getInstance();
+        musicManager.setLevel('nightclub');
 
         return this;
     }

@@ -1,15 +1,29 @@
 import { MainMenuUI } from '../ui/mainMenuUI.js';
 import { LEVEL_ORDER } from '../config/levelOrder.js';
+import { MusicManager } from './MusicManager.js';
 
 export class MainMenu {
     constructor() {
         this.ui = new MainMenuUI();
+        this.musicManager = MusicManager.getInstance();
         
-        // Setup event listener for the start game event
-        window.addEventListener('startGame', this.handleStartGame.bind(this));
-        
-        // Show the menu UI
+        // Show the menu UI first
         this.ui.show();
+        
+        // Setup event listeners
+        window.addEventListener('startGame', this.handleStartGame.bind(this));
+        window.addEventListener('musicEnabled', () => {
+            this.musicManager.initialize();
+            this.musicManager.playSpecialTrack('menu');
+        });
+    }
+
+    show() {
+        this.ui.show();
+    }
+
+    hide() {
+        this.ui.hide();
     }
     
     handleStartGame() {

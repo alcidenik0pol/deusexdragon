@@ -1,4 +1,4 @@
-import { ClusterManager } from '../../src/lighting/ClusterManager.js';
+import { ClusterManager } from '../../fx/lighting/ClusterManager.js';
 import { WORLD_CONFIG } from '../../config/config.js';
 import { BaseComponent } from '../../components/BaseComponent.js';
 

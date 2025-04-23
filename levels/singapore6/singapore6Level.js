@@ -12,9 +12,10 @@ import { SINGAPORE6_OBJECT_MAPPING } from './objectMapping.js';
 import { SeaBorder } from './seaBorder.js';
 import { Singapore6NPCManager } from './npc.js';
 import { Car03 } from './vehicles.js';
-import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
+import { DialogueManager } from '../../quest/DialogueManager.js';
 import { Singapore6Quest } from './quest.js';
 import { QuestJournal } from '../../quest/questJournal.js';
+import { MusicManager } from '../../quest/MusicManager.js';
 
 export class Singapore6Level extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -225,6 +226,9 @@ export class Singapore6Level extends LevelGenerator {
 
         console.log('Level update chain initialized');
 
+        const musicManager = MusicManager.getInstance();
+        musicManager.setLevel('singapore6');
+        
         return result;
     }
 

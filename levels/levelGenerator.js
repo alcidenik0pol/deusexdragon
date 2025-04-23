@@ -1,4 +1,3 @@
-import { Minimap } from '../src/ui/Minimap.js';
 import { WORLD_CONFIG } from '../config/config.js';
 import { SkyboxComponent } from '../components/SkyboxComponent.js';
 import { SettingsUI } from '../quest/settingsUI.js';
@@ -47,7 +46,6 @@ export class LevelGenerator {
         this.cellSize = this.config.cellSize;
         this.walls = [];
         this.components = [];
-        this.minimap = new Minimap(scene);
         this.skyboxComponent = new SkyboxComponent(scene);
         
         // Initialize settings UI
@@ -147,10 +145,6 @@ export class LevelGenerator {
         });
         this.components = [];
 
-        // Clean up minimap
-        if (this.minimap) {
-            this.minimap.dispose();
-        }
 
         // Clean up settings UI
         if (this.settingsUI) {

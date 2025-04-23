@@ -10,10 +10,11 @@ import { DoorComponent } from '../../components/DoorComponent.js';
 import { TaiyongBillboard } from './furniture.js';
 import { TaiyongVehicleSystem } from './vehicles.js';
 import { TaiyongNPCManager } from './npc.js';
-import { DialogueManager } from '../../src/dialogue/DialogueManager.js';
+import { DialogueManager } from '../../quest/DialogueManager.js';
 import { TaiyongTriggerArea } from './taiyongTriggerArea.js';
 import { QuestJournal } from '../../quest/questJournal.js';
 import { TaiyongMedicalQuest } from './quest.js';
+import { MusicManager } from '../../quest/MusicManager.js';
 
 export class TaiyongLevel extends CustomLevel {
     static LEVEL_BOUNDS = {
@@ -76,6 +77,9 @@ export class TaiyongLevel extends CustomLevel {
         if (window.levelProgression) {
             window.levelProgression.currentLevel = this.levelId;
         }
+
+        // Initialize music manager
+        // this.musicManager = new MusicManager();
     }
 
     // Override createGround to use FloorComponent with special sunset handling
@@ -406,6 +410,12 @@ export class TaiyongLevel extends CustomLevel {
         
         await this.createBillboards();
         
+        // Set music level
+        // this.musicManager.setLevel('taiyong');
+
+        const musicManager = MusicManager.getInstance();
+        musicManager.setLevel('taiyong');
+        
         return result;
     }
 
@@ -456,6 +466,11 @@ export class TaiyongLevel extends CustomLevel {
         }
         
         this.resolutionManager = null;
+        
+        // Dispose music manager
+        // if (this.musicManager) {
+        //     this.musicManager.dispose();
+        // }
         
         super.dispose();
     }

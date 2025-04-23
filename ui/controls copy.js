@@ -1,5 +1,4 @@
 import { ChatUI } from './chatUI.js';
-import { MusicManager } from '../quest/MusicManager.js';
 
 export class Controls {
     constructor(scene, idleCharacter, forwardCharacter, backwardCharacter, leftCharacter, rightCharacter, runCharacter, danceCharacter, gameCamera) {
@@ -85,7 +84,7 @@ export class Controls {
                         const levelId = window.currentLevel.levelId;
                         
                         if (resolutionManager) {
-                            // Check if level exit is unlocked
+                            // Check if level exit is unlocked (all required objectives completed)
                             const levelPoints = resolutionManager.levelPoints[levelId] || 0;
                             const threshold = resolutionManager.levelThresholds[levelId] || 0;
                             const allRequiredMet = (resolutionManager.levelConditions[levelId] || [])
@@ -97,10 +96,6 @@ export class Controls {
                                 
                                 // Stop character movement before level change
                                 this.stopCharacterMovement();
-                                
-                                // Stop current music before level change
-                                const musicManager = MusicManager.getInstance();
-                                musicManager.stopAll();
                                 
                                 // Add points to global score before changing level
                                 resolutionManager.addLevelPointsToGlobal(levelId);

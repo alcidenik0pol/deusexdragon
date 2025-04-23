@@ -4,6 +4,7 @@ export class MainMenuUI {
     constructor() {
         this.container = null;
         this.isVisible = false;
+        this.musicEnabled = false;
         
         // Create the UI elements
         this.create();
@@ -109,6 +110,43 @@ export class MainMenuUI {
             margin-bottom: 3rem;
         `;
 
+        // Create music button with different styling
+        const musicButton = document.createElement('button');
+        musicButton.style.cssText = `
+            background-color: transparent;
+            color: #d97706;
+            border: 1px solid #d97706;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            margin-top: 2rem;
+            opacity: 0.7;
+        `;
+        musicButton.textContent = '🔇 ACTIVATE MUSIC';
+        musicButton.onmouseover = () => {
+            musicButton.style.opacity = '1';
+            musicButton.style.transform = 'translateY(-1px)';
+        };
+        musicButton.onmouseout = () => {
+            musicButton.style.opacity = '0.7';
+            musicButton.style.transform = 'translateY(0)';
+        };
+        musicButton.onclick = () => {
+            this.musicEnabled = true;
+            musicButton.textContent = '🔊 MUSIC ENABLED';
+            musicButton.style.color = '#059669'; // Change to green
+            musicButton.style.borderColor = '#059669';
+            musicButton.style.cursor = 'default';
+            musicButton.disabled = true;
+            
+            // Dispatch music enabled event
+            const musicEvent = new CustomEvent('musicEnabled');
+            window.dispatchEvent(musicEvent);
+        };
+
         // Assemble UI
         titleContainer.appendChild(mainTitle);
         titleContainer.appendChild(subTitle);
@@ -116,6 +154,7 @@ export class MainMenuUI {
         this.container.appendChild(titleContainer);
         this.container.appendChild(decorLine);
         this.container.appendChild(startButton);
+        this.container.appendChild(musicButton);
         
         document.body.appendChild(this.container);
     }

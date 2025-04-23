@@ -1,8 +1,8 @@
-import { EffectManager } from '../../src/effects/EffectManager.js';
-import { FogEffect } from '../../src/effects/FogEffect.js';
-import { VolumetricLightEffect } from '../../src/effects/VolumetricLightEffect.js';
-import { RainEffect4 } from '../../src/effects/RainEffect4.js';
-import { FogEffect2 } from '../../src/effects/FogEffect2.js';
+import { EffectManager } from '../../fx/EffectManager.js';
+import { FogEffect } from '../../fx/FogEffect.js';
+import { VolumetricLightEffect } from '../../fx/VolumetricLightEffect.js';
+import { RainEffect4 } from '../../fx/RainEffect4.js';
+import { FogEffect2 } from '../../fx/FogEffect2.js';
 
 export class Singapore6Effects {
     constructor(scene, clusterManager) {

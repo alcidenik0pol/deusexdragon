@@ -1,4 +1,4 @@
-import { ClusterManager } from '../../src/lighting/ClusterManager.js';
+import { ClusterManager } from '../../fx/lighting/ClusterManager.js';
 import { WORLD_CONFIG } from '../../config/config.js';
 
 export class Singapore6Lighting {
@@ -120,132 +120,16 @@ export class Singapore6Lighting {
     }
 
     setupLightingControls() {
-        // Create GUI for light control
-        const adt = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("LightingUI");
-
-        const panel = new BABYLON.GUI.StackPanel();
-        panel.width = "220px";
-        panel.top = "-25px";
-        panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-        panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-        adt.addControl(panel);
-
-        const header = new BABYLON.GUI.TextBlock();
-        header.text = "Ambient Light";
-        header.height = "30px";
-        header.color = "white";
-        panel.addControl(header);
-
-        const slider = new BABYLON.GUI.Slider();
-        slider.minimum = 0;
-        slider.maximum = 1;
-        slider.value = 0.2;
-        slider.height = "20px";
-        slider.width = "200px";
-        slider.color = "gray";
-        slider.background = "white";
-        slider.borderColor = "black";
-        slider.onValueChangedObservable.add((value) => {
-            if (this.hemisphericLight) {
-                this.hemisphericLight.intensity = value;
-            }
-        });
-        panel.addControl(slider);
-
-        // Add spotlight intensity control
-        const spotHeader = new BABYLON.GUI.TextBlock();
-        spotHeader.text = "Spotlight Intensity";
-        spotHeader.height = "30px";
-        spotHeader.color = "white";
-        panel.addControl(spotHeader);
-
-        const spotSlider = new BABYLON.GUI.Slider();
-        spotSlider.minimum = 0;
-        spotSlider.maximum = 2;
-        spotSlider.value = 0.7;
-        spotSlider.height = "20px";
-        spotSlider.width = "200px";
-        spotSlider.color = "gray";
-        spotSlider.background = "white";
-        spotSlider.borderColor = "black";
-        spotSlider.onValueChangedObservable.add((value) => {
-            // Update all streetlights' light properties
-            this.streetlights.forEach(streetlight => {
-                if (streetlight && streetlight.lightId) {
-                    // Update the main spotlight intensity with reduced base value
-                    this.lightManager.updateLightProperty(
-                        streetlight.lightId, 
-                        'intensity', 
-                        value * 3.0
-                    );
-                    
-                    // Update the projector intensity with reduced base value
-                    if (streetlight.projectorId) {
-                        this.lightManager.updateLightProperty(
-                            streetlight.projectorId, 
-                            'intensity', 
-                            value * 2.0
-                        );
-                    }
-                }
-            });
-            
-            // Update light pool intensity
-            this.updateLightPoolIntensity(value);
-            
-            // Force light manager to update
-            this.lightManager.updateLights();
-        });
-        panel.addControl(spotSlider);
-
-        // Add particle visibility control
-        const particleHeader = new BABYLON.GUI.TextBlock();
-        particleHeader.text = "Dust Particles";
-        particleHeader.height = "30px";
-        particleHeader.color = "white";
-        panel.addControl(particleHeader);
-        
-        const particleSlider = new BABYLON.GUI.Slider();
-        particleSlider.minimum = 0;
-        particleSlider.maximum = 1;
-        particleSlider.value = 1.0; // Default value
-        particleSlider.height = "20px";
-        particleSlider.width = "200px";
-        particleSlider.color = "gray";
-        particleSlider.background = "white";
-        particleSlider.borderColor = "black";
-        particleSlider.onValueChangedObservable.add((value) => {
-            // Update all streetlights' particle systems
-            this.streetlights.forEach(streetlight => {
-                if (streetlight && streetlight.particleSystem) {
-                    if (value > 0) {
-                        // Only update if particles should be visible based on distance
-                        if (streetlight.isParticleActive) {
-                            streetlight.particleSystem.emitRate = 30 * value;
-                        }
-                    } else {
-                        streetlight.particleSystem.emitRate = 0;
-                    }
-                }
-            });
-        });
-        panel.addControl(particleSlider);
+        // Remove this entire method - it's no longer needed
     }
-    
+
     updateLightPoolIntensity(intensity) {
         // Update all light pools based on the intensity value
         this.lightPools.forEach(pool => {
             if (pool.material) {
-                // Adjust alpha based on intensity
-                pool.material.alpha = pool.baseAlpha * intensity;
-                
-                // Adjust emissive color intensity
-                const scaledIntensity = 0.7 + (intensity * 0.3); // Scale between 0.7 and 1.0
-                pool.material.emissiveColor = new BABYLON.Color3(
-                    1.0 * scaledIntensity,
-                    0.98 * scaledIntensity,
-                    0.9 * scaledIntensity
-                );
+                // Set fixed values instead of using slider-controlled intensity
+                pool.material.alpha = pool.baseAlpha;
+                pool.material.emissiveColor = new BABYLON.Color3(1.0, 0.98, 0.9);
             }
         });
     }

@@ -5,6 +5,7 @@ import { NightClubLevel } from '../levels/nightclub/nightClubLevel.js';
 import { GridLevel } from '../levels/grid/GridLevel.js';
 import { TaiyongLevel } from '../levels/taiyong/taiyongLevel.js';
 import { FPSDisplay } from './fpsDisplay.js';
+import { MusicManager } from '../quest/MusicManager.js';
 
 export class DebugControls {
     static instance = null;
@@ -37,16 +38,12 @@ export class DebugControls {
                 const SettingsUI = module.SettingsUI;
                 
                 // Disable keys when chat or any UI is active
-                if ((e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'm' || e.key.toLowerCase() === 'f') && 
+                if ((e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'f') && 
                     (ChatUI.isActive || SettingsUI.isActive)) return;
 
                 switch (e.key.toLowerCase()) {
                     case 'l':
                         this.handleLevelSelection();
-                        break;
-                    case 'm':
-                        console.log("M key pressed");
-                        this.handleMinimapToggle();
                         break;
                     case 'f':
                         this.handleFPSToggle();
@@ -89,7 +86,7 @@ export class DebugControls {
     }
 
     handleLevelSelection() {
-        const availableLevels = ['default', 'singapore', 'singapore2', 'singapore3', 'singapore4', 'singapore5', 'singapore6', 'ladiesroom', 'nighttest', 'modernoffice', 'testcamera', 'nightclub', 'testnewmeshes', 'grid', 'taiyong'];
+        const availableLevels = ['default', 'singapore6', 'nightclub', 'grid', 'taiyong'];
         const currentLevelType = prompt(`Enter level name (${availableLevels.join(', ')}):`);
         
         if (currentLevelType && availableLevels.includes(currentLevelType.toLowerCase())) {
@@ -98,18 +95,6 @@ export class DebugControls {
             } else {
                 console.warn('No level switch callback provided');
             }
-        }
-    }
-
-    handleMinimapToggle() {
-        // Get the current level instance
-        const currentLevel = window.currentLevel;
-        console.log("Current level:", currentLevel);
-        if (currentLevel && currentLevel.minimap) {
-            console.log("Toggling minimap");
-            currentLevel.minimap.toggle();
-        } else {
-            console.log("No minimap found on current level");
         }
     }
 } 
