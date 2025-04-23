@@ -5,6 +5,7 @@ import { FloorComponent } from '../../components/FloorComponent.js';
 import { CeilingComponent } from '../../components/NEWCeilingComponent.js';
 import { ClusterManager } from '../../lighting/ClusterManager.js';
 import { NightClubLighting } from './lighting.js';
+import { NightclubFogEffect } from '../../src/effects/NightclubFogEffect.js';
 
 export class NightClubLevel extends CustomLevel {
     // Define level bounds - making it 80x80 with higher ceiling
@@ -25,6 +26,7 @@ export class NightClubLevel extends CustomLevel {
     constructor(scene) {
         super(scene);
         this.lighting = null;
+        this.fogEffect = null;
         
         // Nuke the scene's ambient lighting
         scene.ambientColor = new BABYLON.Color3(0, 0, 0);
@@ -47,6 +49,10 @@ export class NightClubLevel extends CustomLevel {
         // Initialize lighting after the level is created
         this.lighting = new NightClubLighting(this.scene);
         this.lighting.initialize(this.clusterManager);
+
+        // Add fog effect
+        // this.fogEffect = new NightclubFogEffect(this.scene);
+        // this.fogEffect.start();
 
         return this;
     }
@@ -158,6 +164,12 @@ export class NightClubLevel extends CustomLevel {
         return ceiling.mesh;
     }
 
+    onUpdate() {
+        if (this.fogEffect) {
+            this.fogEffect.update();
+        }
+    }
+
     dispose() {
         if (this.lighting) {
             this.lighting.dispose();
@@ -165,6 +177,10 @@ export class NightClubLevel extends CustomLevel {
         
         if (this.clusterManager) {
             this.clusterManager.dispose();
+        }
+        
+        if (this.fogEffect) {
+            this.fogEffect.dispose();
         }
         
         super.dispose();
