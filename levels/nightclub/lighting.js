@@ -63,15 +63,21 @@ export class NightClubLighting {
         this.calmSequence = {
             duration: {
                 min: 30000,      // 30 seconds
-                max: 35000,      // 35 seconds
+                max: 60000,      // 35 seconds
                 current: 32000   // Initial value
             },
             colorTransition: {
-                duration: 10000,  // 10 seconds for each transition
+                duration: 30000,  // 30 seconds for each transition - MUCH slower
                 active: false,
                 startColor: null,
                 targetColor: null,
                 progress: 0
+            },
+            movement: {
+                angle: 0,
+                speed: 0.0005,        // Very slow rotation
+                radius: 0.5,          // Small movement radius (in meters)
+                originalPosition: null // Will store initial position
             }
         };
 
@@ -147,6 +153,34 @@ export class NightClubLighting {
             patternDuration: 5000,  // 5 seconds per pattern
             lastPatternChange: 0,
             currentPattern: 'normal' // 'normal', 'strobe', 'pulse'
+        };
+
+        // Add strobe beams configuration with mostly downward directions
+        this.strobeBeams = {
+            meshes: [],
+            material: null,
+            directions: [
+                // Mostly downward-pointing directions
+                new BABYLON.Vector3(0.2, -1, 0).normalize(),    // Slight right down
+                new BABYLON.Vector3(-0.2, -1, 0).normalize(),   // Slight left down
+                new BABYLON.Vector3(0, -1, 0.2).normalize(),    // Slight forward down
+                new BABYLON.Vector3(0, -1, -0.2).normalize(),   // Slight back down
+                new BABYLON.Vector3(0.2, -1, 0.2).normalize(),  // Diagonal down 1
+                new BABYLON.Vector3(-0.2, -1, -0.2).normalize(), // Diagonal down 2
+                new BABYLON.Vector3(-0.2, -1, 0.2).normalize(), // Diagonal down 3
+                // Few non-downward directions for variety
+                new BABYLON.Vector3(1, -0.2, 0).normalize(),    // Almost horizontal right
+                new BABYLON.Vector3(0, 1, 0),                   // Straight up
+                new BABYLON.Vector3(-0.5, 0.5, 0).normalize(),  // Diagonal up
+            ],
+            movement: {
+                angles: [], // Will store current rotation angles for each beam
+                speeds: [], // Will store rotation speeds for each beam
+                ranges: {
+                    pitch: { min: -0.3, max: 0.3 },  // Up/down rotation
+                    yaw: { min: -0.3, max: 0.3 }     // Left/right rotation
+                }
+            }
         };
     }
 
@@ -317,6 +351,9 @@ export class NightClubLighting {
             
             this.floorMaterial = shaderMaterial;
         }
+
+        // Create strobe beams
+        this.createStrobeBeams(fixture.position);
     }
 
     createVolumetricEffect(fixture) {
@@ -366,9 +403,17 @@ export class NightClubLighting {
         
         cone.material = volumetricMaterial;
         
-        // Store for animation
+        // Store references for animation
         this.mainLight.volumetricCone = cone;
         this.mainLight.volumetricMaterial = volumetricMaterial;
+        
+        // Store the original position for the circular movement
+        this.calmSequence.movement = {
+            angle: 0,
+            speed: 0.0005,        // Very slow rotation
+            radius: 3.0,          // 3 meters radius - MUCH bigger movement!
+            originalPosition: cone.position.clone() // Store initial position
+        };
         
         this.fixtures.push(cone);
     }
@@ -484,6 +529,12 @@ export class NightClubLighting {
             // Reset states when switching modes
             this.calmSequence.colorTransition.active = false;
             this.blackoutTimings.isBlackout = false;
+            
+            // Reset volumetric light position when switching modes
+            if (!this.sequenceManager.isIntenseMode && this.mainLight.volumetricCone) {
+                this.mainLight.volumetricCone.position.copyFrom(this.calmSequence.movement.originalPosition);
+                this.mainLight.volumetricCone.rotation.x = Math.PI;
+            }
         }
 
         if (this.sequenceManager.isIntenseMode) {
@@ -495,6 +546,8 @@ export class NightClubLighting {
             }
 
             if (this.blackoutTimings.isBlackout) {
+                // Hide strobe beams during blackout
+                this.strobeBeams.meshes.forEach(beam => beam.visibility = 0);
                 console.log("💥 BLACKOUT");
                 this.applyBlackout();
                 return;
@@ -503,7 +556,71 @@ export class NightClubLighting {
             // Apply the single chosen color (no cycling)
             const color = this.colorSequence[this.currentColorIndex];
             this.applyIntenseColor(color);
+            
+            // Show and update strobe beams ONLY during intense mode and NOT during blackouts
+            if (this.strobeBeams.material) {
+                this.strobeBeams.material.emissiveColor = color.scale(this.intenseMode.intensity);
+                this.strobeBeams.meshes.forEach(beam => beam.visibility = 1);
+            }
+
+            // Update strobe beam movements when visible
+            if (this.strobeBeams.material) {
+                this.strobeBeams.meshes.forEach((beam, index) => {
+                    const angles = this.strobeBeams.movement.angles[index];
+                    const speeds = this.strobeBeams.movement.speeds[index];
+                    const ranges = this.strobeBeams.movement.ranges;
+                    
+                    // Update angles
+                    angles.pitch += speeds.pitch;
+                    angles.yaw += speeds.yaw;
+                    
+                    // Reverse direction when reaching limits
+                    if (Math.abs(angles.pitch) > ranges.pitch.max) {
+                        speeds.pitch *= -1;
+                    }
+                    if (Math.abs(angles.yaw) > ranges.yaw.max) {
+                        speeds.yaw *= -1;
+                    }
+                    
+                    // Apply rotation
+                    const rotation = beam.rotationQuaternion.toEulerAngles();
+                    rotation.x += angles.pitch;
+                    rotation.y += angles.yaw;
+                    
+                    // Convert back to quaternion
+                    beam.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
+                        rotation.x,
+                        rotation.y,
+                        rotation.z
+                    );
+                    
+                    beam.visibility = 1;
+                });
+            }
         } else {
+            // Hide strobe beams during calm sequence
+            this.strobeBeams.meshes.forEach(beam => beam.visibility = 0);
+            
+            // CALM SEQUENCE - Add gentle horizontal movement to the volumetric cone
+            if (this.mainLight.volumetricCone) {
+                const movement = this.calmSequence.movement;
+                
+                // Calculate new position in a gentle horizontal pattern
+                movement.angle += movement.speed;
+                const offsetX = Math.sin(movement.angle) * movement.radius;
+                const offsetZ = Math.cos(movement.angle) * movement.radius;
+                
+                // Apply smooth movement to the cone - HORIZONTAL ONLY
+                this.mainLight.volumetricCone.position.x = movement.originalPosition.x + offsetX;
+                this.mainLight.volumetricCone.position.z = movement.originalPosition.z + offsetZ;
+                
+                // Keep Y position fixed
+                this.mainLight.volumetricCone.position.y = movement.originalPosition.y;
+                
+                // Keep rotation fixed pointing downward
+                this.mainLight.volumetricCone.rotation.x = Math.PI;
+            }
+            
             // CALM SEQUENCE - constant smooth transitions
             if (!this.calmSequence.colorTransition.active) {
                 // Start new transition
@@ -654,6 +771,85 @@ export class NightClubLighting {
         });
     }
     
+    createStrobeBeams(centerPosition) {
+        // Create shared material for all beams
+        const beamMaterial = new BABYLON.StandardMaterial("beam-material", this.scene);
+        beamMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        beamMaterial.emissiveColor = new BABYLON.Color3(1.5, 0, 1.5);
+        beamMaterial.alpha = 0.2;
+        beamMaterial.disableLighting = true;
+
+        // Create alpha gradient
+        const alphaTexture = new BABYLON.DynamicTexture("beam-alpha-gradient", 256, this.scene);
+        const ctx = alphaTexture.getContext();
+        const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+        gradient.addColorStop(0, "rgba(255,255,255,0.6)");
+        gradient.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 256, 256);
+        alphaTexture.update();
+        
+        beamMaterial.opacityTexture = alphaTexture;
+        beamMaterial.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
+
+        this.strobeBeams.material = beamMaterial;
+
+        // Create beams in each direction with varying widths
+        this.strobeBeams.directions.forEach((direction, index) => {
+            // Randomize beam width slightly
+            const diameter = 0.3 + Math.random() * 0.4; // Random width between 0.3 and 0.7 meters
+            
+            const beam = BABYLON.MeshBuilder.CreateCylinder(
+                `strobe-beam-${index}`,
+                {
+                    height: 70,           // Almost full room length (80m room)
+                    diameterTop: diameter * 1.5,     // Slightly wider at top
+                    diameterBottom: diameter,
+                    tessellation: 8,      // Lower tessellation for performance
+                    subdivisions: 1
+                },
+                this.scene
+            );
+
+            // Position at center
+            beam.position = centerPosition.clone();
+
+            // Calculate rotation to point in the right direction
+            const rotationMatrix = BABYLON.Matrix.Zero();
+            BABYLON.Matrix.LookAtLHToRef(
+                BABYLON.Vector3.Zero(),
+                direction,
+                BABYLON.Vector3.Up(),
+                rotationMatrix
+            );
+            rotationMatrix.invert();
+            const rotation = BABYLON.Quaternion.FromRotationMatrix(rotationMatrix);
+            beam.rotationQuaternion = rotation;
+
+            // Apply material
+            beam.material = beamMaterial;
+            beam.isPickable = false;
+            beam.checkCollisions = false;
+
+            // Initially invisible
+            beam.visibility = 0;
+
+            this.strobeBeams.meshes.push(beam);
+        });
+
+        // Initialize random movement parameters for each beam
+        this.strobeBeams.directions.forEach(() => {
+            this.strobeBeams.movement.angles.push({
+                pitch: Math.random() * Math.PI * 2,
+                yaw: Math.random() * Math.PI * 2
+            });
+            this.strobeBeams.movement.speeds.push({
+                pitch: (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1),
+                yaw: (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1)
+            });
+        });
+    }
+    
     dispose() {
         // Clean up all fixtures
         this.fixtures.forEach(fixture => {
@@ -674,10 +870,62 @@ export class NightClubLighting {
             this.glowLayer.dispose();
         }
         
+        // Clean up strobe beams
+        this.strobeBeams.meshes.forEach(beam => {
+            if (beam) {
+                beam.dispose();
+            }
+        });
+        if (this.strobeBeams.material) {
+            this.strobeBeams.material.dispose();
+        }
+        
         // Clear arrays
         this.lights = [];
         this.fixtures = [];
         
         // Note: We don't dispose the cluster manager here as it's managed by the level
+    }
+
+    createWalls(bounds = this.constructor.LEVEL_BOUNDS.room) {
+        const walls = [];
+        const wallHeight = WORLD_CONFIG.GRID_CELL_SIZE * 40;
+        const roomWidth = WORLD_CONFIG.GRID_CELL_SIZE * 80;
+        
+        // Create outer walls using WallComponent
+        const positions = [
+            { id: "north", pos: new BABYLON.Vector3(0, wallHeight/2, roomWidth/2), rot: 0 },
+            { id: "south", pos: new BABYLON.Vector3(0, wallHeight/2, -roomWidth/2), rot: 0 },
+            { id: "east", pos: new BABYLON.Vector3(roomWidth/2, wallHeight/2, 0), rot: Math.PI/2 },
+            { id: "west", pos: new BABYLON.Vector3(-roomWidth/2, wallHeight/2, 0), rot: Math.PI/2 }
+        ];
+
+        positions.forEach(({ id, pos, rot }) => {
+            const wall = new WallComponent(`nightclub-wall-${id}`);
+            wall.height = wallHeight;
+            wall.width = roomWidth;
+            wall.thickness = 0.4;
+            wall.initialize(this.scene);
+            
+            // Create proper material for the wall
+            const material = new BABYLON.StandardMaterial(`wall-material-${id}`, this.scene);
+            material.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+            material.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+            material.backFaceCulling = false;
+            
+            wall.mesh.material = material;
+            wall.mesh.position = pos;
+            wall.setRotation(0, rot, 0);
+            
+            // Enable collisions and proper light blocking
+            wall.mesh.checkCollisions = true;
+            wall.mesh.isBlocker = true;
+            wall.mesh.receiveShadows = true;
+            wall.mesh.castShadows = true;
+            
+            walls.push(wall.mesh);
+        });
+
+        return walls;
     }
 } 

@@ -81,53 +81,46 @@ export class NightClubLevel extends CustomLevel {
         const walls = [];
         const wallHeight = bounds.height; // 40 meters
         
-        // Create outer walls
-        const positions = {
-            north: new BABYLON.Vector3(0, wallHeight/2, bounds.length/2),
-            south: new BABYLON.Vector3(0, wallHeight/2, -bounds.length/2),
-            east: new BABYLON.Vector3(bounds.width/2, wallHeight/2, 0),
-            west: new BABYLON.Vector3(-bounds.width/2, wallHeight/2, 0)
-        };
+        // Create outer walls using WallComponent (like Taiyong)
+        const positions = [
+            { id: "north", pos: new BABYLON.Vector3(0, wallHeight/2, bounds.length/2), rot: 0 },
+            { id: "south", pos: new BABYLON.Vector3(0, wallHeight/2, -bounds.length/2), rot: 0 },
+            { id: "east", pos: new BABYLON.Vector3(bounds.width/2, wallHeight/2, 0), rot: Math.PI/2 },
+            { id: "west", pos: new BABYLON.Vector3(-bounds.width/2, wallHeight/2, 0), rot: Math.PI/2 }
+        ];
 
         // Create metallic PBR material for walls
         const wallMaterial = new BABYLON.PBRMaterial("wall-material", this.scene);
         wallMaterial.albedoColor = new BABYLON.Color3(0.02, 0.02, 0.02);
-        wallMaterial.metallic = 0.6; // Reduced metallic for walls
-        wallMaterial.roughness = 0.2; // Slightly rougher
+        wallMaterial.metallic = 0.6;
+        wallMaterial.roughness = 0.2;
         wallMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
         wallMaterial.microSurface = 0.85;
         wallMaterial.backFaceCulling = false;
 
-        // Create walls manually with proper dimensions
-        for (const direction of ['north', 'south', 'east', 'west']) {
-            // Create the wall mesh directly instead of using WallComponent
-            const wallWidth = (direction === 'north' || direction === 'south') ? bounds.width : bounds.length;
-            const wallMesh = BABYLON.MeshBuilder.CreateBox(
-                `nightclub-wall-${direction}`, 
-                {
-                    height: wallHeight,
-                    width: wallWidth,
-                    depth: 0.4
-                }, 
-                this.scene
-            );
+        positions.forEach(({ id, pos, rot }) => {
+            // Use WallComponent instead of direct mesh creation
+            const wall = new WallComponent(`nightclub-wall-${id}`);
+            wall.height = wallHeight;
+            wall.width = (id === "north" || id === "south") ? bounds.width : bounds.length;
+            wall.thickness = 0.4;
+            wall.initialize(this.scene);
             
-            // Position the wall
-            wallMesh.position = positions[direction];
+            // Position and rotate
+            wall.mesh.position = pos;
+            wall.setRotation(0, rot, 0);
             
-            // Rotate east and west walls
-            if (direction === 'east' || direction === 'west') {
-                wallMesh.rotation = new BABYLON.Vector3(0, Math.PI/2, 0);
-            }
+            // Apply material
+            wall.mesh.material = wallMaterial.clone(`wall-material-${id}`);
             
-            // Apply material and properties
-            wallMesh.material = wallMaterial.clone(`wall-material-${direction}`);
-            wallMesh.receiveShadows = true;
-            wallMesh.isBlocker = true; // For light blocking
-            wallMesh.tagList = ["wall"]; // Add wall tag
+            // WallComponent handles collisions automatically, but let's be explicit
+            wall.setCollision(true);
+            wall.mesh.checkCollisions = true;
+            wall.mesh.isBlocker = true;
+            wall.mesh.receiveShadows = true;
             
-            walls.push(wallMesh);
-        }
+            walls.push(wall.mesh);
+        });
 
         return walls;
     }
