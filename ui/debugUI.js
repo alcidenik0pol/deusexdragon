@@ -1,6 +1,19 @@
 export class DebugUI {
-    constructor(overlayElement) {
-        this.overlayElement = overlayElement;
+    constructor() {
+        // Create debug overlay
+        this.overlayElement = document.createElement('div');
+        this.overlayElement.id = 'debugOverlay';
+        this.overlayElement.style.cssText = `
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            font-family: Arial;
+        `;
+        document.body.appendChild(this.overlayElement);
+        
         this.isEnabled = true;
         
         // Create a separate container for API notifications
