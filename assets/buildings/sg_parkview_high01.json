@@ -1,0 +1,23 @@
+{
+  "id": "sg_parkview_high01",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.7222102284431458,
+    "height": 1.0018184185028076,
+    "depth": 0.5957299768924713
+  },
+  "standardDimensions": {
+    "width": 21.626979952788375,
+    "height": 30,
+    "depth": 17.839459703169805
+  },
+  "scaleFactor": 29.945546464232756,
+  "gridFootprint": {
+    "width": 22,
+    "depth": 18
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 2,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 2
+}

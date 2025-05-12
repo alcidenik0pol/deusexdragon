@@ -1,0 +1,30 @@
+{
+  "id": "copf01",
+  "type": "characters",
+  "baseModel": "dance01.glb",
+  "animations": {
+    "dance01": "dance01.glb",
+    "dance02": "dance02.glb",
+    "idle": "idle.glb",
+    "walking": "walking.glb"
+  },
+  "rawDimensions": {
+    "width": 0.9016648232936859,
+    "height": 0.9997975528240204,
+    "depth": 0.19369331747293472
+  },
+  "standardDimensions": {
+    "width": 1.6233253195552748,
+    "height": 1.8,
+    "depth": 0.3487185685406952
+  },
+  "scaleFactor": 1.8003644787044477,
+  "gridFootprint": {
+    "width": 2,
+    "depth": 1
+  },
+  "collisionType": "capsule",
+  "sizeMultiplier": 1,
+  "facing": "unknown",
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
+}

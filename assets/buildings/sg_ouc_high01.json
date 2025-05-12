@@ -1,0 +1,23 @@
+{
+  "id": "sg_ouc_high01",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.24369048327207565,
+    "height": 1.0025368928909302,
+    "depth": 0.25746215879917145
+  },
+  "standardDimensions": {
+    "width": 10.938322394921027,
+    "height": 45,
+    "depth": 11.556479595033894
+  },
+  "scaleFactor": 44.88612869920162,
+  "gridFootprint": {
+    "width": 11,
+    "depth": 12
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 3,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 3
+}

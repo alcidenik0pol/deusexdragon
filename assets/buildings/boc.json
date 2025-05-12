@@ -1,0 +1,22 @@
+{
+  "id": "boc",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.19897641986608505,
+    "height": 1.0016934275627136,
+    "depth": 0.1510373055934906
+  },
+  "standardDimensions": {
+    "width": 2.9796005602766265,
+    "height": 15,
+    "depth": 2.2617295088127327
+  },
+  "scaleFactor": 14.97464152929254,
+  "gridFootprint": {
+    "width": 3,
+    "depth": 3
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 1,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
+}

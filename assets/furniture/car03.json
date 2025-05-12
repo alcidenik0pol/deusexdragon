@@ -1,0 +1,23 @@
+{
+  "id": "car03",
+  "type": "furniture",
+  "rawDimensions": {
+    "width": 0.5448099374771118,
+    "height": 0.2265878990292549,
+    "depth": 0.9940853118896484
+  },
+  "standardDimensions": {
+    "width": 2.404408795929438,
+    "height": 1,
+    "depth": 4.387195062704127
+  },
+  "scaleFactor": 4.413298345958402,
+  "gridFootprint": {
+    "width": 3,
+    "depth": 5
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 1,
+  "facing": "unknown",
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
+}

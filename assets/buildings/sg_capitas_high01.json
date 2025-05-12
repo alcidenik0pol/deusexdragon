@@ -1,0 +1,23 @@
+{
+  "id": "sg_capitas_high01",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.3347156345844269,
+    "height": 1.0019015073776245,
+    "depth": 0.30961261689662933
+  },
+  "standardDimensions": {
+    "width": 15.033617022618321,
+    "height": 45,
+    "depth": 13.906125160760963
+  },
+  "scaleFactor": 44.91459456706771,
+  "gridFootprint": {
+    "width": 16,
+    "depth": 14
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 3,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 3
+}

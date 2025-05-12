@@ -1,0 +1,23 @@
+{
+  "id": "sg_rep_high01",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.1763235405087471,
+    "height": 0.9957496821880341,
+    "depth": 0.16218693554401398
+  },
+  "standardDimensions": {
+    "width": 7.968427672965387,
+    "height": 45,
+    "depth": 7.329565080496225
+  },
+  "scaleFactor": 45.19208070558274,
+  "gridFootprint": {
+    "width": 8,
+    "depth": 8
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 3,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 3
+}

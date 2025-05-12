@@ -1,0 +1,35 @@
+{
+  "id": "pc",
+  "type": "characters",
+  "baseModel": "pdenton_dance.glb",
+  "animations": {
+    "pdenton_dance": "pdenton_dance.glb",
+    "pdenton_dying": "pdenton_dying.glb",
+    "pdenton_hit": "pdenton_hit.glb",
+    "pdenton_idle": "pdenton_idle.glb",
+    "pdenton_jump": "pdenton_jump.glb",
+    "pdenton_kick": "pdenton_kick.glb",
+    "pdenton_punch": "pdenton_punch.glb",
+    "pdenton_run": "pdenton_run.glb",
+    "pdenton_sleft": "pdenton_sleft.glb",
+    "pdenton_sright": "pdenton_sright.glb",
+    "pdenton_walk": "pdenton_walk.glb",
+    "pdenton_walkb": "pdenton_walkb.glb"
+  },
+  "rawDimensions": {
+    "width": 1.9537790417671204,
+    "height": 1.9930779933929443,
+    "depth": 0.4305700361728668
+  },
+  "standardDimensions": {
+    "width": 1.7645081059742869,
+    "height": 1.8,
+    "depth": 0.38885887440450023
+  },
+  "scaleFactor": 0.9031257211042427,
+  "gridFootprint": {
+    "width": 2,
+    "depth": 1
+  },
+  "collisionType": "capsule"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "streetlight02",
+  "type": "furniture",
+  "rawDimensions": {
+    "width": 0.013512571807950735,
+    "height": 0.0118562295101583,
+    "depth": 0.02649041891095294
+  },
+  "standardDimensions": {
+    "width": 1.1397022802547216,
+    "height": 1,
+    "depth": 2.2343038221600056
+  },
+  "scaleFactor": 84.34384634197659,
+  "gridFootprint": {
+    "width": 2,
+    "depth": 3
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 1,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
+}

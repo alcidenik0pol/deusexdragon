@@ -1,0 +1,23 @@
+{
+  "id": "containership",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.21002203971147537,
+    "height": 0.38134679198265076,
+    "depth": 0.9749999940395355
+  },
+  "standardDimensions": {
+    "width": 8.261064893959968,
+    "height": 15,
+    "depth": 38.35091894848926
+  },
+  "scaleFactor": 39.33427608506648,
+  "gridFootprint": {
+    "width": 9,
+    "depth": 39
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 1,
+  "facing": "north",
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility"
+}

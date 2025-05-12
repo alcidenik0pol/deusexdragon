@@ -1,0 +1,24 @@
+{
+  "id": "merlion01",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.7979850172996521,
+    "height": 1.9967620372772217,
+    "depth": 1.4921279549598694
+  },
+  "standardDimensions": {
+    "width": 2.9972963818504703,
+    "height": 7.5,
+    "depth": 5.6045534987528995
+  },
+  "scaleFactor": 3.7560810251716203,
+  "gridFootprint": {
+    "width": 3,
+    "depth": 6
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 0.5,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 0.5,
+  "facing": "north"
+}

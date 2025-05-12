@@ -1,0 +1,23 @@
+{
+  "id": "sg_uob_high01",
+  "type": "buildings",
+  "rawDimensions": {
+    "width": 0.19936665892601013,
+    "height": 0.9976495206356049,
+    "depth": 0.201374813914299
+  },
+  "standardDimensions": {
+    "width": 8.992636658567923,
+    "height": 45,
+    "depth": 9.083216539181134
+  },
+  "scaleFactor": 45.10602077103229,
+  "gridFootprint": {
+    "width": 9,
+    "depth": 10
+  },
+  "collisionType": "box",
+  "sizeMultiplier": 3,
+  "_comment": "To adjust size, change only the 'sizeMultiplier' value and run the adjust-size.js utility",
+  "oldSizeMultiplier": 3
+}
