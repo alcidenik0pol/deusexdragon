@@ -49,21 +49,6 @@ export class MainMenuUI {
         decorLine.className = 'w-3/5 h-0.5 mb-12';
         decorLine.style.background = 'linear-gradient(90deg, rgba(217,119,6,0) 0%, rgba(217,119,6,1) 50%, rgba(217,119,6,0) 100%)';
 
-        // Create music button with different styling
-        const musicButton = document.createElement('button');
-        musicButton.className = 'bg-transparent text-amber-600 border border-amber-600 px-4 py-2 text-base cursor-pointer font-["Share_Tech_Mono"] tracking-wider mt-8 transition-all duration-200 opacity-70 hover:opacity-100 hover:-translate-y-0.5 disabled:cursor-default disabled:text-emerald-600 disabled:border-emerald-600';
-        musicButton.textContent = '🔇 ACTIVATE MUSIC';
-        
-        musicButton.onclick = () => {
-            this.musicEnabled = true;
-            musicButton.textContent = '🔊 MUSIC ENABLED';
-            musicButton.disabled = true;
-            
-            // Dispatch music enabled event
-            const musicEvent = new CustomEvent('musicEnabled');
-            window.dispatchEvent(musicEvent);
-        };
-
         // Assemble UI
         titleContainer.appendChild(mainTitle);
         titleContainer.appendChild(subTitle);
@@ -71,7 +56,6 @@ export class MainMenuUI {
         this.container.appendChild(titleContainer);
         this.container.appendChild(decorLine);
         this.container.appendChild(startButton);
-        this.container.appendChild(musicButton);
         
         document.body.appendChild(this.container);
     }

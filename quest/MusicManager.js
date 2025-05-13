@@ -26,6 +26,9 @@ export class MusicManager {
         
         // Playlists per level
         this.playlists = {
+            menu: [
+                'audio/menu.mp3'  // Add your menu music track here
+            ],
             singapore6: [
                 'audio/singapore01.mp3',
                 'audio/singapore02.mp3'

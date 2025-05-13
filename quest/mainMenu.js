@@ -7,19 +7,17 @@ export class MainMenu {
         this.ui = new MainMenuUI();
         this.musicManager = MusicManager.getInstance();
         
-        // Show the menu UI first
+        // Show the menu UI and start menu music
         this.ui.show();
+        this.musicManager.setLevel('menu');
         
         // Setup event listeners
         window.addEventListener('startGame', this.handleStartGame.bind(this));
-        window.addEventListener('musicEnabled', () => {
-            this.musicManager.initialize();
-            this.musicManager.playSpecialTrack('menu');
-        });
     }
 
     show() {
         this.ui.show();
+        this.musicManager.setLevel('menu');
     }
 
     hide() {

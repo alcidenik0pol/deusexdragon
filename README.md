@@ -1,6 +1,8 @@
 # Deus Ex: Neon Merlion
 
 ## Changelog
+### 0.2d
+- Fixed menu music
 
 ### 0.2c
 - Added proper credits level
