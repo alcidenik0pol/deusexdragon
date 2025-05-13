@@ -19,10 +19,6 @@ export class ChatUI {
         // Load Tailwind CSS
         if (!document.getElementById('tailwind-css')) {
             const tailwindLink = document.createElement('link');
-            tailwindLink.id = 'tailwind-css';
-            tailwindLink.rel = 'stylesheet';
-            tailwindLink.href = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
-            document.head.appendChild(tailwindLink);
         }
 
         // Load futuristic font

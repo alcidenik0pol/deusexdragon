@@ -11,15 +11,6 @@ export class MainMenuUI {
     }
 
     create() {
-        // Load Tailwind CSS if not already loaded
-        if (!document.getElementById('tailwind-css')) {
-            const tailwindLink = document.createElement('link');
-            tailwindLink.id = 'tailwind-css';
-            tailwindLink.rel = 'stylesheet';
-            tailwindLink.href = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
-            document.head.appendChild(tailwindLink);
-        }
-
         // Load futuristic font if not already loaded
         if (!document.getElementById('futuristic-font')) {
             const fontLink = document.createElement('link');
@@ -31,115 +22,41 @@ export class MainMenuUI {
 
         // Create main container - centered on screen
         this.container = document.createElement('div');
-        this.container.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-color: rgba(0, 0, 0, 0.9);
-            font-family: 'Share Tech Mono', monospace;
-            z-index: 1000;
-        `;
+        this.container.className = 'fixed inset-0 flex flex-col justify-center items-center bg-black/90 font-["Share_Tech_Mono"] z-[1000]';
 
         // Create title with cyberpunk styling
         const titleContainer = document.createElement('div');
-        titleContainer.style.cssText = `
-            margin-bottom: 3rem;
-            text-align: center;
-        `;
+        titleContainer.className = 'mb-12 text-center';
 
         const mainTitle = document.createElement('h1');
-        mainTitle.style.cssText = `
-            color: #fbbf24;
-            font-size: 4rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(251, 191, 36, 0.7), 0 0 20px rgba(251, 191, 36, 0.5);
-            margin-bottom: 0.5rem;
-        `;
+        mainTitle.className = 'text-amber-400 text-6xl font-bold tracking-wider mb-2';
+        mainTitle.style.textShadow = '0 0 10px rgba(251, 191, 36, 0.7), 0 0 20px rgba(251, 191, 36, 0.5)';
         mainTitle.textContent = 'DEUS EX';
 
         const subTitle = document.createElement('h2');
-        subTitle.style.cssText = `
-            color: #d97706;
-            font-size: 2rem;
-            letter-spacing: 4px;
-            text-shadow: 0 0 8px rgba(217, 119, 6, 0.7);
-        `;
+        subTitle.className = 'text-amber-600 text-4xl tracking-[0.2em]';
+        subTitle.style.textShadow = '0 0 8px rgba(217, 119, 6, 0.7)';
         subTitle.textContent = 'NEON MERLION';
 
         // Create start button with hover effects
         const startButton = document.createElement('button');
-        startButton.style.cssText = `
-            background-color: #d97706;
-            color: #111827;
-            border: none;
-            border-bottom: 3px solid #92400e;
-            padding: 0.75rem 2rem;
-            font-size: 1.5rem;
-            cursor: pointer;
-            font-family: 'Share Tech Mono', monospace;
-            letter-spacing: 2px;
-            transition: all 0.2s;
-            margin-bottom: 2rem;
-        `;
+        startButton.className = 'bg-amber-600 text-gray-900 border-b-3 border-amber-800 px-8 py-3 text-2xl cursor-pointer font-["Share_Tech_Mono"] tracking-wider mb-8 transition-all duration-200 hover:bg-amber-500 hover:border-amber-600 hover:-translate-y-0.5';
         startButton.textContent = 'START';
-        startButton.onmouseover = () => {
-            startButton.style.backgroundColor = '#f59e0b';
-            startButton.style.borderBottomColor = '#d97706';
-            startButton.style.transform = 'translateY(-2px)';
-        };
-        startButton.onmouseout = () => {
-            startButton.style.backgroundColor = '#d97706';
-            startButton.style.borderBottomColor = '#92400e';
-            startButton.style.transform = 'translateY(0)';
-        };
         startButton.onclick = () => this.handleStart();
 
         // Add decorative elements - horizontal line
         const decorLine = document.createElement('div');
-        decorLine.style.cssText = `
-            width: 60%;
-            height: 2px;
-            background: linear-gradient(90deg, rgba(217,119,6,0) 0%, rgba(217,119,6,1) 50%, rgba(217,119,6,0) 100%);
-            margin-bottom: 3rem;
-        `;
+        decorLine.className = 'w-3/5 h-0.5 mb-12';
+        decorLine.style.background = 'linear-gradient(90deg, rgba(217,119,6,0) 0%, rgba(217,119,6,1) 50%, rgba(217,119,6,0) 100%)';
 
         // Create music button with different styling
         const musicButton = document.createElement('button');
-        musicButton.style.cssText = `
-            background-color: transparent;
-            color: #d97706;
-            border: 1px solid #d97706;
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            cursor: pointer;
-            font-family: 'Share Tech Mono', monospace;
-            letter-spacing: 1px;
-            transition: all 0.2s;
-            margin-top: 2rem;
-            opacity: 0.7;
-        `;
+        musicButton.className = 'bg-transparent text-amber-600 border border-amber-600 px-4 py-2 text-base cursor-pointer font-["Share_Tech_Mono"] tracking-wider mt-8 transition-all duration-200 opacity-70 hover:opacity-100 hover:-translate-y-0.5 disabled:cursor-default disabled:text-emerald-600 disabled:border-emerald-600';
         musicButton.textContent = '🔇 ACTIVATE MUSIC';
-        musicButton.onmouseover = () => {
-            musicButton.style.opacity = '1';
-            musicButton.style.transform = 'translateY(-1px)';
-        };
-        musicButton.onmouseout = () => {
-            musicButton.style.opacity = '0.7';
-            musicButton.style.transform = 'translateY(0)';
-        };
+        
         musicButton.onclick = () => {
             this.musicEnabled = true;
             musicButton.textContent = '🔊 MUSIC ENABLED';
-            musicButton.style.color = '#059669'; // Change to green
-            musicButton.style.borderColor = '#059669';
-            musicButton.style.cursor = 'default';
             musicButton.disabled = true;
             
             // Dispatch music enabled event

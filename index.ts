@@ -4,6 +4,7 @@ import '@babylonjs/materials/water';
 import '@babylonjs/loaders';
 import * as GUI from '@babylonjs/gui';
 import * as Materials from '@babylonjs/materials';
+import './ui/styles/globals.css';
 
 // Add this for debugging
 console.log('Index.ts loaded');
