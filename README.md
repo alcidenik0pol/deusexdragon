@@ -3,6 +3,7 @@
 ## Changelog
 ### 0.2d
 - Fixed menu music
+- fixed UI
 
 ### 0.2c
 - Added proper credits level

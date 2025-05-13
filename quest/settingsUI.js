@@ -116,15 +116,15 @@ export class SettingsUI {
     updateContent() {
         // Create LLM selection UI
         let content = `
-            <div style="margin-bottom: 1.5rem;">
-                <span style="color: #d97706; font-size: 16px;">LLM SELECTION</span>
-            </div>
+            <div style="display: flex; justify-content: space-between; gap: 2rem;">
+                <div style="flex: 1;">
+                    <div style="margin-bottom: 1.5rem;">
+                        <span style="color: #d97706; font-size: 16px;">LLM SELECTION</span>
+                    </div>
         `;
 
         // Get available LLM options from UserSettings
         const llmOptions = userSettings.getLLMOptions();
-
-        // Get currently selected LLM
         const currentLLM = userSettings.currentModel;
 
         // Create radio button group for LLM selection
@@ -148,6 +148,28 @@ export class SettingsUI {
                 </div>
             `;
         });
+
+        // Add keyboard shortcuts section
+        content += `
+                </div>
+                <div style="flex: 1; border-left: 1px solid #374151; padding-left: 2rem;">
+                    <div style="margin-bottom: 1.5rem;">
+                        <span style="color: #d97706; font-size: 16px;">CONTROLS</span>
+                    </div>
+                    <div style="color: #D1D5DB; font-family: monospace; line-height: 1.8;">
+                        WASD - Movement<br>
+                        SHIFT+W - Sprint<br>
+                        E    - Interact with NPCs<br>
+                        P    - Move to Next Level<br>
+                        O    - Toggle Settings Menu<br>
+                        J    - Toggle Quest Journal<br>
+                        1    - Toggle Debug Info (FPS/Position)<br>
+                        L    - Level Selection (Debug)<br>
+                        ESC  - Close Active Window<br>
+                    </div>
+                </div>
+            </div>
+        `;
 
         // Add save button
         content += `

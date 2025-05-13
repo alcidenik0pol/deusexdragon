@@ -5,49 +5,40 @@ export class CreditsUI {
 
     createCreditsScreen() {
         const creditsDiv = document.createElement('div');
-        creditsDiv.style.position = 'absolute';
-        creditsDiv.style.top = '0';
-        creditsDiv.style.left = '0';
-        creditsDiv.style.width = '100%';
-        creditsDiv.style.height = '100%';
-        creditsDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-        creditsDiv.style.color = '#f0f0f0';
-        creditsDiv.style.display = 'flex';
-        creditsDiv.style.flexDirection = 'column';
-        creditsDiv.style.justifyContent = 'center';
-        creditsDiv.style.alignItems = 'center';
-        creditsDiv.style.fontFamily = 'Arial, sans-serif';
-        creditsDiv.style.zIndex = '1000';
-        
-        const title = document.createElement('h1');
-        title.textContent = 'DEUS EX: NEON MERLION';
-        title.style.fontSize = '3rem';
-        title.style.marginBottom = '2rem';
-        title.style.color = '#fbbf24';
+        creditsDiv.className = 'fixed inset-0 flex flex-col justify-center items-center bg-black/90 font-["Share_Tech_Mono"] z-[1000]';
+
+        // Reuse the same title styling from MainMenuUI
+        const titleContainer = document.createElement('div');
+        titleContainer.className = 'mb-12 text-center';
+
+        const mainTitle = document.createElement('h1');
+        mainTitle.className = 'text-amber-400 text-6xl font-bold tracking-wider mb-2';
+        mainTitle.style.textShadow = '0 0 10px rgba(251, 191, 36, 0.7), 0 0 20px rgba(251, 191, 36, 0.5)';
+        mainTitle.textContent = 'DEUS EX';
+
+        const subTitle = document.createElement('h2');
+        subTitle.className = 'text-amber-600 text-4xl tracking-[0.2em]';
+        subTitle.style.textShadow = '0 0 8px rgba(217, 119, 6, 0.7)';
+        subTitle.textContent = 'NEON MERLION';
+
+        // Add decorative line
+        const decorLine = document.createElement('div');
+        decorLine.className = 'w-3/5 h-0.5 mb-12';
+        decorLine.style.background = 'linear-gradient(90deg, rgba(217,119,6,0) 0%, rgba(217,119,6,1) 50%, rgba(217,119,6,0) 100%)';
         
         const credits = document.createElement('div');
         credits.innerHTML = `
-            <h2>CREDITS</h2>
-            <p>Thank you for playing!</p>
-            <p>Created by: Your Name</p>
-            <p>Powered by: Babylon.js and Claude AI</p>
-            <p>Music: Various Artists</p>
-            <p>Special Thanks: The Anthropic Team</p>
+            <h2 class="text-amber-400 text-3xl mb-8 text-center">CREDITS</h2>
+            <div class="text-amber-200 text-xl space-y-4 text-center">
+                <p>Thank you for playing!</p>
+                <p>Created by: vitenner</p>
+                <p>Special Thanks: axlee, jlum, ssian, yoong</p>
+            </div>
         `;
-        credits.style.textAlign = 'center';
-        credits.style.fontSize = '1.5rem';
-        credits.style.lineHeight = '2.5rem';
         
         const backButton = document.createElement('button');
+        backButton.className = 'bg-amber-600 text-gray-900 border-b-3 border-amber-800 px-8 py-3 text-2xl cursor-pointer font-["Share_Tech_Mono"] tracking-wider mt-12 transition-all duration-200 hover:bg-amber-500 hover:border-amber-600 hover:-translate-y-0.5';
         backButton.textContent = 'BACK TO MAIN MENU';
-        backButton.style.marginTop = '3rem';
-        backButton.style.padding = '1rem 2rem';
-        backButton.style.fontSize = '1.2rem';
-        backButton.style.backgroundColor = '#d97706';
-        backButton.style.color = '#111827';
-        backButton.style.border = 'none';
-        backButton.style.borderRadius = '4px';
-        backButton.style.cursor = 'pointer';
         
         // Restore and update main menu return logic
         backButton.onclick = () => {
@@ -62,7 +53,11 @@ export class CreditsUI {
             }
         };
         
-        creditsDiv.appendChild(title);
+        titleContainer.appendChild(mainTitle);
+        titleContainer.appendChild(subTitle);
+        
+        creditsDiv.appendChild(titleContainer);
+        creditsDiv.appendChild(decorLine);
         creditsDiv.appendChild(credits);
         creditsDiv.appendChild(backButton);
         

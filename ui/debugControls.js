@@ -39,7 +39,7 @@ export class DebugControls {
                 const SettingsUI = module.SettingsUI;
                 
                 // Disable keys when chat or any UI is active
-                if ((e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'f') && 
+                if ((e.key.toLowerCase() === 'l' || e.key.toLowerCase() === 'f' || e.key === '1') && 
                     (ChatUI.isActive || SettingsUI.isActive)) return;
 
                 switch (e.key.toLowerCase()) {
@@ -48,6 +48,9 @@ export class DebugControls {
                         break;
                     case 'f':
                         this.handleFPSToggle();
+                        break;
+                    case '1':
+                        this.handleDebugToggle();
                         break;
                     // Add more debug keys here as needed
                 }
@@ -65,6 +68,17 @@ export class DebugControls {
         if (this.fpsDisplay) {
             this.fpsDisplay.toggle();
         }
+    }
+
+    handleDebugToggle() {
+        // Toggle FPS display
+        if (this.fpsDisplay) {
+            this.fpsDisplay.toggle();
+        }
+        
+        // Toggle debug overlay by dispatching custom event
+        const event = new CustomEvent('toggleDebugOverlay');
+        window.dispatchEvent(event);
     }
 
     getLevelGenerator(levelType, scene) {

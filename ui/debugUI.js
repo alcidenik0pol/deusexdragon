@@ -3,55 +3,60 @@ export class DebugUI {
         // Create debug overlay
         this.overlayElement = document.createElement('div');
         this.overlayElement.id = 'debugOverlay';
-        this.overlayElement.style.cssText = `
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            font-family: Arial;
+        this.overlayElement.className = `
+            absolute top-2.5 left-2.5
+            bg-black/70
+            text-amber-400
+            font-mono text-sm
+            px-2 py-0.5
+            min-w-[200px]
+            flex flex-col items-start justify-center
+            select-none
+            overflow-hidden
+            z-[1000]
         `;
+        this.overlayElement.style.mixBlendMode = 'normal';
+        this.overlayElement.style.isolation = 'isolate';
         document.body.appendChild(this.overlayElement);
         
-        this.isEnabled = true;
-        
-        // Create a separate container for API notifications
+        // Create API notification container with Tailwind
         this.apiNotificationContainer = document.createElement('div');
-        this.apiNotificationContainer.style.cssText = `
-            position: fixed;
-            top: 80px;  // Below the debug overlay
-            left: 10px;
-            color: #ff9900;  // Orange color for warnings
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 12px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px 10px;
-            border-left: 2px solid #ff9900;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
+        this.apiNotificationContainer.className = `
+            fixed top-20 left-2.5
+            bg-black/70
+            text-orange-400
+            font-mono text-xs
+            px-2.5 py-1.5
+            border-l-2 border-orange-400
+            opacity-0
+            transition-opacity duration-300
+            pointer-events-none
+            z-[1000]
         `;
         document.body.appendChild(this.apiNotificationContainer);
 
-        // Create API error notification container
+        // Create API error container with Tailwind
         this.apiErrorContainer = document.createElement('div');
-        this.apiErrorContainer.style.cssText = `
-            position: fixed;
-            top: 10px;
-            left: 200px;  // Positioned to the right of the debug overlay
-            color: #ff4444;  // Red for errors
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 12px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px 10px;
-            border-left: 2px solid #ff4444;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            z-index: 1000;
+        this.apiErrorContainer.className = `
+            fixed top-2.5 left-52
+            bg-black/70
+            text-red-400
+            font-mono text-xs
+            px-2.5 py-1.5
+            border-l-2 border-red-400
+            opacity-0
+            transition-opacity duration-300
+            pointer-events-none
+            z-[1000]
         `;
         document.body.appendChild(this.apiErrorContainer);
+        
+        this.isEnabled = true;
+        
+        // Add event listener for debug toggle
+        window.addEventListener('toggleDebugOverlay', () => {
+            this.toggle();
+        });
     }
 
     update(character) {
