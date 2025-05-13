@@ -1,5 +1,6 @@
 import { LevelGenerator } from '../levelGenerator.js';
 import { WORLD_CONFIG } from '../../config/config.js';
+import { MusicManager } from '../../quest/MusicManager.js';
 
 export class CreditsLevel extends LevelGenerator {
     static LEVEL_BOUNDS = {
@@ -20,16 +21,23 @@ export class CreditsLevel extends LevelGenerator {
         };
         super(scene, customConfig);
         
+        // Set level ID before anything else
+        this.levelId = 'credits';
+        
         // Set current level
         window.currentLevel = this;
-        
-        // Set level ID
-        this.levelId = 'credits';
         
         // Register with level progression if available
         if (window.levelProgression) {
             window.levelProgression.currentLevel = this.levelId;
         }
+
+        // Create credits UI
+        import('../../ui/creditsUI.js').then(module => {
+            this.creditsUI = new module.CreditsUI();
+        });
+
+        // Remove direct music initialization since it will be handled by the level change event
     }
 
     // Override to create a dark environment
@@ -53,7 +61,12 @@ export class CreditsLevel extends LevelGenerator {
     createWalls() { return []; }
     async createLevel() { return {}; }
 
+    // Override dispose to clean up UI
     dispose() {
         super.dispose();
+        if (this.creditsUI) {
+            // Add dispose method to CreditsUI if needed
+            this.creditsUI.dispose();
+        }
     }
 } 

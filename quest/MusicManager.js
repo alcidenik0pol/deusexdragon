@@ -13,22 +13,7 @@ export class MusicManager {
         this.volume = 0.5;
 
         // ONLY listen for level changes - that's it!
-        window.addEventListener('changeLevel', (event) => {
-            const levelId = event.detail?.levelId;
-            if (!levelId) return;
-
-            // Kill current track
-            if (this.currentTrack) {
-                this.currentTrack.pause();
-                this.currentTrack = null;
-            }
-
-            // Set new playlist and play
-            this.playlist = this.playlists[levelId] || [];
-            if (this.playlist.length > 0) {
-                this.play();
-            }
-        });
+        window.addEventListener('changeLevel', this._handleLevelChange.bind(this));
 
         // Current playlist
         this.playlist = [];
@@ -56,15 +41,12 @@ export class MusicManager {
                 'audio/taiyong03.mp3',
                 'audio/taiyong04.mp3',
                 'audio/taiyong05.mp3'
+            ],
+            credits: [
+                'audio/credits02.mp3'
             ]
         };
 
-        // Special tracks (not part of regular playlists)
-        this.specialTracks = {
-            menu: 'audio/menu.mp3',
-            credits: 'audio/credits02.mp3'
-        };
-        
         // Bind methods
         this._handleTrackEnd = this._handleTrackEnd.bind(this);
         
@@ -98,14 +80,8 @@ export class MusicManager {
             this.nextTrackTimeout = null;
         }
 
-        // Start new track
-        if (levelId === 'main_menu') {
-            this.playSpecialTrack('menu');
-        } else if (levelId === 'credits') {
-            this.playSpecialTrack('credits');
-        } else {
-            this.setLevel(levelId);
-        }
+        // Set new playlist and play
+        this.setLevel(levelId);
     }
 
     // Add initialization method

@@ -6,6 +6,7 @@ import { GridLevel } from '../levels/grid/GridLevel.js';
 import { TaiyongLevel } from '../levels/taiyong/taiyongLevel.js';
 import { FPSDisplay } from './fpsDisplay.js';
 import { MusicManager } from '../quest/MusicManager.js';
+import { CreditsLevel } from '../levels/credits/creditsLevel.js';
 
 export class DebugControls {
     static instance = null;
@@ -80,13 +81,15 @@ export class DebugControls {
                 return new GridLevel(scene);
             case 'taiyong':
                 return new TaiyongLevel(scene);
+            case 'credits':
+                return new CreditsLevel(scene);
             default:
                 return new LevelGenerator(scene);
         }
     }
 
     handleLevelSelection() {
-        const availableLevels = ['default', 'singapore6', 'nightclub', 'grid', 'taiyong'];
+        const availableLevels = ['default', 'singapore6', 'nightclub', 'grid', 'taiyong', 'credits'];
         const currentLevelType = prompt(`Enter level name (${availableLevels.join(', ')}):`);
         
         if (currentLevelType && availableLevels.includes(currentLevelType.toLowerCase())) {
