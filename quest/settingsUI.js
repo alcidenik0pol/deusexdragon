@@ -114,6 +114,10 @@ export class SettingsUI {
     }
 
     updateContent() {
+        // Always get the current model from userSettings (in case it changed)
+        const llmOptions = userSettings.getLLMOptions();
+        const currentLLM = userSettings.currentModel;
+
         // Create LLM selection UI
         let content = `
             <div style="display: flex; justify-content: space-between; gap: 2rem;">
@@ -122,10 +126,6 @@ export class SettingsUI {
                         <span style="color: #d97706; font-size: 16px;">LLM SELECTION</span>
                     </div>
         `;
-
-        // Get available LLM options from UserSettings
-        const llmOptions = userSettings.getLLMOptions();
-        const currentLLM = userSettings.currentModel;
 
         // Create radio button group for LLM selection
         llmOptions.forEach(option => {
@@ -193,7 +193,8 @@ export class SettingsUI {
         // Add event listener to save button
         const saveButton = document.getElementById('save-settings-btn');
         if (saveButton) {
-            saveButton.addEventListener('click', () => this.saveSettings());
+            saveButton.onclick = () => this.saveSettings();
+            console.log('[DEBUG] Save button event listener attached');
             
             // Add hover effects
             saveButton.onmouseover = () => {
@@ -208,13 +209,19 @@ export class SettingsUI {
     }
 
     saveSettings() {
+        console.log('[DEBUG] saveSettings called');
         // Get selected LLM
         const selectedLLM = document.querySelector('input[name="llm-selection"]:checked')?.value;
+        console.log('[DEBUG] Selected LLM:', selectedLLM);
         
         if (selectedLLM) {
             // Update the model in UserSettings (which saves to sessionStorage)
             userSettings.currentModel = selectedLLM;
-            
+            console.log('[DEBUG] userSettings.currentModel set to:', userSettings.currentModel);
+            // Log confirmation
+            console.log(`[SettingsUI] Model changed to: ${selectedLLM}`);
+            // Immediately refresh the UI to reflect the new selection
+            this.updateContent();
             // Show success message
             const successMsg = document.createElement('div');
             successMsg.style.cssText = `
@@ -225,21 +232,21 @@ export class SettingsUI {
                 border-left: 3px solid #10B981;
             `;
             successMsg.textContent = `Settings saved! LLM set to ${selectedLLM}`;
-            
             // Add message to UI
             const saveButton = document.getElementById('save-settings-btn');
             saveButton.parentNode.appendChild(successMsg);
-            
-            // Remove message after 2 seconds
+            // Remove message after 1 second, then close
             setTimeout(() => {
                 if (successMsg.parentNode) {
                     successMsg.parentNode.removeChild(successMsg);
                 }
-            }, 2000);
+                this.hide();
+            }, 1000);
         }
     }
 
     show() {
+        console.log('[DEBUG] Opening settings UI, current model:', userSettings.currentModel);
         this.updateContent();
         this.container.style.display = 'block';
         this.isVisible = true;
@@ -255,6 +262,7 @@ export class SettingsUI {
     }
 
     hide() {
+        console.log('[DEBUG] Hiding settings UI');
         this.container.style.display = 'none';
         this.isVisible = false;
         SettingsUI.isActive = false;

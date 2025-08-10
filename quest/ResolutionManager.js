@@ -116,7 +116,7 @@ export class ResolutionManager {
       console.log(`[ResolutionManager] Full prompt being sent:`, prompt);
       
       const requestBody = {
-        model: this.evaluationModel,
+        model: userSettings.currentModel,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
         max_tokens: 300  // Keep higher to ensure we get a complete response
@@ -129,6 +129,8 @@ export class ResolutionManager {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Deus Ex Dragon'
         },
         body: JSON.stringify(requestBody),
       });

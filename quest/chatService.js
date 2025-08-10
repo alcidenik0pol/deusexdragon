@@ -178,16 +178,16 @@ export class ChatService {
         messages.push({ role: 'user', content });
       }
       
-      // Use the current model from instance property (which is kept updated)
+      // Always use userSettings.currentModel for the model
       const requestBody = {
-        model: this.model,
+        model: userSettings.currentModel,
         messages: messages,
         stream: true,
         temperature: 0.7,
         max_tokens: 1000
       };
       
-      console.log(`Sending request to ${this.baseUrl} with model: ${this.model}`);
+      console.log(`Sending request to ${this.baseUrl} with model: ${userSettings.currentModel}`);
       console.log(`Including ${conversationHistory.length} previous messages in context`);
       console.log("Full NPC Context being sent:", npcContext);
 
@@ -196,6 +196,8 @@ export class ChatService {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Deus Ex Dragon'
         },
         body: JSON.stringify(requestBody),
       });

@@ -5,16 +5,17 @@
 export class UserSettings {
     static instance = null;
     
-    // Available LLM options - exactly matching those in env.js
+    // Available LLM options - updated to working models
     static LLM_OPTIONS = [
-        { id: 'google/gemini-2.5-pro-exp-03-25:free', name: 'Gemini 2.5 Pro', description: 'Fast model from Google' },
-        { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek Chat', description: 'Seems slow' },
-        { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek R1', description: 'Not sure it\'s great' },
-        { id: 'qwen/qwen-2.5-7b-instruct:free', name: 'Qwen 2.5', description: 'Great all-around performance' }
+        { id: 'google/gemma-3-27b-it:free', name: 'Google Gemma 3', description: 'Fast and reliable - default' },
+        { id: 'qwen/qwen3-14b-04-28:free', name: 'Qwen 3 (14B)', description: 'Good performance' },
+        { id: 'qwen/qwen3-32b-04-28:free', name: 'Qwen 3 (32B)', description: 'Higher quality' },
+        { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek R1', description: 'Fast, reliable, smaller' },
+        { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek Chat v3', description: 'Alternative DeepSeek model' }
     ];
     
     // Default model to use if none is selected - matching the uncommented one in env.js
-    static DEFAULT_MODEL = 'qwen/qwen-2.5-7b-instruct:free';
+    static DEFAULT_MODEL = 'google/gemma-3-27b-it:free';
     
     constructor() {
         // Singleton pattern
@@ -34,7 +35,12 @@ export class UserSettings {
     
     _initializeSettings() {
         // Load selected LLM from sessionStorage or use default
-        this._currentModel = sessionStorage.getItem('selectedLLM') || UserSettings.DEFAULT_MODEL;
+        const stored = sessionStorage.getItem('selectedLLM');
+        if (stored && UserSettings.LLM_OPTIONS.some(option => option.id === stored)) {
+            this._currentModel = stored;
+        } else {
+            this._currentModel = UserSettings.DEFAULT_MODEL;
+        }
     }
     
     // Getter for current model
