@@ -24,6 +24,7 @@
 !assets/static/**/*.gif
 !assets/static/**/*.svg
 !assets/static/**/*.mp4
+!assets/_generation/**/*.mp3
 
 # Logs
 logs
