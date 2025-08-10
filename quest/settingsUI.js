@@ -139,6 +139,9 @@ export class SettingsUI {
                 <div style="flex: 1;">
                     <div style="margin-bottom: 1.5rem;">
                         <span style="color: #d97706; font-size: 16px;">LLM SELECTION</span>
+                        <div style="color: #6B7280; font-size: 10px; margin-top: 0.25rem; font-family: 'Share Tech Mono', monospace;">
+                                                         Last updated: August 10, 2025
+                        </div>
                     </div>
         `;
 

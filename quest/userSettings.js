@@ -8,13 +8,14 @@ import { config } from '../config/env.js';
 export class UserSettings {
     static instance = null;
     
-    // Available LLM options - updated to working models
+    // Available LLM options - Last updated: August 10, 2025
     static LLM_OPTIONS = [
         { id: 'google/gemma-3-27b-it:free', name: 'Google Gemma 3', description: 'Fast and reliable - default' },
         { id: 'qwen/qwen3-14b-04-28:free', name: 'Qwen 3 (14B)', description: 'Good performance' },
-        { id: 'qwen/qwen3-32b-04-28:free', name: 'Qwen 3 (32B)', description: 'Higher quality' },
-        { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek R1', description: 'Fast, reliable, smaller' },
-        { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek Chat v3', description: 'Alternative DeepSeek model' }
+        { id: 'openai/gpt-oss-20b:free', name: 'OpenAI GPT OSS 20B', description: 'Open source alternative' },
+        { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek Chat v3', description: 'Advanced reasoning model' },
+        { id: 'deepseek/deepseek-r1-0528:free', name: 'DeepSeek R1 (May)', description: 'Latest reasoning model' },
+        { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek R1', description: 'Core reasoning model' }
     ];
     
     // Get default model from env.js config (single source of truth)
