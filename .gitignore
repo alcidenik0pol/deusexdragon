@@ -91,6 +91,7 @@ test/types/index.js
 # compiled app
 dist
 .env
+config/env.js
 backend/src/db
 .cursor
 pong.crt

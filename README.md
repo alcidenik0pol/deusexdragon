@@ -1,12 +1,11 @@
-# Deus Ex: Neon Merlion
+# deusexdragon
 
-## Changelog
-### 0.2d
-- Fixed menu music
-- fixed UI
 
-### 0.2c
-- Added proper credits level
+## Setup
+1. add your api key OPENROUTER_API_KEY to config/env.js
+2. run:
+```
+npm run dev
+```
 
-### 0.2b
-- Added Tailwind CSS for UI
+## Controls

@@ -202,14 +202,37 @@ export class ChatService {
         body: JSON.stringify(requestBody),
       });
 
-      if (response.status === 429) {
+      // Handle all HTTP error statuses
+      if (!response.ok) {
         const errorData = await response.text();
         console.error(`API request failed with status ${response.status}: ${errorData}`);
         
-        // Add this line to show the error in UI
-        if (window.debugUI) window.debugUI.showApiError({ code: 429 });
+        let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
         
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        // Specific error messages for common issues
+        if (response.status === 401) {
+          errorMessage = 'API key is invalid, expired, or has insufficient credits. Please check your OpenRouter account.';
+          console.error('401 Unauthorized - Possible causes:');
+          console.error('1. API key is invalid or expired');
+          console.error('2. Insufficient credits on account');
+          console.error('3. API key has been revoked/disabled');
+          console.error('4. Model may not be available anymore');
+        } else if (response.status === 429) {
+          errorMessage = 'Rate limit exceeded. Please wait before making more requests.';
+        } else if (response.status === 402) {
+          errorMessage = 'Payment required. Please add credits to your OpenRouter account.';
+        }
+        
+        // Show the error in UI if available
+        if (window.debugUI) {
+          window.debugUI.showApiError({ 
+            code: response.status, 
+            message: errorMessage,
+            details: errorData 
+          });
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const reader = response.body?.getReader();

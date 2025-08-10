@@ -1,6 +1,9 @@
+import { config } from '../config/env.js';
+
 /**
- * UserSettings - Manages user preferences that persist across the game
- * Uses sessionStorage for settings that should reset on page reload
+ * UserSettings - Manages user preferences with live updates
+ * Uses localStorage for persistent user preferences across sessions
+ * Primary source: env.js default → localStorage override → live switching
  */
 export class UserSettings {
     static instance = null;
@@ -14,8 +17,10 @@ export class UserSettings {
         { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek Chat v3', description: 'Alternative DeepSeek model' }
     ];
     
-    // Default model to use if none is selected - matching the uncommented one in env.js
-    static DEFAULT_MODEL = 'google/gemma-3-27b-it:free';
+    // Get default model from env.js config (single source of truth)
+    static get DEFAULT_MODEL() {
+        return config.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free';
+    }
     
     constructor() {
         // Singleton pattern
@@ -30,12 +35,24 @@ export class UserSettings {
         UserSettings.instance = this;
         window.userSettings = this;
         
-        console.log('UserSettings initialized with model:', this.currentModel);
+        console.log('UserSettings initialized');
+        console.log('  - Default from env.js:', UserSettings.DEFAULT_MODEL);
+        console.log('  - localStorage override:', localStorage.getItem('selectedLLM'));
+        console.log('  - Final model:', this.currentModel);
     }
     
     _initializeSettings() {
-        // Load selected LLM from sessionStorage or use default
-        const stored = sessionStorage.getItem('selectedLLM');
+        // One-time migration from sessionStorage to localStorage
+        const oldSession = sessionStorage.getItem('selectedLLM');
+        const newLocal = localStorage.getItem('selectedLLM');
+        if (oldSession && !newLocal) {
+            console.log('[UserSettings] Migrating LLM preference to localStorage');
+            localStorage.setItem('selectedLLM', oldSession);
+            sessionStorage.removeItem('selectedLLM');
+        }
+        
+        // Load from localStorage (persistent) or use env.js default
+        const stored = localStorage.getItem('selectedLLM');
         if (stored && UserSettings.LLM_OPTIONS.some(option => option.id === stored)) {
             this._currentModel = stored;
         } else {
@@ -60,8 +77,8 @@ export class UserSettings {
         
         this._currentModel = modelId;
         
-        // Save to sessionStorage
-        sessionStorage.setItem('selectedLLM', modelId);
+        // Save to localStorage for persistence across sessions
+        localStorage.setItem('selectedLLM', modelId);
         
         // Dispatch event for components to update
         const event = new CustomEvent('modelChanged', { 

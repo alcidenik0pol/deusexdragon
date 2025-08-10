@@ -3,8 +3,17 @@ import { userSettings, UserSettings } from './userSettings.js';
 
 export class SettingsUI {
     static isActive = false;
+    static instance = null; // 🚀 SINGLETON PATTERN
 
     constructor() {
+        // 💥 PREVENT MULTIPLE INSTANCES - NUCLEAR SINGLETON
+        if (SettingsUI.instance) {
+            console.log('[DEBUG] 🚀 RETURNING EXISTING SETTINGS UI INSTANCE');
+            return SettingsUI.instance;
+        }
+        
+        console.log('[DEBUG] 💥 CREATING FIRST AND ONLY SETTINGS UI INSTANCE');
+        
         this.container = null;
         this.contentBlock = null;
         this.isVisible = false;
@@ -12,8 +21,14 @@ export class SettingsUI {
         // Create the UI elements
         this.create();
         
-        // Add keyboard listener for 'O'
+        // Add keyboard listener for 'O' - ONLY ONCE!
         this.setupKeyboardControls();
+        
+        // 🔥 STORE AS SINGLETON
+        SettingsUI.instance = this;
+        
+        // 🚀 MAKE GLOBALLY ACCESSIBLE like ChatUI
+        window.settingsUI = this;
     }
 
     create() {
@@ -190,13 +205,27 @@ export class SettingsUI {
 
         this.contentBlock.innerHTML = content;
 
-        // Add event listener to save button
+        // 🚀 NUCLEAR REBUILT: Use WORKING chatUI.js pattern
+        this._attachButtonHandlers();
+    }
+
+    _attachButtonHandlers() {
+        // 💥 TOTAL REBUILD: Copy the WORKING pattern from chatUI.js
         const saveButton = document.getElementById('save-settings-btn');
         if (saveButton) {
-            saveButton.onclick = () => this.saveSettings();
-            console.log('[DEBUG] Save button event listener attached');
+            // 🔥 SIMPLE AND DIRECT - like chatUI.js line 213
+            saveButton.onclick = (event) => {
+                console.log('[DEBUG] 🚀 NUCLEAR SAVE BUTTON CLICKED - EVENT:', event);
+                console.log('[DEBUG] 🔥 BUTTON ELEMENT:', saveButton);
+                console.log('[DEBUG] 💥 BUTTON PARENT:', saveButton.parentNode);
+                this.handleSave();
+            };
             
-            // Add hover effects
+            // 🎯 CRITICAL DEBUG - Test if button is clickable
+            console.log('[DEBUG] 🧪 TESTING: Button clickable?', saveButton.onclick !== null);
+            console.log('[DEBUG] 🧪 TESTING: Button in DOM?', document.contains(saveButton));
+            
+            // 🔥 SIMPLE HOVER - like chatUI.js pattern
             saveButton.onmouseover = () => {
                 saveButton.style.backgroundColor = '#f59e0b';
                 saveButton.style.borderBottomColor = '#d97706';
@@ -205,44 +234,46 @@ export class SettingsUI {
                 saveButton.style.backgroundColor = '#d97706';
                 saveButton.style.borderBottomColor = '#92400e';
             };
+            
+            console.log('[DEBUG] 💥 NUCLEAR BUTTON HANDLER ATTACHED');
+        } else {
+            console.error('[DEBUG] ❌ SAVE BUTTON NOT FOUND!');
         }
     }
 
-    saveSettings() {
-        console.log('[DEBUG] saveSettings called');
-        // Get selected LLM
-        const selectedLLM = document.querySelector('input[name="llm-selection"]:checked')?.value;
-        console.log('[DEBUG] Selected LLM:', selectedLLM);
+    // 💥💥💥 COMPLETELY OBLITERATED AND REBUILT 💥💥💥
+    handleSave() {
+        console.log('[DEBUG] 🚀 NUCLEAR HANDLE SAVE CALLED');
         
-        if (selectedLLM) {
-            // Update the model in UserSettings (which saves to sessionStorage)
-            userSettings.currentModel = selectedLLM;
-            console.log('[DEBUG] userSettings.currentModel set to:', userSettings.currentModel);
-            // Log confirmation
-            console.log(`[SettingsUI] Model changed to: ${selectedLLM}`);
-            // Immediately refresh the UI to reflect the new selection
-            this.updateContent();
-            // Show success message
-            const successMsg = document.createElement('div');
-            successMsg.style.cssText = `
-                color: #10B981;
-                margin-top: 1rem;
-                padding: 0.5rem;
-                background-color: rgba(16, 185, 129, 0.1);
-                border-left: 3px solid #10B981;
-            `;
-            successMsg.textContent = `Settings saved! LLM set to ${selectedLLM}`;
-            // Add message to UI
-            const saveButton = document.getElementById('save-settings-btn');
-            saveButton.parentNode.appendChild(successMsg);
-            // Remove message after 1 second, then close
-            setTimeout(() => {
-                if (successMsg.parentNode) {
-                    successMsg.parentNode.removeChild(successMsg);
-                }
-                this.hide();
-            }, 1000);
+        // 🔥 SIMPLE AND DIRECT - like chatUI.js pattern
+        const selectedLLM = document.querySelector('input[name="llm-selection"]:checked')?.value;
+        console.log('[DEBUG] 💥 Selected LLM:', selectedLLM);
+        
+        if (!selectedLLM) {
+            console.error('[DEBUG] ❌ NO MODEL SELECTED!');
+            return;
         }
+        
+        // 🚀 NUCLEAR UPDATE - DIRECT AND SIMPLE
+        console.log('[DEBUG] 🔥 SETTING MODEL TO:', selectedLLM);
+        userSettings.currentModel = selectedLLM;
+        console.log('[DEBUG] ✅ MODEL SET TO:', userSettings.currentModel);
+        
+        // 💥 SHOW SUCCESS AND CLOSE - like chatUI.js goodbye pattern (line 407)
+        console.log('[DEBUG] 🎉 SUCCESS! CLOSING UI...');
+        
+        // Brief success message in the output area
+        this.contentBlock.innerHTML = `
+            <div style="color: #10B981; text-align: center; padding: 2rem; font-size: 16px;">
+                ✅ Settings Saved!<br>
+                Model changed to: ${selectedLLM}
+            </div>
+        `;
+        
+        // 🚀 CLOSE LIKE CHATUI - setTimeout pattern from line 407
+        setTimeout(() => {
+            this.hide();
+        }, 800);
     }
 
     show() {
