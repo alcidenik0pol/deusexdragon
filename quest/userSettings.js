@@ -1,26 +1,21 @@
-import { config } from '../config/env.js';
+import { MODEL_CONFIG } from '../config/models.js';
 
 /**
  * UserSettings - Manages user preferences with live updates
  * Uses localStorage for persistent user preferences across sessions
- * Primary source: env.js default → localStorage override → live switching
+ * Primary source: models.js default → localStorage override → live switching
  */
 export class UserSettings {
     static instance = null;
     
-    // Available LLM options - Last updated: August 10, 2025
-    static LLM_OPTIONS = [
-        { id: 'google/gemma-3-27b-it:free', name: 'Google Gemma 3', description: 'Fast and reliable - default' },
-        { id: 'qwen/qwen3-14b-04-28:free', name: 'Qwen 3 (14B)', description: 'Good performance' },
-        { id: 'openai/gpt-oss-20b:free', name: 'OpenAI GPT OSS 20B', description: 'Open source alternative' },
-        { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek Chat v3', description: 'Advanced reasoning model' },
-        { id: 'deepseek/deepseek-r1-0528:free', name: 'DeepSeek R1 (May)', description: 'Latest reasoning model' },
-        { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek R1', description: 'Core reasoning model' }
-    ];
+    // Get LLM options from centralized model config
+    static get LLM_OPTIONS() {
+        return MODEL_CONFIG.AVAILABLE_MODELS;
+    }
     
-    // Get default model from env.js config (single source of truth)
+    // Get default model from centralized model config (single source of truth)
     static get DEFAULT_MODEL() {
-        return config.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free';
+        return MODEL_CONFIG.DEFAULT_MODEL;
     }
     
     constructor() {
@@ -37,7 +32,7 @@ export class UserSettings {
         window.userSettings = this;
         
         console.log('UserSettings initialized');
-        console.log('  - Default from env.js:', UserSettings.DEFAULT_MODEL);
+        console.log('  - Default from models.js:', UserSettings.DEFAULT_MODEL);
         console.log('  - localStorage override:', localStorage.getItem('selectedLLM'));
         console.log('  - Final model:', this.currentModel);
     }
