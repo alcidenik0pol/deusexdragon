@@ -1,5 +1,6 @@
 import { config } from '../config/env.js';
 import { userSettings } from './userSettings.js';
+import { getModelConfig, supportsSystemMessages, buildDialoguePrompt, buildUserPromptWithContext, getFallbackResponse } from '../config/llm.js';
 
 export class ChatService {
   constructor() {
@@ -55,9 +56,11 @@ export class ChatService {
     const history = this.getConversationHistory(npc);
     history.push({ role, content });
     
-    // Strictly limit history length
-    const MAX_HISTORY_LENGTH = 5; // Reduced from 10
-    if (history.length > MAX_HISTORY_LENGTH) {
+    // Strictly limit history length based on current model
+    const currentModel = userSettings.currentModel;
+    const modelConfig = getModelConfig(currentModel, 'dialogue');
+    
+    if (history.length > modelConfig.max_history_length) {
       history.shift();
     }
     
@@ -140,56 +143,71 @@ export class ChatService {
     console.log(`Starting chat stream for message: "${content.substring(0, 50)}..." with NPC: ${npc?.name || 'Unknown'}`);
     
     try {
-      // Modify this section in your streamChat function
+      // Build NPC context using centralized prompt builder
       const npcName = npc?.name || 'NPC';
       const npcPersona = npc?.persona || `a citizen in Deus Ex world`;
-      const questInfo = npc?.questDetails ? `
-      IMPORTANT INFORMATION:
-      ${npc.questDetails.relevantInfo.join('\n')}
+      const currentModel = userSettings.currentModel;
       
-      YOUR CONNECTIONS:
-      ${npc.questDetails.connections.join('\n')}
-      
-      HOW TO RESPOND:
-      ${npc.questDetails.playerObjectives.join('\n')}
-      
-      Always stay in character and keep responses brief (2-3 sentences maximum). DO NOT include any action text, asterisks, or descriptions of physical actions.
-      ` : '';
-
-      const npcContext = `You are ${npcName}, ${npcPersona}. ${questInfo}`;
-
       // Get conversation history for this NPC
       const conversationHistory = this.getConversationHistory(npc);
       
       // Add the user's message to history before sending
       this.addToHistory(npc, 'user', content);
 
-      // Prepare request payload with history
-      const messages = [
-        { role: 'system', content: npcContext },
-        ...conversationHistory // Include previous conversation history
-      ];
+      let messages;
+      let contextInfo; // For logging
       
-      // Don't add the user message again if it's already the last one in history
-      const lastMessage = conversationHistory.length > 0 ? 
-                           conversationHistory[conversationHistory.length - 1] : null;
-                           
-      if (!lastMessage || lastMessage.role !== 'user' || lastMessage.content !== content) {
-        messages.push({ role: 'user', content });
+      // Check if model supports system messages
+      if (!supportsSystemMessages(currentModel)) {
+        console.log(`Model ${currentModel} doesn't support system messages, using user prompt with context`);
+        
+        // For models without system support, embed everything in user messages
+        const contextualPrompt = buildUserPromptWithContext(npcName, npcPersona, npc?.questDetails, content);
+        messages = [{ role: 'user', content: contextualPrompt }];
+        contextInfo = `User-embedded context for ${npcName}`;
+        
+        // Add previous conversation history as user/assistant pairs (but simplified)
+        const recentHistory = conversationHistory.slice(-4); // Only last 2 exchanges
+        recentHistory.forEach(msg => {
+          if (msg.role === 'user') {
+            messages.push({ role: 'user', content: `Player: ${msg.content}` });
+          } else {
+            messages.push({ role: 'assistant', content: `${npcName}: ${msg.content}` });
+          }
+        });
+      } else {
+        // Standard approach for models with system message support
+        const npcContext = buildDialoguePrompt(npcName, npcPersona, npc?.questDetails, currentModel);
+        contextInfo = npcContext;
+        
+        messages = [
+          { role: 'system', content: npcContext },
+          ...conversationHistory // Include previous conversation history
+        ];
+        
+        // Don't add the user message again if it's already the last one in history
+        const lastMessage = conversationHistory.length > 0 ? 
+                             conversationHistory[conversationHistory.length - 1] : null;
+                             
+        if (!lastMessage || lastMessage.role !== 'user' || lastMessage.content !== content) {
+          messages.push({ role: 'user', content });
+        }
       }
       
-      // Always use userSettings.currentModel for the model
+      // Get model-specific configuration
+      const modelConfig = getModelConfig(currentModel, 'dialogue');
+      
       const requestBody = {
         model: userSettings.currentModel,
         messages: messages,
-        stream: true,
-        temperature: 0.7,
-        max_tokens: 1000
+        stream: modelConfig.stream,
+        temperature: modelConfig.temperature,
+        max_tokens: modelConfig.max_tokens
       };
       
       console.log(`Sending request to ${this.baseUrl} with model: ${userSettings.currentModel}`);
       console.log(`Including ${conversationHistory.length} previous messages in context`);
-      console.log("Full NPC Context being sent:", npcContext);
+      console.log("Context info:", contextInfo);
 
       const response = await fetch(this.baseUrl, {
         method: 'POST',
@@ -361,7 +379,7 @@ export class ChatService {
       if (window.debugUI) window.debugUI.showApiError(error);
       
       // Provide a fallback response if the API fails
-      const fallbackResponse = `I'm sorry, I seem to be having trouble with my communication systems right now. Could you try again in a moment?`;
+      const fallbackResponse = getFallbackResponse();
       
       // Add fallback response to history
       this.addToHistory(npc, 'assistant', fallbackResponse);

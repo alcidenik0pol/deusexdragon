@@ -1,5 +1,6 @@
 import { config } from '../config/env.js';
 import { userSettings } from './userSettings.js';
+import { getModelConfig, buildResolutionPrompt, formatConversation } from '../config/llm.js';
 
 export class ResolutionManager {
   constructor() {
@@ -86,40 +87,25 @@ export class ResolutionManager {
       npcName = window.characters[npcId].name;
     }
     
-    let formattedConversation = `Conversation between Player and ${npcName} (${npcId}):\n\n`;
-    
-    history.forEach(msg => {
-      const speaker = msg.role === 'user' ? 'Player' : npcName;
-      formattedConversation += `${speaker}: ${msg.content}\n`;
-    });
-    
-    return formattedConversation;
+    return formatConversation(npcName, npcId, history);
   }
   
   async checkConditionWithLLM(condition, conversationContext) {
     try {
-      // Extremely explicit prompt demanding a one-word response
-      const prompt = `
-      You are evaluating a conversation in a video game to determine if a specific objective has been completed.
-      
-      ${conversationContext}
-      
-      CRITICAL INSTRUCTION:
-      Reply with EXACTLY ONE WORD, either "yes" or "no".
-      Do not include any other text, explanation, punctuation, or whitespace.
-      
-      QUESTION: ${condition.condition}
-      
-      ONE-WORD ANSWER:`;
+      // Build evaluation prompt using centralized template
+      const prompt = buildResolutionPrompt(conversationContext, condition.condition);
       
       console.log(`[ResolutionManager] Sending evaluation request for condition: ${condition.id}`);
       console.log(`[ResolutionManager] Full prompt being sent:`, prompt);
       
+      // Get model-specific configuration for resolution
+      const modelConfig = getModelConfig(userSettings.currentModel, 'resolution');
+      
       const requestBody = {
         model: userSettings.currentModel,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.1,
-        max_tokens: 300  // Keep higher to ensure we get a complete response
+        temperature: modelConfig.temperature,
+        max_tokens: modelConfig.max_tokens
       };
       
       console.log(`[ResolutionManager] Request body:`, JSON.stringify(requestBody));
