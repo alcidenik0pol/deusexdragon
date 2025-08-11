@@ -32,7 +32,7 @@ Point Opportunity 2: Accept First Job
 Dialogue Path:
 
 Tong: "I need someone with clean DNA records to retrieve a package from a Belltower security checkpoint."
-Tong: "Nothing complicated - walk in, present this ID card, take the package, walk out. No questions, no conversation."
+Tong: "It's for my son, Tracer. Nothing complicated - walk in, present this ID card, take the package, walk out. No questions, no conversation."
 
 [CONDITION: Accepted_Initial_Job]
 

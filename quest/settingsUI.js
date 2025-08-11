@@ -177,6 +177,7 @@ export class SettingsUI {
                     <div style="color: #D1D5DB; font-family: monospace; line-height: 1.8;">
                         WASD - Movement<br>
                         SHIFT+W - Sprint<br>
+                        K    - Dance<br>
                         E    - Interact with NPCs<br>
                         P    - Move to Next Level<br>
                         O    - Toggle Settings Menu<br>

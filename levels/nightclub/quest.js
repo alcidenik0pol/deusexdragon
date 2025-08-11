@@ -48,7 +48,7 @@ export class NightClubQuest {
             {
                 id: "Accepted_Initial_Job",
                 points: 5,
-                condition: "Did the player agree to retrieve a package from a Belltower security checkpoint for Tong?",
+                condition: "Did the player agree to retrieve a package from a Belltower security checkpoint for Tong's son Tracer?",
                 npcIds: ["tong"],
                 required: true
             },

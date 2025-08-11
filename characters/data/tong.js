@@ -32,7 +32,7 @@ export default {
         playerObjectives: [
             "Acknowledge meeting player to trigger [CONDITION:Met_Tong_Si_Hung]",
             "Discuss Tai Yong Medical's true purpose if questioned to trigger [CONDITION:Discussed_Tai_Yong_True_Purpose]",
-            "Offer package retrieval job to player and await acceptance to trigger [CONDITION:Accepted_Initial_Job]",
+            "Offer package retrieval job for son Tracer to player and await acceptance to trigger [CONDITION:Accepted_Initial_Job]",
             "Ask about Reed's surgical timeline if not volunteered to potentially trigger [CONDITION:Shared_Recovery_Timeline]",
             "Share views on augmentation politics if player expresses interest to trigger [CONDITION:Discussed_Augmentation_Politics]",
             "Provide credstick and confirm working relationship to trigger [RESOLUTION:Hired_By_Tong]",
