@@ -11,7 +11,7 @@
 - **Dual LLM System** — One LLM generates NPC dialogue in real-time; a second evaluates your conversations against quest conditions and triggers in-world events when objectives are met
 - **100% AI-Generated Assets** — The entire asset pipeline is AI: meshes, music, voice acting, dialogue
 - **No Scripted Dialogue Trees** — NPCs respond dynamically; quest progression emerges from natural conversation
-- **5 Explorable Levels** — Singapore streets, nightclubs, corporate towers, each with unique atmosphere and objectives
+- **3 Explorable Levels** — Singapore streets, nightclubs, corporate towers, each with unique atmosphere and objectives
 
 ---
 
@@ -165,6 +165,7 @@
 | **Singapore6** | Rain-soaked streets | Neon-lit urban exploration |
 | **Nightclub** | Underground club | Volumetric lights, music, crowds |
 | **Taiyong** | Corporate tower | Sterile corporate dystopia |
+
 Each level is a folder with modular files: `*Level.js`, `buildings.js`, `lighting.js`, `npc.js`, `quest.js`, `furniture.js`, `objectMapping.js`.
 
 ---
