@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(ls -la \"F:\\\\_Dev\\\\deusexdragon\\\\docs\"\" 2>/dev/null || echo \"docs folder empty or doesn 't exist \")"
+    ]
+  }
+}
