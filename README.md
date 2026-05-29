@@ -165,9 +165,6 @@
 | **Singapore6** | Rain-soaked streets | Neon-lit urban exploration |
 | **Nightclub** | Underground club | Volumetric lights, music, crowds |
 | **Taiyong** | Corporate tower | Sterile corporate dystopia |
-| **Grid** | Digital space | Abstract geometry |
-| **Credits** | — | End sequence |
-
 Each level is a folder with modular files: `*Level.js`, `buildings.js`, `lighting.js`, `npc.js`, `quest.js`, `furniture.js`, `objectMapping.js`.
 
 ---
