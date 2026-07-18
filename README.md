@@ -1,11 +1,11 @@
 # Deus Ex: Neon Merlion
 
 <p align="center">
+  <b>▶ Click to play trailer</b>
+  <br>
   <a href="https://res.cloudinary.com/xpweckjx/video/upload/internal/projects/cyberpunk-rpg/deus-ex-dragon.webm">
     <img src="https://res.cloudinary.com/xpweckjx/video/upload/so_2,f_jpg,w_1280/internal/projects/cyberpunk-rpg/deus-ex-dragon.jpg" alt="Deus Ex: Neon Merlion — demo video (with sound)" width="100%">
   </a>
-  <br>
-  <b>▶ Click to play trailer</b>
 </p>
 
 > **An AI-native 3D cyberpunk RPG where your conversations drive the story.** Talk your way through quests — an LLM evaluates every dialogue exchange to unlock doors, reposition NPCs, and trigger level transitions in real-time.
