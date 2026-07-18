@@ -1,0 +1,45 @@
+Copyright (c) 2026 Victor Tenneroni. All rights reserved.
+
+This software and its associated source code, documentation, assets, and
+related materials (collectively, the "Software") are the proprietary and
+confidential property of the copyright holder.
+
+NO LICENSE IS GRANTED TO USE, COPY, MODIFY, MERGE, PUBLISH, DISTRIBUTE,
+SUBLICENSE, SELL, OR OPERATE THE SOFTWARE, IN WHOLE OR IN PART, WITHOUT
+THE PRIOR WRITTEN PERMISSION OF THE COPYRIGHT HOLDER.
+
+Unauthorized use, reproduction, or distribution of the Software, or any
+portion of it, is strictly prohibited and may constitute a violation of
+applicable copyright, trademark, and other intellectual property laws.
+Such unauthorized use may result in severe civil and criminal penalties.
+
+Permission requests and all other inquiries must be directed to the
+copyright holder.
+
+NO WARRANTY. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES,
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+THIRD-PARTY LICENSES
+
+This Software depends on third-party libraries that are licensed under
+their own terms, including but not limited to:
+
+  - Babylon.js (@babylonjs/*) - Apache License 2.0
+  - TypeScript - Apache License 2.0
+  - Webpack - MIT License
+  - Tailwind CSS - MIT License
+
+The above third-party licenses continue to apply to their respective
+components. Nothing in this License affects your rights with respect to
+those third-party components, which are governed by their own licenses.
+
+---
+
+For licensing inquiries, please contact: vtennero@student.42.fr

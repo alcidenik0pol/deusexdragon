@@ -2,6 +2,7 @@
   "name": "deux-ex-neon-merlion",
   "version": "0.2b",
   "description": "Deus Ex Neon Merlion",
+  "license": "UNLICENSED",
   "scripts": {
     "build": "webpack --mode production",
     "watch": "webpack --watch --mode development",
