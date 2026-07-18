@@ -5,7 +5,12 @@
       "Bash(find:*)",
       "Bash(ls -la \"F:\\\\_Dev\\\\deusexdragon\\\\docs\"\" 2>/dev/null || echo \"docs folder empty or doesn 't exist \")",
       "Bash(ls -la \"F:\\\\_Dev\\\\deusexdragon\\\\fx\"\" 2>&1 && echo \"---LIGHTING---\" && ls -la \"F:_Devdeusexdragonfxlighting\"\")",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(curl:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ]
   }
 }

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Loop — Deus Ex: Neon Merlion</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: #0a0a14;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255, 43, 214, 0.08), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(0, 240, 255, 0.08), transparent 40%);
+    color: #e6e6f0;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    padding: 14px 28px 8px;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #00f0ff, #ff2bd6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header p {
+    font-size: 12px;
+    color: #7a7a92;
+    margin-top: 2px;
+  }
+  main {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #diagram {
+    background: transparent;
+  }
+  .mermaid {
+    font-size: 17px !important;
+  }
+  footer {
+    padding: 8px 28px;
+    border-top: 1px solid rgba(0, 240, 255, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #5a5a72;
+    flex-shrink: 0;
+  }
+  button {
+    background: linear-gradient(135deg, #00f0ff 0%, #00b8d4 100%);
+    color: #0a0a14;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transition: transform 0.1s, box-shadow 0.2s;
+  }
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 240, 255, 0.4);
+  }
+  button:active { transform: translateY(0); }
+  .src { font-family: "Consolas", "SF Mono", monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Agentic Loop &amp; Quest Resolution</h1>
+  <p>Deus Ex: Neon Merlion — dual-LLM pipeline (one player message = two LLM calls)</p>
+</header>
+
+<main>
+  <div class="mermaid" id="diagram">flowchart TD
+    START([Player presses E near NPC]):::entry
+
+    subgraph ENTRY[Entry - either path]
+        DM["DialogueManager.findClosestNPC<br/>DialogueManager.js:40"]:::src
+        NB["NPCBase.interact (click)<br/>NPCBase.js:157"]:::src
+    end
+    START --> ENTRY
+    ENTRY --> SHOW["ChatUI.show - lock controls<br/>chatUI.js:328"]:::src
+
+    SHOW --> SUBMIT["handleSubmit<br/>chatUI.js:427"]:::src
+    SUBMIT --> LEG1
+
+    subgraph LEG1[Leg 1 - Dialogue LLM - streaming]
+        HU["addToHistory npc,user<br/>chatService.js:155"]:::src
+        BP{"supportsSystemMessages?<br/>chatService.js:161"}:::gate
+        REQ1["POST OpenRouter<br/>stream:true - temp .5-.8<br/>chatService.js:212"]:::llm
+        SSE["SSE tokens to onChunk to UI<br/>chatService.js:268"]:::src
+        HA["addToHistory npc,assistant<br/>chatService.js:370"]:::src
+        HU --> BP --> REQ1 --> SSE --> HA
+    end
+
+    HA --> TRIG{"trigger:<br/>role=assistant AND len ge 2<br/>chatService.js:69"}:::gate
+    TRIG -->|setTimeout 1000ms| LEG2
+
+    subgraph LEG2[Leg 2 - Resolution LLM - non-streaming - 1s later]
+        EVAL["evaluateConversation<br/>ResolutionManager.js:48"]:::src
+        FILT["filter: level+npc+not completed<br/>ResolutionManager.js:53"]:::src
+        LOOP{"for each condition (await)<br/>ResolutionManager.js:70"}:::gate
+        REQ2["POST OpenRouter<br/>stream:false - temp .05-.2<br/>ResolutionManager.js:113"]:::llm
+        DEC{"answer.includes yes?<br/>ResolutionManager.js:175"}:::gate
+        EVAL --> FILT --> LOOP --> REQ2 --> DEC
+        DEC -->|no| RETRY["stays open - re-eval next turn"]:::out
+    end
+
+    DEC -->|yes| DONE["completeCondition<br/>+points - mark - notify<br/>dispatch conditionCompleted<br/>ResolutionManager.js:183"]:::out
+    DONE --> LVL{"points ge threshold<br/>AND all required met?<br/>ResolutionManager.js:211"}:::gate
+    LVL -->|yes| UNLOCK["dispatch levelExitUnlocked<br/>ResolutionManager.js:229"]:::out
+    UNLOCK --> NEXT([Player can press P - next level])
+    LVL -->|no| NEXTCYCLE([Next message repeats cycle])
+
+    classDef entry fill:#2d5a2d,stroke:#00ff88,color:#fff,stroke-width:2px;
+    classDef src fill:#1f3a5f,stroke:#00f0ff,color:#fff,stroke-width:2px;
+    classDef llm fill:#5f3a1f,stroke:#ff8800,color:#fff,stroke-width:2px;
+    classDef gate fill:#4a2d4a,stroke:#ff2bd6,color:#fff,stroke-width:2px;
+    classDef out fill:#1a4a4a,stroke:#00ffaa,color:#fff,stroke-width:2px;</div>
+</main>
+
+<footer>
+  <span class="src">docs/agentic_loop.html</span>
+  <button id="png-btn">Download PNG</button>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    flowchart: {
+      useMaxWidth: true,
+      htmlLabels: true,
+      curve: 'basis',
+      padding: 14
+    },
+    themeVariables: {
+      darkMode: true,
+      background: 'transparent',
+      primaryColor: '#1a1a2e',
+      primaryTextColor: '#e6e6f0',
+      primaryBorderColor: '#00f0ff',
+      lineColor: '#ff2bd6',
+      secondaryColor: '#16213e',
+      tertiaryColor: '#0f0f1a',
+      fontFamily: '"Segoe UI", -apple-system, sans-serif',
+      fontSize: '17px'
+    }
+  });
+
+  document.getElementById('png-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('png-btn');
+    const svg = document.querySelector('#diagram svg');
+    if (!svg) return;
+
+    btn.textContent = 'Rendering...';
+    btn.disabled = true;
+
+    try {
+      const clone = svg.cloneNode(true);
+      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      clone.removeAttribute('style');
+
+      const rect = svg.getBoundingClientRect();
+      const scale = 2.5;
+      const width = Math.ceil(rect.width) * scale;
+      const height = Math.ceil(rect.height) * scale;
+
+      clone.setAttribute('width', width);
+      clone.setAttribute('height', height);
+
+      const svgStr = new XMLSerializer().serializeToString(clone);
+      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0a0a14';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+
+        canvas.toBlob((pngBlob) => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(pngBlob);
+          a.download = 'agentic_loop.png';
+          a.click();
+          URL.revokeObjectURL(a.href);
+          btn.textContent = 'Download PNG';
+          btn.disabled = false;
+        }, 'image/png');
+      };
+      img.onerror = () => {
+        alert('PNG export failed. Use browser screenshot instead (Win+Shift+S).');
+        btn.textContent = 'Download PNG';
+        btn.disabled = false;
+      };
+      img.src = url;
+    } catch (e) {
+      alert('Export error: ' + e.message);
+      btn.textContent = 'Download PNG';
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

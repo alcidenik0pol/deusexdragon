@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Loop (4:3) — Deus Ex: Neon Merlion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: #080d1a;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Hard 4:3 canvas */
+  #canvas {
+    width: min(96vw, calc(93vh * 4 / 3));
+    aspect-ratio: 4 / 3;
+    background: #0f172a;
+    border: 1px solid rgba(51, 65, 85, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+  #diagram {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #diagram svg {
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+  /* Square shapes only */
+  #diagram svg rect {
+    rx: 0 !important;
+    ry: 0 !important;
+  }
+  /* Node + edge labels: clean sans, normal weight */
+  #diagram svg .nodeLabel,
+  #diagram svg .edgeLabel {
+    font-family: 'Inter', -apple-system, sans-serif !important;
+    font-weight: 400 !important;
+    color: #e2e8f0 !important;
+    line-height: 1.35;
+  }
+  /* Code reference line (function + file): monospace, smaller, cyan */
+  #diagram svg .nodeLabel code {
+    display: block;
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace !important;
+    font-weight: 400 !important;
+    color: #7dd3fc !important;
+    font-size: 0.72em;
+    margin-top: 6px;
+    opacity: 0.85;
+    white-space: normal;
+    line-height: 1.3;
+  }
+  /* Subgraph titles */
+  #diagram svg .cluster-label {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
+    color: #94a3b8 !important;
+  }
+  #diagram svg .cluster-label text {
+    fill: #94a3b8 !important;
+  }
+  /* Edge yes/no labels */
+  #diagram svg .edgeLabel {
+    color: #94a3b8 !important;
+    font-size: 0.85em !important;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas">
+  <div class="mermaid" id="diagram">flowchart TD
+  START["player presses E<br/>near NPC<br/><code>handleKeyPress() · DialogueManager.js:23</code>"]:::entry
+
+  subgraph L1["Leg 1 - Dialogue LLM (streaming)"]
+    direction LR
+    HU["append user msg<br/>to NPC history<br/><code>addToHistory() · chatService.js:155</code>"]:::src
+    BP["model supports<br/>system msgs?<br/><code>supportsSystemMessages() · chatService.js:161</code>"]:::gate
+    REQ1["stream request<br/>to OpenRouter<br/><code>streamChat() · chatService.js:212</code>"]:::llm
+    SSE["stream tokens<br/>to UI<br/><code>handleChunk() · chatService.js:268</code>"]:::src
+    HA["append NPC reply<br/>to history<br/><code>addToHistory() · chatService.js:370</code>"]:::src
+    HU --> BP --> REQ1 --> SSE --> HA
+  end
+
+  TRIG["on NPC reply, 1s delay,<br/>then evaluate<br/><code>setTimeout() · chatService.js:69</code>"]:::gate
+
+  subgraph L2["Leg 2 - Resolution LLM (cold yes/no)"]
+    direction LR
+    EVAL["submit conversation<br/>for evaluation<br/><code>evaluateConversation() · ResolutionManager.js:48</code>"]:::src
+    FILT["filter unfinished<br/>conditions for NPC<br/><code>Array.filter() · ResolutionManager.js:53</code>"]:::src
+    LOOP["loop per condition,<br/>sequential<br/><code>for...of await · ResolutionManager.js:70</code>"]:::gate
+    REQ2["send yes/no request<br/>to OpenRouter<br/><code>checkConditionWithLLM() · ResolutionManager.js:113</code>"]:::llm
+    DEC["answer<br/>contains yes?<br/><code>answer.includes(yes) · ResolutionManager.js:175</code>"]:::gate
+    EVAL --> FILT --> LOOP --> REQ2 --> DEC
+  end
+
+  DONE["mark done + award points<br/>+ notify<br/><code>completeCondition() · ResolutionManager.js:183</code>"]:::out
+  LVL["points &gt;= threshold<br/>AND required met?<br/><code>checkLevelCompletion() · ResolutionManager.js:211</code>"]:::gate
+  UNLOCK["unlock<br/>level exit<br/><code>unlockLevelExit() · ResolutionManager.js:229</code>"]:::out
+
+  START --> L1
+  L1 --> TRIG
+  TRIG --> L2
+  L2 -->|no| RETRY["stays open,<br/>re-check next msg<br/><code>ResolutionManager.js:70</code>"]:::out
+  L2 -->|yes| DONE --> LVL
+  LVL -->|no| NEXTCYCLE["loop repeats<br/>next message"]:::out
+  LVL -->|yes| UNLOCK --> NEXT["player presses P,<br/>next level<br/><code>goToNextLevel() · controls.js:80</code>"]:::entry
+
+  classDef entry fill:#1e293b,stroke:#34d399,color:#e2e8f0,stroke-width:2px;
+  classDef src fill:#1e293b,stroke:#60a5fa,color:#e2e8f0,stroke-width:2px;
+  classDef llm fill:#1e293b,stroke:#fbbf24,color:#e2e8f0,stroke-width:2px;
+  classDef gate fill:#1e293b,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px;
+  classDef out fill:#1e293b,stroke:#5eead4,color:#e2e8f0,stroke-width:2px;</div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    flowchart: {
+      useMaxWidth: true,
+      htmlLabels: true,
+      curve: 'linear',
+      padding: 16,
+      nodeSpacing: 40,
+      rankSpacing: 45
+    },
+    themeVariables: {
+      darkMode: true,
+      background: 'transparent',
+      primaryColor: '#1e293b',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#475569',
+      lineColor: '#64748b',
+      secondaryColor: '#0f172a',
+      tertiaryColor: '#1e293b',
+      clusterBkg: 'rgba(15, 23, 42, 0.45)',
+      clusterBorder: '#334155',
+      fontFamily: '"Inter", sans-serif',
+      fontSize: '19px',
+      edgeLabelBackground: '#0f172a'
+    }
+  });
+</script>
+</body>
+</html>
