@@ -10,7 +10,15 @@
       "Bash(git config:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(npm audit:*)",
+      "Bash(npm view:*)",
+      "Bash(npm install:*)",
+      "Bash(rtk ls:*)",
+      "Bash(rtk read:*)",
+      "Bash(rtk proxy cat:*)",
+      "Bash(rtk proxy npm audit:*)"
     ]
   }
 }
