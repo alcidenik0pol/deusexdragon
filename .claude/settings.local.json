@@ -18,7 +18,13 @@
       "Bash(rtk ls:*)",
       "Bash(rtk read:*)",
       "Bash(rtk proxy cat:*)",
-      "Bash(rtk proxy npm audit:*)"
+      "Bash(rtk proxy npm audit:*)",
+      "Bash(rtk git show:*)",
+      "Bash(rtk git diff:*)",
+      "Bash(rtk proxy npm run build:*)",
+      "Bash(echo:*)",
+      "Bash(rtk proxy npm install:*)",
+      "Bash(rtk proxy npm ls:*)"
     ]
   }
 }
